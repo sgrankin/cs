@@ -1,7 +1,8 @@
-package templates
+package server
 
 import (
 	"bufio"
+	"embed"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -10,6 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+//go:embed templates
+var templatesFS embed.FS
 
 func linkTag(nonce template.HTMLAttr, rel string, s string, m map[string]string) template.HTML {
 	hash := m[strings.TrimPrefix(s, "/")]
@@ -45,7 +49,7 @@ func getFuncs() map[string]interface{} {
 func LoadTemplates(base string, templates map[string]*template.Template) error {
 	pattern := base + "/templates/common/*.html"
 	common := template.New("").Funcs(getFuncs())
-	common = template.Must(common.ParseGlob(pattern))
+	common = template.Must(common.ParseFS(templatesFS, pattern))
 
 	pattern = base + "/templates/*.html"
 	paths, err := filepath.Glob(pattern)

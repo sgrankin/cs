@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/livegrep/livegrep/server/config"
+	"sgrankin.dev/cs/livegrep/server/config"
 )
 
 // Mapping from known file extensions to filetype hinting.
@@ -20,6 +20,7 @@ var filenameToLangMap map[string]string = map[string]string{
 	"BUILD.bazel": "python",
 	"WORKSPACE":   "python",
 }
+
 var extToLangMap map[string]string = map[string]string{
 	".adoc":        "AsciiDoc",
 	".asc":         "AsciiDoc",
@@ -71,6 +72,7 @@ var extToLangMap map[string]string = map[string]string{
 	".yaml":        "yaml",
 	".yml":         "yaml",
 }
+
 var fileFirstLineToLangMap map[*regexp.Regexp]string = map[*regexp.Regexp]string{
 	regexp.MustCompile(`^#!.*\bpython[23]?\b`): "python",
 	regexp.MustCompile(`^#!.*\bbash\b`):        "bash",

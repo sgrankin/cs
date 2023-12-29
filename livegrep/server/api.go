@@ -15,12 +15,53 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/livegrep/livegrep/server/api"
-	"github.com/livegrep/livegrep/server/log"
-	"github.com/livegrep/livegrep/server/reqid"
-
-	pb "github.com/livegrep/livegrep/src/proto/go_proto"
+	"sgrankin.dev/cs/livegrep/server/api"
+	"sgrankin.dev/cs/livegrep/server/log"
+	"sgrankin.dev/cs/livegrep/server/reqid"
 )
+
+type Bounds struct {
+	Left, Right int
+}
+
+type SearchResult struct {
+	Tree, Version, Path         string
+	LineNumber                  int
+	ContextBefore, ContextAfter []string
+	Bounds                      Bounds
+	Line                        string
+}
+
+type FileResult struct {
+	Tree, Version, Path string
+	Bounds              Bounds
+}
+
+type ExitReason int
+
+func (v ExitReason) String() string { return fmt.Sprintf("%d", v) }
+
+const (
+	ExitReasonNone = iota
+	ExitReasonTimeout
+	ExitReasonMatchLimit
+)
+
+type SearchStats struct {
+	RE2Time, GitTime, SortTime, IndexTime, AnalyzeTime, TotalTime int64
+
+	ExitReason ExitReason
+}
+
+type CodeSearchResult struct {
+	Stats       SearchStats
+	Results     []SearchResult
+	FileResults []FileResult
+
+	// unique index identity that served this request
+	IndexName string
+	IndexTime int
+}
 
 func replyJSON(ctx context.Context, w http.ResponseWriter, status int, obj interface{}) {
 	w.WriteHeader(status)
@@ -47,8 +88,8 @@ func writeQueryError(ctx context.Context, w http.ResponseWriter, err error) {
 	}
 }
 
-func extractQuery(ctx context.Context, r *http.Request) (pb.Query, bool, error) {
-	var query pb.Query
+func extractQuery(ctx context.Context, r *http.Request) (Query, bool, error) {
+	var query Query
 
 	if err := r.ParseForm(); err != nil {
 		return query, false, err
@@ -119,9 +160,7 @@ func extractQuery(ctx context.Context, r *http.Request) (pb.Query, bool, error) 
 	return query, regex, err
 }
 
-var (
-	ErrTimedOut = errors.New("timed out talking to backend")
-)
+var ErrTimedOut = errors.New("timed out talking to backend")
 
 func stringSlice(ss []string) []string {
 	if ss != nil {
@@ -130,8 +169,8 @@ func stringSlice(ss []string) []string {
 	return []string{}
 }
 
-func (s *server) doSearch(ctx context.Context, backend *Backend, q *pb.Query) (*api.ReplySearch, error) {
-	var search *pb.CodeSearchResult
+func (s *server) doSearch(ctx context.Context, backend *Backend, q *Query) (*api.ReplySearch, error) {
+	var search *CodeSearchResult
 	var err error
 
 	start := time.Now()
@@ -143,10 +182,7 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *pb.Query) (*
 		ctx = metadata.AppendToOutgoingContext(ctx, "Request-Id", string(id))
 	}
 
-	search, err = backend.Codesearch.Search(
-		ctx, q,
-		grpc.FailFast(false),
-	)
+	search, err = backend.Codesearch.Search(ctx, *q)
 	if err != nil {
 		log.Printf(ctx, "error talking to backend err=%s", err)
 		return nil, err
@@ -185,7 +221,7 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *pb.Query) (*
 	}
 
 	reply.Info = &api.Stats{
-		RE2Time:     search.Stats.Re2Time,
+		RE2Time:     search.Stats.RE2Time,
 		GitTime:     search.Stats.GitTime,
 		SortTime:    search.Stats.SortTime,
 		IndexTime:   search.Stats.IndexTime,
@@ -213,7 +249,6 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	q, is_regex, err := extractQuery(ctx, r)
-
 	if err != nil {
 		writeError(ctx, w, 400, "bad_query", err.Error())
 		return
@@ -234,7 +269,6 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	reply, err := s.doSearch(ctx, backend, &q)
-
 	if err != nil {
 		log.Printf(ctx, "error in search err=%s", err)
 		writeQueryError(ctx, w, err)

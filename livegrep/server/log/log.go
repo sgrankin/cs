@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/livegrep/livegrep/server/reqid"
 	"golang.org/x/net/context"
+
+	"sgrankin.dev/cs/livegrep/server/reqid"
 )
 
 func Printf(c context.Context, msg string, args ...interface{}) {

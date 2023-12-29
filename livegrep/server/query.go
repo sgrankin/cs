@@ -8,9 +8,18 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	pb "github.com/livegrep/livegrep/src/proto/go_proto"
 )
+
+type Query struct {
+	Line                         string
+	File, NotFile                []string
+	Repo, NotRepo, Tags, NotTags string
+	FoldCase                     bool
+
+	MaxMatches   int32
+	FilenameOnly bool
+	ContextLines int64
+}
 
 var pieceRE = regexp.MustCompile(`\[|\(|(?:^([a-zA-Z0-9-_]+):|\\.)| `)
 
@@ -48,8 +57,8 @@ func ensureSingleValue(ops map[string][]string, key string) (string, error) {
 	return "", nil
 }
 
-func ParseQuery(query string, globalRegex bool) (pb.Query, error) {
-	var out pb.Query
+func ParseQuery(query string, globalRegex bool) (Query, error) {
+	var out Query
 
 	ops := make(map[string][]string)
 	key := ""
@@ -76,7 +85,6 @@ func ParseQuery(query string, globalRegex bool) (pb.Query, error) {
 			// A space: Ends the operator, if we're in one.
 			if key == "" {
 				term += " "
-
 			} else {
 				ops[key] = append(ops[key], term)
 				key = ""

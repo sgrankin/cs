@@ -1,0 +1,12 @@
+{
+  "name": "com_github_livegrep_livegrep_web",
+  "private": "true",
+  "devDependencies": {
+    "backbone": "1.5.0",
+    "bootstrap": "3.3.7",
+    "bootstrap-select": "1.12.4",
+    "jquery": "3.7.1",
+    "js-cookie": "3.0.5",
+    "underscore": "1.13.6"
+  }
+}

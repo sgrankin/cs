@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
-	"github.com/livegrep/livegrep/server/config"
+
+	"sgrankin.dev/cs/livegrep/server/config"
 )
 
 func assertRepoPath(t *testing.T,
@@ -13,7 +14,8 @@ func assertRepoPath(t *testing.T,
 	url string,
 	expectedRepo string,
 	expectedPath string,
-	expectedErr error) {
+	expectedErr error,
+) {
 	actualRepo, actualPath, err := getRepoPathFromURL(repoRegex, url)
 	if err != expectedErr {
 		t.Errorf("error expectation mismatch when parsing url, got %v, expected %v", err.Error(), expectedErr)

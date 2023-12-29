@@ -2,12 +2,10 @@ package server
 
 import (
 	"context"
-	"log"
 	"net/url"
 	"sync"
 	"time"
 
-	pb "github.com/livegrep/livegrep/src/proto/go_proto"
 	"google.golang.org/grpc"
 )
 
@@ -15,6 +13,25 @@ type Tree struct {
 	Name    string
 	Version string
 	Url     string
+}
+
+type ServerInfo struct {
+	Name  string
+	Trees []struct {
+		Name, Version string
+		Metadata      struct {
+			URLPattern, Remote, Github string
+
+			Labels string
+		}
+	}
+	HasTags   bool
+	IndexTime int64
+}
+
+type CodeSearch interface {
+	Info(context.Context) (*ServerInfo, error)
+	Search(context.Context, Query) (*CodeSearchResult, error)
 }
 
 type I struct {
@@ -28,21 +45,17 @@ type Backend struct {
 	Id         string
 	Addr       string
 	I          *I
-	Codesearch pb.CodeSearchClient
+	Codesearch CodeSearch
 }
 
 func NewBackend(id string, addr string, extraOpts ...grpc.DialOption) (*Backend, error) {
 	dialOpts := []grpc.DialOption{grpc.WithInsecure()}
 	dialOpts = append(dialOpts, extraOpts...)
-	client, err := grpc.Dial(addr, dialOpts...)
-	if err != nil {
-		return nil, err
-	}
 	bk := &Backend{
 		Id:         id,
 		Addr:       addr,
 		I:          &I{Name: id},
-		Codesearch: pb.NewCodeSearchClient(client),
+		Codesearch: nil, // TODO XXX
 	}
 	return bk, nil
 }
@@ -51,22 +64,9 @@ func (bk *Backend) Start() {
 	if bk.I == nil {
 		bk.I = &I{Name: bk.Id}
 	}
-	go bk.poll()
 }
 
-func (bk *Backend) poll() {
-	for {
-		info, e := bk.Codesearch.Info(context.Background(), &pb.InfoRequest{}, grpc.FailFast(false))
-		if e == nil {
-			bk.refresh(info)
-		} else {
-			log.Printf("refresh %s: %v", bk.Id, e)
-		}
-		time.Sleep(60 * time.Second)
-	}
-}
-
-func (bk *Backend) refresh(info *pb.ServerInfo) {
+func (bk *Backend) refresh(info *ServerInfo) {
 	bk.I.Lock()
 	defer bk.I.Unlock()
 
@@ -77,7 +77,7 @@ func (bk *Backend) refresh(info *pb.ServerInfo) {
 	if len(info.Trees) > 0 {
 		bk.I.Trees = nil
 		for _, r := range info.Trees {
-			pattern := r.Metadata.UrlPattern
+			pattern := r.Metadata.URLPattern
 			if v := r.Metadata.Github; v != "" {
 				value := v
 				base := ""

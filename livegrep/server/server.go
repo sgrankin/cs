@@ -18,10 +18,9 @@ import (
 	"github.com/bmizerany/pat"
 	libhoney "github.com/honeycombio/libhoney-go"
 
-	"github.com/livegrep/livegrep/server/config"
-	"github.com/livegrep/livegrep/server/log"
-	"github.com/livegrep/livegrep/server/reqid"
-	"github.com/livegrep/livegrep/server/templates"
+	"sgrankin.dev/cs/livegrep/server/config"
+	"sgrankin.dev/cs/livegrep/server/log"
+	"sgrankin.dev/cs/livegrep/server/reqid"
 )
 
 var serveUrlParseError = fmt.Errorf("failed to parse repo and path from URL")
@@ -55,7 +54,7 @@ type server struct {
 
 func (s *server) loadTemplates() {
 	s.Templates = make(map[string]*template.Template)
-	err := templates.LoadTemplates(s.config.DocRoot, s.Templates)
+	err := LoadTemplates(s.config.DocRoot, s.Templates)
 	if err != nil {
 		panic(fmt.Sprintf("loading templates: %v", err))
 	}
@@ -64,7 +63,7 @@ func (s *server) loadTemplates() {
 	s.OpenSearch = texttemplate.Must(texttemplate.ParseFiles(p))
 
 	s.AssetHashes = make(map[string]string)
-	err = templates.LoadAssetHashes(
+	err = LoadAssetHashes(
 		path.Join(s.config.DocRoot, "hashes.txt"),
 		s.AssetHashes)
 	if err != nil {

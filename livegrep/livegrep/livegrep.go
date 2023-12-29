@@ -12,9 +12,10 @@ import (
 	"path"
 
 	libhoney "github.com/honeycombio/libhoney-go"
-	"github.com/livegrep/livegrep/server"
-	"github.com/livegrep/livegrep/server/config"
-	"github.com/livegrep/livegrep/server/middleware"
+
+	"sgrankin.dev/cs/livegrep/server"
+	"sgrankin.dev/cs/livegrep/server/config"
+	"sgrankin.dev/cs/livegrep/server/middleware"
 )
 
 var (
