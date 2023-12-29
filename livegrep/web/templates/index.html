@@ -1,0 +1,139 @@
+{{template "layout" .}}
+
+{{define "body"}}
+<div id='searcharea'>
+  <div class="search-inputs">
+    <div class="prefixed-input filter-code">
+      <label class="prefix-label" for="searchbox">Query:</label>
+      <input type="text" id='searchbox' tabindex="1" required="required" />
+    </div>
+    <div id='regex-error'>
+      <span id='errortext'></span>
+    </div>
+
+    <div class='query-hint'>
+      Special terms:
+      <code>path:</code>
+      <code>-path:</code>
+      <code>repo:</code>
+      <code>-repo:</code>
+      <code>max_matches:</code>
+    </div>
+  </div>
+
+  <div class="search-options">
+    <div class="search-option">
+      <span class="label">Case:</span>
+      <input type='radio' name='fold_case' value='false' id='case-match' tabindex="3" />
+      <label for='case-match'>match</label>
+      <input type='radio' name='fold_case' value='auto' id='case-auto' tabindex="4" />
+      <label for='case-auto'>auto</label>
+      [<span class="tooltip-target">?<div class="tooltip">
+        Case-sensitive if the query contains capital letters
+      </div></span>]
+      <input type='radio' name='fold_case' value='true' id='case-ignore' tabindex="5" />
+      <label for='case-ignore'>ignore</label>
+    </div>
+
+    <div class="search-option">
+      <span class="label">Regex:</span>
+      <input type='checkbox' name='regex' id='regex' tabindex="6" />
+      <label for='regex'>on</label>
+    </div>
+
+    {{if gt (.Data.Backends | len) 1 }}
+      <div class="search-option">
+        <span class="label">Search:</span>
+        <select id='backend' tabindex="7">
+        {{range .Data.Backends}}
+          <option value="{{.Id}}">{{.I.Name}}</option>
+        {{end}}
+        </select>
+      </div>
+    {{else}}
+      {{with index .Data.Backends 0}}
+        <select id='backend' style='display: none;'>
+          <option value="{{.Id}}">{{.I.Name}}</option>
+        </select>
+        {{if ne (.I.Name) "-"}}
+          <div class="search-option">
+            <span class="label">Searching:</span>
+            {{.I.Name}}
+          </div>
+        {{end}}
+      {{end}}
+    {{end}}
+
+    <div class="search-option">
+      <span class="label">Repo:</span>
+      <select id="repos" multiple></select>
+    </div>
+
+    <div class="search-option">
+      <span class="label">Context:</span>
+      <input type='checkbox' name='context' id='context' tabindex="8" checked="CHECKED" />
+      <label for='context'>on</label>
+    </div>
+  </div>
+</div>
+
+<div id='resultbox'>
+<div id='helparea'>
+  <div class='helpsection'><h5>Special query terms</h5></div>
+  <table>
+    <tr>
+      <td><code>path:</code></td>
+      <td>Only include results from matching files.</td>
+      <td><a href="/search?q=hello+path:test">example</a></td>
+    </tr>
+    <tr>
+      <td><code>-path:</code></td>
+      <td>Exclude results from matching files.</td>
+      <td><a href="/search?q=hello+-path:test">example</a></td>
+    </tr>
+    <tr>
+      <td><code>repo:</code></td>
+      <td>Only include results from matching repositories.</td>
+      <td><a href="/search?q=hello+repo:{{.Data.SampleRepo}}">example</a></td>
+    </tr>
+    <tr>
+      <td><code>-repo:</code></td>
+      <td>Exclude results from matching repositories.</td>
+      <td><a href="/search?q=hello+-repo:{{.Data.SampleRepo}}">example</a></td>
+    </tr>
+    <tr>
+      <td><code>max_matches:</code></td>
+      <td>Adjust the limit on number of matching lines returned.</td>
+      <td><a href="/search?q=hello+max_matches:5">example</a></td>
+    </tr>
+    <tr>
+      <td><code>(<em>special-term</em>:)</code></td>
+      <td>Escape one of the above terms by wrapping it in parentheses (with regex enabled).</td>
+      <td><a href="/search?q=(file:)&regex=true">example</a></td>
+    </tr>
+  </table>
+  <div class='helpsection'><h5>Regular Expressions</h5></div>
+  <p>
+    See <a href="https://github.com/google/re2/wiki/Syntax">the RE2
+    documentation</a> for a complete listing of supported regex syntax.
+  </p>
+</div>
+<div id='resultarea'>
+  <div id='countarea'>
+    <span id='numresults'>0</span> matches found
+    <span id='searchtimebox'>
+      <span class='label'>
+        /
+      </span>
+      <span id='searchtime'>
+      </span>
+    </span>
+  </div>
+  <div id='results' tabindex='-1'>
+  </div>
+</div>
+<p class='credit'>
+Livegrep project &copy; Nelson Elhage
+</p>
+</div>
+{{end}}

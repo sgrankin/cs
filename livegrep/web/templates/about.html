@@ -1,0 +1,23 @@
+{{template "layout" .}}
+
+{{define "body"}}
+<div class='textarea'>
+  <p>
+    This livegrep project was an experiment in scaling real-time
+    regex search, inspired in part by the death of <a
+    href="http://google.com/codesearch">Google Codesearch.</a>
+  </p>
+  <p>
+    livegrep uses Russ Cox's excellent <a
+    href="http://code.google.com/p/re2/">RE2</a> regular expression
+    library, underneath a custom indexing and searching backend
+    written in C++ with pthreads. The frontend is implemented in <a
+    href="http://golang.org/">Go</a>.
+  </p>
+  <p>
+    livegrep is written and run by <a
+    href="https://nelhage.com/">Nelson Elhage</a> and is <a
+    href="https://github.com/livegrep/livegrep">open source</a>.
+  </p>
+</div>
+{{end}}

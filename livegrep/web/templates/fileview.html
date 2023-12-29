@@ -1,0 +1,97 @@
+{{template "layout" .}}
+
+{{define "body"}}
+{{with .Data}}
+<section class="file-viewer">
+  <header class="header">
+    <nav class="header-title">
+      {{$repo := .Repo.Name}}
+      <a href="/view/{{$repo}}/" class="path-segment repo" title="Repository: {{$repo}}">{{$repo}}</a>:
+      {{range $i, $e := .PathSegments}}{{if gt $i 0}}/{{end}}<a href="{{$e.Path}}" class="path-segment">{{$e.Name}}</a>{{end}}
+    </nav>
+    <ul class="header-actions without-selection">
+      <li class="header-action">
+        <a data-action-name="search" title="Perform a new search. Keyboard shortcut: /" href="#">new search [<span class='shortcut'>/</span>]</a>
+      </li>,
+      <li class="header-action">
+        <a id="external-link" data-action-name="" title="View at {{.ExternalDomain}}. Keyboard shortcut: v" href="#">view at {{.ExternalDomain}} [<span class='shortcut'>v</span>]</a>
+      </li>,
+      {{if .Permalink}}
+      <li class="header-action">
+        <a id="permalink" title="Permalink. Keyboard shortcut: y" href="{{.Permalink}}">permalink [<span class='shortcut'>y</span>]</a>
+      </li>,
+      {{else}}
+      <li class="header-action">
+        <a id="back-to-head" title="return to HEAD revision" href="{{.Headlink}}">back to HEAD</a>
+      </li>,
+      {{end}}
+      <li class="header-action">
+        <a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#">help [<span class='shortcut'>?</span>]</a>
+      </li>
+    </ul>
+    <ul class="header-actions with-selection" style="display:none">
+      <li class="header-action">
+        search for selected text [/]
+      </li>,
+      <li class="header-action">
+        previous match [p]
+      </li>,
+      <li class="header-action">
+        next match [n]
+      </li>,
+      <li class="header-action">
+        <a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#">help [<span class='shortcut'>?</span>]</a>
+      </li>
+    </ul>
+  </header>
+
+  <div class="content-wrapper">
+      {{with .DirContent}}
+        <div class="dir-viewer-wrapper">
+          <ul class="file-list">
+              {{range $child := .Entries}}
+              <li class="file-list-entry{{if $child.IsDir}} is-directory{{end}}{{if $child.SymlinkTarget}} is-symlink{{end}}">
+                {{if $child.Path}}<a href="{{$child.Path}}">{{$child.Name}}{{if $child.IsDir}}/{{end}}</a>{{else}}{{$child.Name}}{{end}}
+                {{if .SymlinkTarget}}&rarr; (<span class="symlink-target">{{.SymlinkTarget}}</span>){{end}}
+              </li>
+              {{end}}
+          </ul>
+          {{ with .ReadmeContent }}
+            <div style="width:80%;">
+              {{ template "filecontent" . }}
+            </div>
+          {{end}}
+        </div>
+      {{end}}
+      {{with .FileContent}}
+        {{ template "filecontent" . }}
+      {{end}}
+  </div>
+
+  <section class="help-screen u-modal-overlay hidden">
+    <div class="help-screen-card u-modal-content">
+      <ul>
+        <li>Click on a line number to highlight it</li>
+        <li>Shift + click a second line number to highlight a range</li>
+        <li>Press <kbd class="keyboard-shortcut">/</kbd> to start a new search</li>
+        <li>Press <kbd class="keyboard-shortcut">b</kbd> to see which authors wrote which lines</li>
+        <li>Press <kbd class="keyboard-shortcut">l</kbd> to see the commit log for this file</li>
+        <li>Press <kbd class="keyboard-shortcut">v</kbd> to view this file/directory at {{.ExternalDomain}}</li>
+        <li>Press <kbd class="keyboard-shortcut">y</kbd> to create a permalink to this version of this file</li>
+        <li>Select some text and press <kbd class="keyboard-shortcut">/</kbd> to search for that text</li>
+        <li>Select some text and press <kbd class="keyboard-shortcut">enter</kbd> to search for that text in a new tab</li>
+        <li>Select some text and press <kbd class="keyboard-shortcut">p</kbd> for the previous match for that text</li>
+        <li>Select some text and press <kbd class="keyboard-shortcut">n</kbd> for the next match for that text</li>
+      </ul>
+    </div>
+  </section>
+</section>
+{{end}}
+
+<script{{.Nonce}} src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha384-06z5D//U/xpvxZHuUz92xBvq3DqBBFi7Up53HRrbV7Jlv7Yvh/MZ7oenfUe9iCEt" crossorigin="anonymous"></script>
+<script{{.Nonce}} src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha384-Uq05+JLko69eOiPr39ta9bh7kld5PKZoU+fF7g0EXTAriEollhZ+DrN8Q/Oi8J2Q" crossorigin="anonymous"></script>
+<script{{.Nonce}}>
+  Prism.plugins.autoloader.languages_path =
+  'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+</script>
+{{end}}
