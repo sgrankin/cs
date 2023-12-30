@@ -1,11 +1,10 @@
 package reqid
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-
-	"golang.org/x/net/context"
 )
 
 type key int

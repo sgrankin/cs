@@ -2,14 +2,14 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"sgrankin.dev/cs/livegrep/server/reqid"
 )
 
+// TODO: replace this with log or slog
 func Printf(c context.Context, msg string, args ...interface{}) {
 	var line bytes.Buffer
 	line.WriteString(time.Now().UTC().Format("[2006-01-02T15:04:05.999] "))

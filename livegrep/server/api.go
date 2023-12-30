@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/log"

@@ -8,7 +8,6 @@ require (
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f
 	github.com/evanw/esbuild v0.19.11
 	github.com/honeycombio/libhoney-go v1.20.0
-	golang.org/x/net v0.19.0
 	google.golang.org/grpc v1.60.1
 )
 
@@ -20,6 +19,7 @@ require (
 	github.com/klauspost/compress v1.16.6 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231002182017-d307bd883b97 // indirect
