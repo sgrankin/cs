@@ -44,10 +44,14 @@ var queryTests = []struct {
 	{`ab(cab|cat)`, `"abc" "bca" ("cab"|"cat")`},
 	{`(z*(abc|def)z*)(z*(abc|def)z*)`, `("abc"|"def")`},
 	{`(z*abcz*defz*)|(z*abcz*defz*)`, `"abc" "def"`},
-	{`(z*abcz*defz*(ghi|jkl)z*)|(z*abcz*defz*(mno|prs)z*)`,
-		`"abc" "def" ("ghi"|"jkl"|"mno"|"prs")`},
-	{`(z*(abcz*def)|(ghiz*jkl)z*)|(z*(mnoz*prs)|(tuvz*wxy)z*)`,
-		`("abc" "def")|("ghi" "jkl")|("mno" "prs")|("tuv" "wxy")`},
+	{
+		`(z*abcz*defz*(ghi|jkl)z*)|(z*abcz*defz*(mno|prs)z*)`,
+		`"abc" "def" ("ghi"|"jkl"|"mno"|"prs")`,
+	},
+	{
+		`(z*(abcz*def)|(ghiz*jkl)z*)|(z*(mnoz*prs)|(tuvz*wxy)z*)`,
+		`("abc" "def")|("ghi" "jkl")|("mno" "prs")|("tuv" "wxy")`,
+	},
 	{`(z*abcz*defz*)(z*(ghi|jkl)z*)`, `"abc" "def" ("ghi"|"jkl")`},
 	{`(z*abcz*defz*)|(z*(ghi|jkl)z*)`, `("ghi"|"jkl")|("abc" "def")`},
 

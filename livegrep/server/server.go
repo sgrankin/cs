@@ -371,7 +371,6 @@ func New(cfg *config.Config) (http.Handler, error) {
 	mux.Handle("/", h)
 
 	srv.inner = mux
-
 	return srv, nil
 }
 

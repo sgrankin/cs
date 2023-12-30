@@ -36,9 +36,9 @@ func writeError(ctx context.Context, w http.ResponseWriter, status int, code, me
 
 func writeQueryError(ctx context.Context, w http.ResponseWriter, err error) {
 	// TODO: is this an invalid argument?
-	// writeError(ctx, w, 400, "query", grpc.ErrorDesc(err))
-	writeError(ctx, w, 500, "internal_error",
-		fmt.Sprintf("Talking to backend: %s", err.Error()))
+	writeError(ctx, w, 400, "query", err.Error())
+	// writeError(ctx, w, 500, "internal_error",
+	// 	fmt.Sprintf("Talking to backend: %s", err.Error()))
 }
 
 func extractQuery(ctx context.Context, r *http.Request) (csapi.Query, bool, error) {
@@ -215,6 +215,9 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 
 	if q.MaxMatches == 0 {
 		q.MaxMatches = s.config.DefaultMaxMatches
+	}
+	if q.ContextLines == 0 {
+		q.ContextLines = 3
 	}
 
 	reply, err := s.doSearch(ctx, backend, &q)

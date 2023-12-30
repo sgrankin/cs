@@ -11,7 +11,7 @@ import (
 	"regexp/syntax"
 	"sort"
 
-	"github.com/google/codesearch/sparse"
+	"sgrankin.dev/cs/codesearch/sparse"
 )
 
 // A matcher holds the state for running regular expression search.
@@ -43,10 +43,9 @@ const (
 
 // A dstate corresponds to a DFA state.
 type dstate struct {
-	next     [256]*dstate // next state, per byte
-	enc      string       // encoded nstate
-	matchNL  bool         // match when next byte is \n
-	matchEOT bool         // match in this state at end of text
+	next    [256]*dstate // next state, per byte
+	enc     string       // encoded nstate
+	matched bool         // match is complete
 }
 
 func (z *nstate) String() string {
@@ -101,23 +100,6 @@ func (z *nstate) dec(s string) {
 		b = b[n:]
 		last += uint32(i)
 		z.q.Add(last)
-	}
-}
-
-// dmatch is the state we're in when we've seen a match and are just
-// waiting for the end of the line.
-var dmatch = dstate{
-	matchNL:  true,
-	matchEOT: true,
-}
-
-func init() {
-	var z nstate
-	dmatch.enc = z.enc()
-	for i := range dmatch.next {
-		if i != '\n' {
-			dmatch.next[i] = &dmatch
-		}
 	}
 }
 
@@ -255,7 +237,7 @@ func (m *matcher) computeNext(d *dstate, c int) *dstate {
 
 	// re-add start, process rune + expand according to flags.
 	if m.stepByte(&this.q, &next.q, c, flag) {
-		return &dmatch
+		return &dstate{matched: true}
 	}
 	return m.cache(next)
 }
@@ -269,66 +251,45 @@ func (m *matcher) cache(z *nstate) *dstate {
 
 	d = &dstate{enc: enc}
 	m.dstate[enc] = d
-	d.matchNL = m.computeNext(d, '\n') == &dmatch
-	d.matchEOT = m.computeNext(d, endText) == &dmatch
 	return d
 }
 
-func (m *matcher) match(b []byte, beginText, endText bool) (end int) {
-	//	fmt.Printf("%v\n", m.prog)
-
-	d := m.startLine
-	if beginText {
-		d = m.start
-	}
-	//	m.z1.dec(d.enc)
-	//	fmt.Printf("%v (%v)\n", &m.z1, d==&dmatch)
-	for i, c := range b {
+func match[T ~[]byte | ~string](m *matcher, s T) (end int) {
+	d := m.start
+	for i := 0; i < len(s); i++ {
+		c := int(s[i])
 		d1 := d.next[c]
 		if d1 == nil {
-			if c == '\n' {
-				if d.matchNL {
-					return i
-				}
-				d1 = m.startLine
-			} else {
-				d1 = m.computeNext(d, int(c))
-			}
+			d1 = m.computeNext(d, c)
 			d.next[c] = d1
 		}
+		if d1.matched {
+			return i
+		}
 		d = d1
-		//		m.z1.dec(d.enc)
-		//		fmt.Printf("%#U: %v (%v, %v, %v)\n", c, &m.z1, d==&dmatch, d.matchNL, d.matchEOT)
 	}
-	if d.matchNL || endText && d.matchEOT {
-		return len(b)
+	if m.computeNext(d, endText).matched {
+		return len(s)
 	}
 	return -1
 }
 
-func (m *matcher) matchString(b string, beginText, endText bool) (end int) {
-	d := m.startLine
-	if beginText {
-		d = m.start
-	}
-	for i := 0; i < len(b); i++ {
-		c := b[i]
+func revmatch[T ~[]byte | ~string](m *matcher, s T) (end int) {
+	d := m.start
+	for i := len(s) - 1; i >= 0; i-- {
+		c := int(s[i])
 		d1 := d.next[c]
 		if d1 == nil {
-			if c == '\n' {
-				if d.matchNL {
-					return i
-				}
-				d1 = m.startLine
-			} else {
-				d1 = m.computeNext(d, int(c))
-			}
+			d1 = m.computeNext(d, c)
 			d.next[c] = d1
+		}
+		if d1.matched {
+			return i + 1
 		}
 		d = d1
 	}
-	if d.matchNL || endText && d.matchEOT {
-		return len(b)
+	if m.computeNext(d, endText).matched {
+		return 0
 	}
 	return -1
 }
