@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	_ "expvar"
 	"flag"
-	"io/ioutil"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 
 	"sgrankin.dev/cs/livegrep/server"
 	"sgrankin.dev/cs/livegrep/server/config"
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	if *indexConfig != "" {
-		data, err := ioutil.ReadFile(*indexConfig)
+		data, err := os.ReadFile(*indexConfig)
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	if len(flag.Args()) != 0 {
-		data, err := ioutil.ReadFile(flag.Arg(0))
+		data, err := os.ReadFile(flag.Arg(0))
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
