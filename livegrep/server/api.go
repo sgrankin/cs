@@ -10,52 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"sgrankin.dev/cs/csapi"
 	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/log"
 )
-
-type Bounds struct {
-	Left, Right int
-}
-
-type SearchResult struct {
-	Tree, Version, Path         string
-	LineNumber                  int
-	ContextBefore, ContextAfter []string
-	Bounds                      Bounds
-	Line                        string
-}
-
-type FileResult struct {
-	Tree, Version, Path string
-	Bounds              Bounds
-}
-
-type ExitReason int
-
-func (v ExitReason) String() string { return fmt.Sprintf("%d", v) }
-
-const (
-	ExitReasonNone = iota
-	ExitReasonTimeout
-	ExitReasonMatchLimit
-)
-
-type SearchStats struct {
-	RE2Time, GitTime, SortTime, IndexTime, AnalyzeTime, TotalTime int64
-
-	ExitReason ExitReason
-}
-
-type CodeSearchResult struct {
-	Stats       SearchStats
-	Results     []SearchResult
-	FileResults []FileResult
-
-	// unique index identity that served this request
-	IndexName string
-	IndexTime int
-}
 
 func replyJSON(ctx context.Context, w http.ResponseWriter, status int, obj interface{}) {
 	w.WriteHeader(status)
@@ -80,8 +38,8 @@ func writeQueryError(ctx context.Context, w http.ResponseWriter, err error) {
 		fmt.Sprintf("Talking to backend: %s", err.Error()))
 }
 
-func extractQuery(ctx context.Context, r *http.Request) (Query, bool, error) {
-	var query Query
+func extractQuery(ctx context.Context, r *http.Request) (csapi.Query, bool, error) {
+	var query csapi.Query
 
 	if err := r.ParseForm(); err != nil {
 		return query, false, err
@@ -161,8 +119,8 @@ func stringSlice(ss []string) []string {
 	return []string{}
 }
 
-func (s *server) doSearch(ctx context.Context, backend *Backend, q *Query) (*api.ReplySearch, error) {
-	var search *CodeSearchResult
+func (s *server) doSearch(ctx context.Context, backend *Backend, q *csapi.Query) (*api.ReplySearch, error) {
+	var search *csapi.CodeSearchResult
 	var err error
 
 	start := time.Now()

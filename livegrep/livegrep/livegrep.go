@@ -21,10 +21,12 @@ var (
 )
 
 func main() {
+	log.SetFlags(log.Lshortfile)
 	flag.Parse()
 
 	cfg := &config.Config{
-		Listen: *serveAddr,
+		Listen:            *serveAddr,
+		DefaultMaxMatches: 500,
 	}
 
 	if *indexConfig != "" {

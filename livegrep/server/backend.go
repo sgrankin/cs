@@ -1,35 +1,18 @@
 package server
 
 import (
-	"context"
 	"net/url"
 	"sync"
 	"time"
+
+	"sgrankin.dev/cs/csapi"
+	"sgrankin.dev/cs/csbackend"
 )
 
 type Tree struct {
 	Name    string
 	Version string
 	Url     string
-}
-
-type ServerInfo struct {
-	Name  string
-	Trees []struct {
-		Name, Version string
-		Metadata      struct {
-			URLPattern, Remote, Github string
-
-			Labels string
-		}
-	}
-	HasTags   bool
-	IndexTime int64
-}
-
-type CodeSearch interface {
-	Info(context.Context) (*ServerInfo, error)
-	Search(context.Context, Query) (*CodeSearchResult, error)
 }
 
 type I struct {
@@ -42,14 +25,14 @@ type I struct {
 type Backend struct {
 	Id         string
 	I          *I
-	Codesearch CodeSearch
+	Codesearch csapi.CodeSearch
 }
 
 func NewBackend(id string) (*Backend, error) {
 	bk := &Backend{
 		Id:         id,
 		I:          &I{Name: id},
-		Codesearch: nil, // TODO XXX
+		Codesearch: csbackend.New(), // TODO XXX
 	}
 	return bk, nil
 }
@@ -60,7 +43,7 @@ func (bk *Backend) Start() {
 	}
 }
 
-func (bk *Backend) refresh(info *ServerInfo) {
+func (bk *Backend) refresh(info *csapi.ServerInfo) {
 	bk.I.Lock()
 	defer bk.I.Unlock()
 
