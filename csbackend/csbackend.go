@@ -3,17 +3,37 @@ package csbackend
 import (
 	"bufio"
 	"context"
+	"flag"
 	"log"
-	"os"
 	"regexp"
 	"regexp/syntax"
 	"strings"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/csapi"
 )
 
-type CSBackend struct{}
+type CSBackend struct {
+	ix   *index.Index
+	repo *git.Repository
+}
+
+var (
+	dataPath  = flag.String("data", "data", "The path to the data git repo")
+	indexPath = flag.String("index", "data/csindex", "The path to the index file")
+)
+
+func New() *CSBackend {
+	ix := index.Open(*indexPath)
+	repo, err := git.PlainOpen(*dataPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &CSBackend{ix, repo}
+}
 
 // Info implements csapi.CodeSearch.
 func (*CSBackend) Info(context.Context) (*csapi.ServerInfo, error) {
@@ -21,7 +41,7 @@ func (*CSBackend) Info(context.Context) (*csapi.ServerInfo, error) {
 }
 
 // Search implements csapi.CodeSearch.
-func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearchResult, error) {
+func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearchResult, error) {
 	pat := "(?m)" + req.Line
 	if req.FoldCase {
 		pat = "(?i)" + pat
@@ -52,24 +72,27 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 	q := index.RegexpQuery(syn)
 	log.Printf("query: %s\n", q) // XXX
 
-	ix := index.Open(index.File())
-	ix.Verbose = true // XXX
-
 	// Find filename matches:
 	fresults := []csapi.FileResult{}
-	for _, fileid := range ix.PostingQuery(&index.Query{Op: index.QAll}) {
-		name := ix.Name(fileid)
-		if !re.MatchString(name) {
-			continue
-		}
+	for _, fileid := range b.ix.PostingQuery(&index.Query{Op: index.QAll}) {
+		postName := b.ix.Name(fileid)
+		names := strings.SplitN(postName, ":", 4)
+		name := names[2]
 		if fre != nil && !fre.MatchString(name) {
 			continue
 		}
 		if nfre != nil && nfre.MatchString(name) {
 			continue
 		}
+		loc := re.FindStringIndex(name)
+		if loc == nil {
+			continue
+		}
 		fresults = append(fresults, csapi.FileResult{
-			Path: name,
+			Tree:    names[0],
+			Version: names[1],
+			Path:    name,
+			Bounds:  csapi.Bounds{Left: loc[0], Right: loc[1]},
 		})
 		if len(fresults) >= int(req.MaxMatches) {
 			break
@@ -79,13 +102,15 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 	// if *bruteFlag {
 	// 	post = ix.PostingQuery(&index.Query{Op: index.QAll})
 	// } else {
-	post := ix.PostingQuery(q)
+	post := b.ix.PostingQuery(q)
 	log.Printf("post query identified %d possible files\n", len(post)) // XXX
 
 	if fre != nil || nfre != nil {
 		fnames := make([]uint32, 0, len(post))
 		for _, fileid := range post {
-			name := ix.Name(fileid)
+			postName := b.ix.Name(fileid)
+			names := strings.SplitN(postName, ":", 4)
+			name := names[2]
 			if fre != nil && !fre.MatchString(name) {
 				continue
 			}
@@ -101,12 +126,22 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 
 	results := []csapi.SearchResult{}
 	for _, fileid := range post {
-		name := ix.Name(fileid)
-		f, err := os.Open(name)
+		postName := b.ix.Name(fileid)
+		names := strings.SplitN(postName, ":", 4)
+		name := names[2]
+		log.Printf("scanning %q", postName)
+		blob, err := b.repo.BlobObject(plumbing.NewHash(names[3]))
 		if err != nil {
 			log.Panic(err)
 		}
-
+		f, err := blob.Reader()
+		if err != nil {
+			log.Panic(err)
+		}
+		// TODO: we may be able to be a bit more efficient by using
+		// FindAllIndex with large chunks (similar to the codesearch grep?)
+		// and counting lines ourselves.  Probably mangle the input RE to include a .*$
+		// so that we know how far to skip after a match (we only care about one match per line).
 		scanner := bufio.NewScanner(f)
 		lnum := 0
 		for scanner.Scan() {
@@ -143,5 +178,3 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 }
 
 var _ csapi.CodeSearch = (*CSBackend)(nil)
-
-func New() *CSBackend { return nil }
