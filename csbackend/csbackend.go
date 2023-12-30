@@ -9,30 +9,30 @@ import (
 	"regexp/syntax"
 	"strings"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 
+	"sgrankin.dev/cs/blobstore"
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/csapi"
 )
 
 type CSBackend struct {
-	ix   *index.Index
-	repo *git.Repository
+	ix    *index.Index
+	blobs *blobstore.BlobStore
 }
 
 var (
-	dataPath  = flag.String("data", "data", "The path to the data git repo")
+	dataPath  = flag.String("data", "data/data.db", "The path to the blob data DB")
 	indexPath = flag.String("index", "data/csindex", "The path to the index file")
 )
 
 func New() *CSBackend {
 	ix := index.Open(*indexPath)
-	repo, err := git.PlainOpen(*dataPath)
+	blobs, err := blobstore.Open(*dataPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &CSBackend{ix, repo}
+	return &CSBackend{ix, blobs}
 }
 
 // Info implements csapi.CodeSearch.
@@ -130,19 +130,17 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		names := strings.SplitN(postName, ":", 4)
 		name := names[2]
 		log.Printf("scanning %q", postName)
-		blob, err := b.repo.BlobObject(plumbing.NewHash(names[3]))
+		hash := plumbing.NewHash(names[3])
+		blob, err := b.blobs.Open(hash[:])
 		if err != nil {
 			log.Panic(err)
 		}
-		f, err := blob.Reader()
-		if err != nil {
-			log.Panic(err)
-		}
+
 		// TODO: we may be able to be a bit more efficient by using
-		// FindAllIndex with large chunks (similar to the codesearch grep?)
-		// and counting lines ourselves.  Probably mangle the input RE to include a .*$
-		// so that we know how far to skip after a match (we only care about one match per line).
-		scanner := bufio.NewScanner(f)
+		// FindAllIndex with large chunks (similar to the codesearch grep?) and counting lines ourselves.
+		// Probably mangle the input RE to include a .*$ so that we know how far to skip after a match (we only care about one match per line).
+		// We can also extract literals from the regex and search the file for them first to see if they actually match.. though perhaps regexp already implements that optimization.
+		scanner := bufio.NewScanner(blob)
 		lnum := 0
 		for scanner.Scan() {
 			lnum++
@@ -165,7 +163,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 				log.Panic("reading file:", err)
 			}
 		}
-		f.Close()
+		blob.Close()
 		if int(req.MaxMatches) > 0 && len(results) >= int(req.MaxMatches) {
 			break
 		}
