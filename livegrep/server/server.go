@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"net/http"
 	"path"
 	"regexp"
@@ -54,17 +55,17 @@ type server struct {
 
 func (s *server) loadTemplates() {
 	s.Templates = make(map[string]*template.Template)
-	err := LoadTemplates(s.config.DocRoot, s.Templates)
+	err := LoadTemplates(s.Templates)
 	if err != nil {
 		panic(fmt.Sprintf("loading templates: %v", err))
 	}
 
-	p := s.config.DocRoot + "/templates/opensearch.xml"
-	s.OpenSearch = texttemplate.Must(texttemplate.ParseFiles(p))
+	p := "/templates/opensearch.xml"
+	s.OpenSearch = texttemplate.Must(texttemplate.ParseFS(templatesFS, p))
 
 	s.AssetHashes = make(map[string]string)
 	err = LoadAssetHashes(
-		path.Join(s.config.DocRoot, "hashes.txt"),
+		path.Join("hashes.txt"),
 		s.AssetHashes)
 	if err != nil {
 		panic(fmt.Sprintf("loading templates: %v", err))
@@ -402,7 +403,11 @@ func New(cfg *config.Config) (http.Handler, error) {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/assets/", http.FileServer(http.Dir(path.Join(cfg.DocRoot, "htdocs"))))
+	staticDir, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		panic(err) // TODO: send through log or something...
+	}
+	mux.Handle("/static/", http.FileServerFS(staticDir))
 	mux.Handle("/", h)
 
 	srv.inner = mux

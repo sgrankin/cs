@@ -15,11 +15,6 @@ type Honeycomb struct {
 }
 
 type Config struct {
-	// Location of the directory containing templates and static
-	// assets. This should point at the "web" directory of the
-	// repository.
-	DocRoot string `json:"docroot"`
-
 	Feedback struct {
 		// The mailto address for the "feedback" url.
 		MailTo string `json:"mailto"`

@@ -5,7 +5,6 @@ go 1.22
 toolchain go1.22rc1
 
 require (
-	github.com/bazelbuild/rules_go v0.44.1
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f
 	github.com/evanw/esbuild v0.19.11
 	github.com/honeycombio/libhoney-go v1.20.0

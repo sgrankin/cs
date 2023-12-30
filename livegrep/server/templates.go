@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,25 +47,26 @@ func getFuncs() map[string]interface{} {
 	}
 }
 
-func LoadTemplates(base string, templates map[string]*template.Template) error {
-	pattern := base + "/templates/common/*.html"
+func LoadTemplates(templates map[string]*template.Template) error {
+	pattern := "/templates/common/*.html"
 	common := template.New("").Funcs(getFuncs())
 	common = template.Must(common.ParseFS(templatesFS, pattern))
 
-	pattern = base + "/templates/*.html"
-	paths, err := filepath.Glob(pattern)
+	pattern = "/templates/*.html"
+	paths, err := fs.Glob(templatesFS, pattern)
 	if err != nil {
 		return err
 	}
 	for _, path := range paths {
 		t := template.Must(common.Clone())
-		t = template.Must(t.ParseFiles(path))
+		t = template.Must(t.ParseFS(templatesFS, path))
 		templates[filepath.Base(path)] = t
 	}
 	return nil
 }
 
 func LoadAssetHashes(assetHashFile string, assetHashMap map[string]string) error {
+	// XXX do we want this?
 	file, err := os.Open(assetHashFile)
 	if err != nil {
 		return err

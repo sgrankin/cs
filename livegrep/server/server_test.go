@@ -4,8 +4,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/bazelbuild/rules_go/go/tools/bazel"
-
 	"sgrankin.dev/cs/livegrep/server/config"
 )
 
@@ -47,12 +45,6 @@ func TestRepoRegexParsing(t *testing.T) {
 }
 
 func TestTemplatesLoad(t *testing.T) {
-	docroot, err := bazel.Runfile("web/")
-	if err != nil {
-		t.Fatalf("runfile: %s", err.Error())
-	}
-	srv := server{config: &config.Config{
-		DocRoot: docroot,
-	}}
+	srv := server{config: &config.Config{}}
 	srv.loadTemplates()
 }
