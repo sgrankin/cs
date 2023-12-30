@@ -8,9 +8,6 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
-
-	libhoney "github.com/honeycombio/libhoney-go"
 
 	"sgrankin.dev/cs/livegrep/server"
 	"sgrankin.dev/cs/livegrep/server/config"
@@ -33,10 +30,6 @@ func main() {
 		Reload: *reload,
 		Backends: []config.Backend{
 			{Id: "", Addr: *backendAddr},
-		},
-		Honeycomb: config.Honeycomb{
-			WriteKey: os.Getenv("HONEYCOMB_WRITE_KEY"),
-			Dataset:  os.Getenv("HONEYCOMB_DATASET"),
 		},
 	}
 
@@ -61,8 +54,6 @@ func main() {
 			log.Fatalf("reading %s: %s", flag.Arg(0), err.Error())
 		}
 	}
-
-	libhoney.Init(libhoney.Config{})
 
 	handler, err := server.New(cfg)
 	if err != nil {

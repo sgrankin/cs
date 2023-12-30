@@ -9,11 +9,6 @@ type Backend struct {
 	Addr string `json:"addr"`
 }
 
-type Honeycomb struct {
-	WriteKey string `json:"write_key"`
-	Dataset  string `json:"dataset"`
-}
-
 type Config struct {
 	Feedback struct {
 		// The mailto address for the "feedback" url.
@@ -45,9 +40,6 @@ type Config struct {
 
 	// Whether to re-load templates on every request
 	Reload bool `json:"reload"`
-
-	// honeycomb API write key
-	Honeycomb Honeycomb `json:"honeycomb"`
 
 	DefaultMaxMatches int32 `json:"default_max_matches"`
 

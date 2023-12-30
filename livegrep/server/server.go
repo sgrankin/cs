@@ -14,10 +14,8 @@ import (
 	texttemplate "text/template"
 	"time"
 
-	"google.golang.org/grpc"
-
 	"github.com/bmizerany/pat"
-	libhoney "github.com/honeycombio/libhoney-go"
+	"google.golang.org/grpc"
 
 	"sgrankin.dev/cs/livegrep/server/config"
 	"sgrankin.dev/cs/livegrep/server/log"
@@ -47,8 +45,6 @@ type server struct {
 	OpenSearch  *texttemplate.Template
 	AssetHashes map[string]string
 	Layout      *template.Template
-
-	honey *libhoney.Builder
 
 	serveFilePathRegex *regexp.Regexp
 }
@@ -322,14 +318,6 @@ func New(cfg *config.Config) (http.Handler, error) {
 		repos:  make(map[string]config.RepoConfig),
 	}
 	srv.loadTemplates()
-
-	if cfg.Honeycomb.WriteKey != "" {
-		log.Printf(context.Background(),
-			"Enabling honeycomb dataset=%s", cfg.Honeycomb.Dataset)
-		srv.honey = libhoney.NewBuilder()
-		srv.honey.WriteKey = cfg.Honeycomb.WriteKey
-		srv.honey.Dataset = cfg.Honeycomb.Dataset
-	}
 
 	dialOpts := []grpc.DialOption{}
 	callOpts := []grpc.CallOption{}
