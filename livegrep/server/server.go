@@ -18,6 +18,8 @@ import (
 	texttemplate "text/template"
 	"time"
 
+	"github.com/gorilla/handlers"
+
 	"sgrankin.dev/cs/livegrep/server/config"
 	"sgrankin.dev/cs/livegrep/server/log"
 	"sgrankin.dev/cs/livegrep/server/reqid"
@@ -264,9 +266,10 @@ func (s *server) ServeOpensearch(ctx context.Context, w http.ResponseWriter, r *
 	}
 }
 
-func (s *server) renderPage(ctx context.Context, w io.Writer, r *http.Request, templateName string, pageData *page) {
+func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.Request, templateName string, pageData *page) {
 	t, ok := s.Templates[templateName]
 	if !ok {
+		http.Error(w, fmt.Sprintf("Error: no template named %v", templateName), http.StatusInternalServerError)
 		log.Printf(ctx, "Error: no template named %v", templateName)
 		return
 	}
@@ -280,6 +283,7 @@ func (s *server) renderPage(ctx context.Context, w io.Writer, r *http.Request, t
 		pageData.Nonce = template.HTMLAttr(fmt.Sprintf(` nonce="%s"`, nonce))
 	}
 
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err := t.ExecuteTemplate(w, templateName, pageData)
 	if err != nil {
 		log.Printf(ctx, "Error rendering %v: %s", templateName, err)
@@ -345,32 +349,24 @@ func New(cfg *config.Config) (http.Handler, error) {
 	}
 	srv.serveFilePathRegex = serveFilePathRegex
 
-	m := http.NewServeMux()
-	m.HandleFunc("GET /debug/healthcheck", srv.ServeHealthcheck)
-	m.Handle("GET /debug/stats", srv.Handler(srv.ServeStats))
-	m.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
-	m.Handle("GET /search/", srv.Handler(srv.ServeSearch))
-	m.Handle("GET /view/{path...}", srv.Handler(srv.ServeFile))
-	m.Handle("GET /about", srv.Handler(srv.ServeAbout))
-	m.Handle("GET /help", srv.Handler(srv.ServeHelp))
-	m.Handle("GET /opensearch.xml", srv.Handler(srv.ServeOpensearch))
-	m.Handle("GET /", srv.Handler(srv.ServeRoot))
+	mux := http.NewServeMux()
+	mux.Handle("GET /", srv.Handler(srv.ServeRoot))
+	mux.Handle("GET /about", srv.Handler(srv.ServeAbout))
+	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
+	mux.Handle("GET /debug/stats", srv.Handler(srv.ServeStats))
+	mux.Handle("GET /help", srv.Handler(srv.ServeHelp))
+	mux.Handle("GET /opensearch.xml", srv.Handler(srv.ServeOpensearch))
+	mux.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
+	mux.Handle("GET /view/{path...}", srv.Handler(srv.ServeFile))
 
 	// GET (with query parameters) is for backward compatibility; the UI now
 	// uses POST (with form parameters).
-	m.Handle("GET /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
-	m.Handle("GET /api/v1/search/", srv.Handler(srv.ServeAPISearch))
-	m.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
-	m.Handle("POST /api/v1/search/", srv.Handler(srv.ServeAPISearch))
-	m.Handle("GET /api/v1/repos", srv.Handler(srv.ServeRepoInfo))
+	mux.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
+	mux.Handle("GET /api/v1/repos", srv.Handler(srv.ServeRepoInfo))
 
-	var h http.Handler = m
+	mux.Handle("GET /static/", http.FileServerFS(staticFS))
 
-	mux := http.NewServeMux()
-	mux.Handle("/static/", http.FileServerFS(staticFS))
-	mux.Handle("/", h)
-
-	srv.inner = mux
+	srv.inner = handlers.CompressHandler(mux)
 	return srv, nil
 }
 
