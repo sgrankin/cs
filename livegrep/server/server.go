@@ -356,11 +356,13 @@ func New(cfg *config.Config) (http.Handler, error) {
 	mux.Handle("GET /debug/stats", srv.Handler(srv.ServeStats))
 	mux.Handle("GET /help", srv.Handler(srv.ServeHelp))
 	mux.Handle("GET /opensearch.xml", srv.Handler(srv.ServeOpensearch))
+	mux.Handle("GET /search", srv.Handler(srv.ServeSearch))
 	mux.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
 	mux.Handle("GET /view/{path...}", srv.Handler(srv.ServeFile))
 
 	// GET (with query parameters) is for backward compatibility; the UI now
 	// uses POST (with form parameters).
+	mux.Handle("POST /api/v1/search", srv.Handler(srv.ServeAPISearch))
 	mux.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
 	mux.Handle("GET /api/v1/repos", srv.Handler(srv.ServeRepoInfo))
 
