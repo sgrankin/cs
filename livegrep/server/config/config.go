@@ -19,10 +19,6 @@ type Config struct {
 	// Should we respect X-Real-Ip, X-Real-Proto, and X-Forwarded-Host?
 	ReverseProxy bool `json:"reverse_proxy"`
 
-	// List of backends to connect to. Each backend must include
-	// the "id" and "addr" fields.
-	Backends []Backend `json:"backends"`
-
 	// The address to listen on, as HOST:PORT.
 	Listen string `json:"listen"`
 
@@ -37,9 +33,6 @@ type Config struct {
 	Sentry struct {
 		URI string `json:"uri"`
 	} `json:"sentry"`
-
-	// Whether to re-load templates on every request
-	Reload bool `json:"reload"`
 
 	DefaultMaxMatches int32 `json:"default_max_matches"`
 

@@ -18,8 +18,6 @@ var (
 	serveAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
 	backendAddr = flag.String("connect", "localhost:9999", "The address to connect to")
 	indexConfig = flag.String("index-config", "", "Codesearch index config file; provide to enable repo browsing")
-	reload      = flag.Bool("reload", false, "Reload template files on every request")
-	_           = flag.Bool("logtostderr", false, "[DEPRECATED] compatibility with glog")
 )
 
 func main() {
@@ -27,10 +25,6 @@ func main() {
 
 	cfg := &config.Config{
 		Listen: *serveAddr,
-		Reload: *reload,
-		Backends: []config.Backend{
-			{Id: "", Addr: *backendAddr},
-		},
 	}
 
 	if *indexConfig != "" {

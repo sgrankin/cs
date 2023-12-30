@@ -41,15 +41,13 @@ type I struct {
 
 type Backend struct {
 	Id         string
-	Addr       string
 	I          *I
 	Codesearch CodeSearch
 }
 
-func NewBackend(id string, addr string) (*Backend, error) {
+func NewBackend(id string) (*Backend, error) {
 	bk := &Backend{
 		Id:         id,
-		Addr:       addr,
 		I:          &I{Name: id},
 		Codesearch: nil, // TODO XXX
 	}

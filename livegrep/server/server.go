@@ -192,12 +192,6 @@ func (s *server) ServeHealthcheck(w http.ResponseWriter, r *http.Request) {
 	// report as healthy.
 	// TODO: report as unhealthy if a backend goes down after we've spoken to
 	// it.
-	for _, bk := range s.bk {
-		if bk.I.IndexTime.IsZero() {
-			http.Error(w, fmt.Sprintf("unhealthy backend '%s' '%s'\n", bk.Id, bk.Addr), 500)
-			return
-		}
-	}
 	io.WriteString(w, "ok\n")
 }
 
@@ -282,16 +276,6 @@ func (s *server) renderPage(ctx context.Context, w io.Writer, r *http.Request, t
 	}
 }
 
-type reloadHandler struct {
-	srv   *server
-	inner http.Handler
-}
-
-func (h *reloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.srv.loadTemplates()
-	h.inner.ServeHTTP(w, r)
-}
-
 type handler func(c context.Context, w http.ResponseWriter, r *http.Request)
 
 const RequestTimeout = 30 * time.Second
@@ -318,15 +302,13 @@ func New(cfg *config.Config) (http.Handler, error) {
 	}
 	srv.loadTemplates()
 
-	for _, bk := range srv.config.Backends {
-		be, e := NewBackend(bk.Id, bk.Addr)
-		if e != nil {
-			return nil, e
-		}
-		be.Start()
-		srv.bk[be.Id] = be
-		srv.bkOrder = append(srv.bkOrder, be.Id)
+	be, e := NewBackend("backend")
+	if e != nil {
+		return nil, e
 	}
+	be.Start()
+	srv.bk[be.Id] = be
+	srv.bkOrder = append(srv.bkOrder, be.Id)
 
 	var repoNames []string
 	for _, r := range srv.config.IndexConfig.Repositories {
@@ -372,10 +354,6 @@ func New(cfg *config.Config) (http.Handler, error) {
 	m.Add("GET", "/api/v1/repos", srv.Handler(srv.ServeRepoInfo))
 
 	var h http.Handler = m
-
-	if cfg.Reload {
-		h = &reloadHandler{srv, h}
-	}
 
 	mux := http.NewServeMux()
 	staticDir, err := fs.Sub(staticFS, "static")
