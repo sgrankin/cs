@@ -3,15 +3,13 @@ package csbackend
 import (
 	"bufio"
 	"context"
-	"io"
 	"log"
 	"os"
-	"strconv"
+	"regexp"
+	"regexp/syntax"
 	"strings"
 
-	"github.com/google/codesearch/index"
-	"github.com/google/codesearch/regexp"
-
+	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/csapi"
 )
 
@@ -32,11 +30,6 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 	if err != nil {
 		log.Panic(err)
 	}
-	g := regexp.Grep{
-		Stderr: os.Stderr,
-		N:      true, // Print line numbers
-		Regexp: re,
-	}
 	var fre *regexp.Regexp
 	if len(req.File) > 0 {
 		fre, err = regexp.Compile(strings.Join(req.File, "|"))
@@ -51,8 +44,12 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 			log.Panic(err)
 		}
 	}
+	syn, err := syntax.Parse(pat, syntax.PerlX)
+	if err != nil {
+		log.Panic(err)
+	}
 
-	q := index.RegexpQuery(re.Syntax)
+	q := index.RegexpQuery(syn)
 	log.Printf("query: %s\n", q) // XXX
 
 	ix := index.Open(index.File())
@@ -62,13 +59,13 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 	fresults := []csapi.FileResult{}
 	for _, fileid := range ix.PostingQuery(&index.Query{Op: index.QAll}) {
 		name := ix.Name(fileid)
-		if re.MatchString(name, true, true) < 0 {
+		if !re.MatchString(name) {
 			continue
 		}
-		if fre != nil && fre.MatchString(name, true, true) < 0 {
+		if fre != nil && !fre.MatchString(name) {
 			continue
 		}
-		if nfre != nil && nfre.MatchString(name, true, true) >= 0 {
+		if nfre != nil && nfre.MatchString(name) {
 			continue
 		}
 		fresults = append(fresults, csapi.FileResult{
@@ -89,10 +86,10 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 		fnames := make([]uint32, 0, len(post))
 		for _, fileid := range post {
 			name := ix.Name(fileid)
-			if fre != nil && fre.MatchString(name, true, true) < 0 {
+			if fre != nil && !fre.MatchString(name) {
 				continue
 			}
-			if nfre != nil && nfre.MatchString(name, true, true) >= 0 {
+			if nfre != nil && nfre.MatchString(name) {
 				continue
 			}
 			fnames = append(fnames, fileid)
@@ -102,39 +99,42 @@ func (*CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearc
 		post = fnames
 	}
 
-	reader, writer := io.Pipe()
-	g.Stdout = writer
-
-	go func() {
-		for _, fileid := range post {
-			name := ix.Name(fileid)
-			g.File(name)
-		}
-		writer.Close()
-	}()
 	results := []csapi.SearchResult{}
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := strings.SplitN(scanner.Text(), ":", 3)
-		lnum, err := strconv.Atoi(line[1])
+	for _, fileid := range post {
+		name := ix.Name(fileid)
+		f, err := os.Open(name)
 		if err != nil {
 			log.Panic(err)
 		}
-		results = append(results,
-			csapi.SearchResult{
-				Path:       line[0],
-				LineNumber: lnum,
-				Line:       line[2],
-			})
+
+		scanner := bufio.NewScanner(f)
+		lnum := 0
+		for scanner.Scan() {
+			lnum++
+			line := scanner.Text()
+			loc := re.FindStringIndex(line)
+			if loc == nil {
+				continue
+			}
+			results = append(results,
+				csapi.SearchResult{
+					Path:       name,
+					LineNumber: lnum,
+					Line:       line,
+					Bounds:     csapi.Bounds{Left: loc[0], Right: loc[1]},
+				})
+			if int(req.MaxMatches) > 0 && len(results) >= int(req.MaxMatches) {
+				break
+			}
+			if err := scanner.Err(); err != nil {
+				log.Panic("reading file:", err)
+			}
+		}
+		f.Close()
 		if int(req.MaxMatches) > 0 && len(results) >= int(req.MaxMatches) {
 			break
 		}
-
-		if err := scanner.Err(); err != nil {
-			log.Panic("reading grep result:", err)
-		}
 	}
-	reader.Close()
 
 	return &csapi.CodeSearchResult{
 		Results:     results,
