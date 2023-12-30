@@ -5,6 +5,7 @@
 package index
 
 import (
+	"bufio"
 	"io"
 	"log"
 	"os"
@@ -36,12 +37,10 @@ type IndexWriter struct {
 	Verbose bool // log status using package log
 
 	trigram *sparse.Set // trigrams for the current file
-	buf     [8]byte     // scratch buffer
 
 	paths []string
 
 	nameData   *bufWriter // temp file holding list of names
-	nameLen    uint32     // number of bytes written to nameData
 	nameIndex  *bufWriter // temp file holding name index
 	numName    int        // number of names written
 	totalBytes int64
@@ -50,8 +49,11 @@ type IndexWriter struct {
 	postFile  []*os.File  // flushed post entries
 	postIndex *bufWriter  // temp file holding posting list index
 
-	inbuf []byte     // input buffer
-	main  *bufWriter // main index file
+	blobData  *bufWriter // temp file holding content blobs
+	blobIndex *bufWriter // temp file holding content blob offset & length
+
+	inbuf bufio.Reader // input buffer
+	main  *bufWriter   // main index file
 }
 
 const npost = 64 << 20 / 8 // 64 MB worth of post entries
@@ -65,7 +67,8 @@ func Create(file string) *IndexWriter {
 		postIndex: bufCreate(""),
 		main:      bufCreate(file),
 		post:      make([]postEntry, 0, npost),
-		inbuf:     make([]byte, 16384),
+		blobData:  bufCreate(""),
+		blobIndex: bufCreate(""),
 	}
 }
 
@@ -116,45 +119,36 @@ func (ix *IndexWriter) AddFile(name string) {
 // It logs errors using package log.
 func (ix *IndexWriter) Add(name string, f io.Reader) {
 	ix.trigram.Reset()
-	var (
-		c       = byte(0)
-		i       = 0
-		buf     = ix.inbuf[:0]
-		tv      = uint32(0)
-		n       = int64(0)
-		linelen = 0
-	)
+	ix.inbuf.Reset(f)
+
+	trigram := uint32(0)
+	fLen := int64(0)
+	linelen := 0
+
+	off := ix.blobData.offset()
 	for {
-		tv = (tv << 8) & (1<<24 - 1)
-		if i >= len(buf) {
-			n, err := f.Read(buf[:cap(buf)])
-			if n == 0 {
-				if err != nil {
-					if err == io.EOF {
-						break
-					}
-					log.Printf("%s: %v\n", name, err)
-					return
-				}
-				log.Printf("%s: 0-length read\n", name)
-				return
+		char, err := ix.inbuf.ReadByte()
+		if err != nil {
+			if err == io.EOF {
+				break
 			}
-			buf = buf[:n]
-			i = 0
+			log.Printf("%s: %v\n", name, err)
+			return
+
 		}
-		c = buf[i]
-		i++
-		tv |= uint32(c)
-		if n++; n >= 3 {
-			ix.trigram.Add(tv)
+		ix.blobData.writeByte(char)
+		trigram = (trigram << 8) & (1<<24 - 1)
+		trigram |= uint32(char)
+		if fLen++; fLen >= 3 {
+			ix.trigram.Add(trigram)
 		}
-		if !validUTF8((tv>>8)&0xFF, tv&0xFF) {
+		if !validUTF8((trigram>>8)&0xFF, trigram&0xFF) {
 			if ix.LogSkip {
 				log.Printf("%s: invalid UTF-8, ignoring\n", name)
 			}
 			return
 		}
-		if n > maxFileLen {
+		if fLen > maxFileLen {
 			if ix.LogSkip {
 				log.Printf("%s: too long, ignoring\n", name)
 			}
@@ -166,7 +160,7 @@ func (ix *IndexWriter) Add(name string, f io.Reader) {
 			}
 			return
 		}
-		if c == '\n' {
+		if char == '\n' {
 			linelen = 0
 		}
 	}
@@ -176,10 +170,10 @@ func (ix *IndexWriter) Add(name string, f io.Reader) {
 		}
 		return
 	}
-	ix.totalBytes += n
+	ix.totalBytes += fLen
 
 	if ix.Verbose {
-		log.Printf("%d %d %s\n", n, ix.trigram.Len(), name)
+		log.Printf("%d %d %s\n", fLen, ix.trigram.Len(), name)
 	}
 
 	fileid := ix.addName(name)
@@ -189,13 +183,15 @@ func (ix *IndexWriter) Add(name string, f io.Reader) {
 		}
 		ix.post = append(ix.post, makePostEntry(trigram, fileid))
 	}
+	ix.blobIndex.writeUint32(off)
+	ix.blobIndex.writeUint32(uint32(fLen))
 }
 
 // Flush flushes the index entry to the target file.
 func (ix *IndexWriter) Flush() {
 	ix.addName("")
 
-	var off [5]uint32
+	var off [7]uint32
 	ix.main.writeString(magic)
 	off[0] = ix.main.offset()
 	for _, p := range ix.paths {
@@ -203,14 +199,25 @@ func (ix *IndexWriter) Flush() {
 		ix.main.writeString("\x00")
 	}
 	ix.main.writeString("\x00")
+
 	off[1] = ix.main.offset()
 	copyFile(ix.main, ix.nameData)
+
 	off[2] = ix.main.offset()
 	ix.mergePost(ix.main)
+
 	off[3] = ix.main.offset()
-	copyFile(ix.main, ix.nameIndex)
+	copyFile(ix.main, ix.blobData)
+
 	off[4] = ix.main.offset()
+	copyFile(ix.main, ix.nameIndex)
+
+	off[5] = ix.main.offset()
 	copyFile(ix.main, ix.postIndex)
+
+	off[6] = ix.main.offset()
+	copyFile(ix.main, ix.blobIndex)
+
 	for _, v := range off {
 		ix.main.writeUint32(v)
 	}
@@ -281,31 +288,32 @@ func (ix *IndexWriter) flushPost() {
 // mergePost reads the flushed index entries and merges them
 // into posting lists, writing the resulting lists to out.
 func (ix *IndexWriter) mergePost(out *bufWriter) {
-	var h postHeap
+	var heap postHeap
+	var buf [3]byte // scratch buffer
 
 	log.Printf("merge %d files + mem", len(ix.postFile))
 	for _, f := range ix.postFile {
-		h.addFile(f)
+		heap.addFile(f)
 	}
 	sortPost(ix.post)
-	h.addMem(ix.post)
+	heap.addMem(ix.post)
 
 	npost := 0
-	e := h.next()
+	e := heap.next()
 	offset0 := out.offset()
 	for {
 		npost++
 		offset := out.offset() - offset0
 		trigram := e.trigram()
-		ix.buf[0] = byte(trigram >> 16)
-		ix.buf[1] = byte(trigram >> 8)
-		ix.buf[2] = byte(trigram)
+		buf[0] = byte(trigram >> 16)
+		buf[1] = byte(trigram >> 8)
+		buf[2] = byte(trigram)
 
 		// posting list
 		fileid := ^uint32(0)
 		nfile := uint32(0)
-		out.write(ix.buf[:3])
-		for ; e.trigram() == trigram && trigram != 1<<24-1; e = h.next() {
+		out.write(buf[:3])
+		for ; e.trigram() == trigram && trigram != 1<<24-1; e = heap.next() {
 			out.writeUvarint(e.fileid() - fileid)
 			fileid = e.fileid()
 			nfile++
@@ -313,7 +321,7 @@ func (ix *IndexWriter) mergePost(out *bufWriter) {
 		out.writeUvarint(0)
 
 		// index entry
-		ix.postIndex.write(ix.buf[:3])
+		ix.postIndex.write(buf[:3])
 		ix.postIndex.writeUint32(nfile)
 		ix.postIndex.writeUint32(offset)
 

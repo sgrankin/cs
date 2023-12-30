@@ -2,36 +2,38 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package index
+/*
+# Merging indexes
 
-// Merging indexes.
-//
-// To merge two indexes A and B (newer) into a combined index C:
-//
-// Load the path list from B and determine for each path the docid ranges
-// that it will replace in A.
-//
-// Read A's and B's name lists together, merging them into C's name list.
-// Discard the identified ranges from A during the merge.  Also during the merge,
-// record the mapping from A's docids to C's docids, and also the mapping from
-// B's docids to C's docids.  Both mappings can be summarized in a table like
-//
-//	10-14 map to 20-24
-//	15-24 is deleted
-//	25-34 maps to 40-49
-//
-// The number of ranges will be at most the combined number of paths.
-// Also during the merge, write the name index to a temporary file as usual.
-//
-// Now merge the posting lists (this is why they begin with the trigram).
-// During the merge, translate the docid numbers to the new C docid space.
-// Also during the merge, write the posting list index to a temporary file as usual.
-// 
-// Copy the name index and posting list index into C's index and write the trailer.
-// Rename C's index onto the new index.
+To merge two indexes A and B (newer) into a combined index C:
+
+Load the path list from B and determine for each path the docid ranges that it will replace in A.
+
+Read A's and B's name lists together, merging them into C's name list.
+Discard the identified ranges from A during the merge.
+Also during the merge, record the mapping from A's docids to C's docids, and also the mapping from B's docids to C's docids.
+Both mappings can be summarized in a table like
+
+	10-14 map to 20-24
+	15-24 is deleted
+	25-34 maps to 40-49
+
+The number of ranges will be at most the combined number of paths.
+Also during the merge, write the name index to a temporary file as usual.
+
+Now merge the posting lists (this is why they begin with the trigram).
+During the merge, translate the docid numbers to the new C docid space.
+Also during the merge, write the posting list index to a temporary file as usual.
+
+Copy the name index and posting list index into C's index and write the trailer.
+Rename C's index onto the new index.
+*/
+
+package index
 
 import (
 	"encoding/binary"
+	"log"
 	"os"
 	"strings"
 )
@@ -164,6 +166,44 @@ func Merge(dst, src1, src2 string) {
 	}
 	nameIndexFile.writeUint32(ix3.offset())
 
+	// To merge blobs, create an array of slices in order of the new posting IDs, and then write them to destination.
+	blobs := [][]byte{}
+	new = 0
+	mi1 = 0
+	mi2 = 0
+	for new < numName {
+		var blob []byte
+		if mi1 < len(map1) && map1[mi1].new == new {
+			for i := map1[mi1].lo; i < map1[mi1].hi; i++ {
+				blob = ix1.Data(i)
+				new++
+			}
+			mi1++
+		} else if mi2 < len(map2) && map2[mi2].new == new {
+			for i := map2[mi2].lo; i < map2[mi2].hi; i++ {
+				blob = ix2.Data(i)
+				new++
+			}
+			mi2++
+		} else {
+			panic("merge: inconsistent index")
+		}
+		blobs = append(blobs, blob)
+	}
+
+	blobFile := bufCreate("")
+	var blobOffsets, blobSizes []uint32 // TODO: just make a struct
+	for _, blob := range blobs {
+		off := blobFile.offset()
+		size := len(blob)
+		_, err := blobFile.file.Write(blob)
+		if err != nil {
+			log.Fatalf("writing %s: %v", blobFile.name, err)
+		}
+		blobOffsets = append(blobOffsets, off)
+		blobSizes = append(blobSizes, uint32(size))
+	}
+
 	// Merged list of posting lists.
 	postData := ix3.offset()
 	var r1 postMapReader
@@ -211,6 +251,9 @@ func Merge(dst, src1, src2 string) {
 		}
 	}
 
+	blobData := ix3.offset()
+	copyFile(ix3, blobFile)
+
 	// Name index
 	nameIndex := ix3.offset()
 	copyFile(ix3, nameIndexFile)
@@ -219,11 +262,19 @@ func Merge(dst, src1, src2 string) {
 	postIndex := ix3.offset()
 	copyFile(ix3, w.postIndexFile)
 
+	blobIndex := ix3.offset()
+	for i, off := range blobOffsets {
+		ix3.writeUint32(off)
+		ix3.writeUint32(blobSizes[i])
+	}
+
 	ix3.writeUint32(pathData)
 	ix3.writeUint32(nameData)
 	ix3.writeUint32(postData)
+	ix3.writeUint32(blobData)
 	ix3.writeUint32(nameIndex)
 	ix3.writeUint32(postIndex)
+	ix3.writeUint32(blobIndex)
 	ix3.writeString(trailerMagic)
 	ix3.flush()
 

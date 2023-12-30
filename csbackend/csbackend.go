@@ -1,24 +1,20 @@
 package csbackend
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"flag"
 	"log"
-	"regexp"
 	"regexp/syntax"
 	"strings"
 
-	"github.com/go-git/go-git/v5/plumbing"
-
-	"sgrankin.dev/cs/blobstore"
 	"sgrankin.dev/cs/codesearch/index"
+	"sgrankin.dev/cs/codesearch/regexp"
 	"sgrankin.dev/cs/csapi"
 )
 
 type CSBackend struct {
-	ix    *index.Index
-	blobs *blobstore.BlobStore
+	ix *index.Index
 }
 
 var (
@@ -28,11 +24,7 @@ var (
 
 func New() *CSBackend {
 	ix := index.Open(*indexPath)
-	blobs, err := blobstore.Open(*dataPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return &CSBackend{ix, blobs}
+	return &CSBackend{ix}
 }
 
 // Info implements csapi.CodeSearch.
@@ -76,23 +68,29 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	fresults := []csapi.FileResult{}
 	for _, fileid := range b.ix.PostingQuery(&index.Query{Op: index.QAll}) {
 		postName := b.ix.Name(fileid)
-		names := strings.SplitN(postName, ":", 4)
-		name := names[2]
-		if fre != nil && !fre.MatchString(name) {
+		tree, rest, _ := strings.Cut(postName, ":")
+		version, rest, _ := strings.Cut(rest, ":")
+		name, rest, _ := strings.Cut(rest, ":")
+		if fre != nil && fre.MatchString(name, true, true) < 0 {
 			continue
 		}
-		if nfre != nil && nfre.MatchString(name) {
+		if nfre != nil && nfre.MatchString(name, true, true) < 0 {
 			continue
 		}
-		loc := re.FindStringIndex(name)
-		if loc == nil {
+		// end is the end of the match or the nl after it (which one?)... we don't have the bounds (yet?)
+		end := re.MatchString(name, true, true) // XXX
+		if end < 0 {
 			continue
 		}
+		// loc := re.FindStringIndex(name)
+		// if loc == nil {
+		// 	continue
+		// }
 		fresults = append(fresults, csapi.FileResult{
-			Tree:    names[0],
-			Version: names[1],
+			Tree:    tree,
+			Version: version,
 			Path:    name,
-			Bounds:  csapi.Bounds{Left: loc[0], Right: loc[1]},
+			// Bounds:  csapi.Bounds{Left: loc[0], Right: loc[1]},
 		})
 		if len(fresults) >= int(req.MaxMatches) {
 			break
@@ -109,12 +107,14 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		fnames := make([]uint32, 0, len(post))
 		for _, fileid := range post {
 			postName := b.ix.Name(fileid)
-			names := strings.SplitN(postName, ":", 4)
-			name := names[2]
-			if fre != nil && !fre.MatchString(name) {
+			// TODO: This is just silly...
+			_, rest, _ := strings.Cut(postName, ":")
+			_, rest, _ = strings.Cut(rest, ":")
+			name, _, _ := strings.Cut(rest, ":")
+			if fre != nil && fre.MatchString(name, true, true) < 0 {
 				continue
 			}
-			if nfre != nil && nfre.MatchString(name) {
+			if nfre != nil && nfre.MatchString(name, true, true) >= 0 {
 				continue
 			}
 			fnames = append(fnames, fileid)
@@ -124,48 +124,92 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		post = fnames
 	}
 
-	results := []csapi.SearchResult{}
-	for _, fileid := range post {
-		postName := b.ix.Name(fileid)
-		names := strings.SplitN(postName, ":", 4)
-		name := names[2]
-		log.Printf("scanning %q", postName)
-		hash := plumbing.NewHash(names[3])
-		blob, err := b.blobs.Open(hash[:])
-		if err != nil {
-			log.Panic(err)
-		}
+	// TOOD: consider a query cache based on _cost_ (time), per file.
 
-		// TODO: we may be able to be a bit more efficient by using
-		// FindAllIndex with large chunks (similar to the codesearch grep?) and counting lines ourselves.
-		// Probably mangle the input RE to include a .*$ so that we know how far to skip after a match (we only care about one match per line).
-		// We can also extract literals from the regex and search the file for them first to see if they actually match.. though perhaps regexp already implements that optimization.
-		scanner := bufio.NewScanner(blob)
-		lnum := 0
-		for scanner.Scan() {
-			lnum++
-			line := scanner.Text()
-			loc := re.FindStringIndex(line)
-			if loc == nil {
-				continue
-			}
+	results := []csapi.SearchResult{}
+posts:
+	for _, fileid := range post {
+		blob := b.ix.Data(fileid)
+
+		// TODO: move name check to _after_ we found out if this file matches
+		postName := b.ix.Name(fileid)
+		// TODO: This is just silly...
+		_, rest, _ := strings.Cut(postName, ":")
+		_, rest, _ = strings.Cut(rest, ":")
+		name, _, _ := strings.Cut(rest, ":")
+		// log.Printf("scanning %q", postName)
+		// begin := time.Now()
+
+		end := re.Match(blob, true, true) // XXX
+		for end >= 0 {
+			// TODO: we may be able to be a bit more efficient by using
+			// FindAllIndex with large chunks (similar to the codesearch grep?) and counting lines ourselves.
+			// Probably mangle the input RE to include a .*$ so that we know how far to skip after a match (we only care about one match per line).
+			// We can also extract literals from the regex and search the file for them first to see if they actually match.. though perhaps regexp already implements that optimization.
+			start := bytes.LastIndexByte(blob[:end], '\n') + 1
 			results = append(results,
 				csapi.SearchResult{
-					Path:       name,
-					LineNumber: lnum,
-					Line:       line,
-					Bounds:     csapi.Bounds{Left: loc[0], Right: loc[1]},
+					Path: name,
+					// LineNumber: line,
+					Line: string(blob[start:end]),
+					// Bounds:     csapi.Bounds{Left: match[0] - lineStart, Right: match[1] - lineStart},
 				})
 			if int(req.MaxMatches) > 0 && len(results) >= int(req.MaxMatches) {
+				break posts
+			}
+			chunkEnd := re.Match(blob[end+1:], false, true)
+			if chunkEnd < 0 {
 				break
 			}
-			if err := scanner.Err(); err != nil {
-				log.Panic("reading file:", err)
-			}
+			end = chunkEnd + end + 1 // XXX
+
+			// matches := re.FindAllIndex(blob, -1)
+			// if matches == nil {
+			// 	continue posts
+			// }
+
+			// // Now for each match, we need to find the newline boundaries (and line number) to generate the result.
+			// line := 1
+			// lineStart := 0
+			// lineEnd := bytes.IndexByte(blob, '\n')
+			// if lineEnd < 0 {
+			// 	lineEnd = len(blob)
+			// }
+			// lastMatchLine := -1
+			// for _, match := range matches {
+			// 	// Seek to the line that has the match.
+			// 	for match[0] > lineEnd {
+			// 		lineStart = lineEnd + 1
+			// 		line++
+			// 		lineEnd = bytes.IndexByte(blob[lineStart:], '\n')
+			// 		if lineEnd < 0 {
+			// 			lineEnd = len(blob)
+			// 		} else {
+			// 			lineEnd += lineStart
+			// 		}
+			// 	}
+			// 	// Only emit one match per line.
+			// 	if lastMatchLine == line {
+			// 		continue
+			// 	}
+			// 	lastMatchLine = line
+			// 	results = append(results,
+			// 		csapi.SearchResult{
+			// 			Path:       name,
+			// 			LineNumber: line,
+			// 			Line:       string(blob[lineStart:lineEnd]),
+			// 			Bounds:     csapi.Bounds{Left: match[0] - lineStart, Right: match[1] - lineStart},
+			// 		})
+			// 	if int(req.MaxMatches) > 0 && len(results) >= int(req.MaxMatches) {
+			// 		break posts
+			// 	}
+			// }
+
+			// end := time.Now()
+			// log.Printf("\t%d µsec\t%d matches", end.Sub(begin).Microseconds(), nmatch)
 		}
-		blob.Close()
 		if int(req.MaxMatches) > 0 && len(results) >= int(req.MaxMatches) {
-			break
+			break posts
 		}
 	}
 

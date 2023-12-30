@@ -2,67 +2,101 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package index
+/*
+# Index format
 
-// Index format.
-//
-// An index stored on disk has the format:
-//
-//	"csearch index 1\n"
-//	list of paths
-//	list of names
-//	list of posting lists
-//	name index
-//	posting list index
-//	trailer
-//
-// The list of paths is a sorted sequence of NUL-terminated file or directory names.
-// The index covers the file trees rooted at those paths.
-// The list ends with an empty name ("\x00").
-//
-// The list of names is a sorted sequence of NUL-terminated file names.
-// The initial entry in the list corresponds to file #0,
-// the next to file #1, and so on.  The list ends with an
-// empty name ("\x00").
-//
-// The list of posting lists are a sequence of posting lists.
-// Each posting list has the form:
-//
-//	trigram [3]
-//	deltas [v]...
-//
-// The trigram gives the 3 byte trigram that this list describes.  The
-// delta list is a sequence of varint-encoded deltas between file
-// IDs, ending with a zero delta.  For example, the delta list [2,5,1,1,0]
-// encodes the file ID list 1, 6, 7, 8.  The delta list [0] would
-// encode the empty file ID list, but empty posting lists are usually
-// not recorded at all.  The list of posting lists ends with an entry
-// with trigram "\xff\xff\xff" and a delta list consisting a single zero.
-//
-// The indexes enable efficient random access to the lists.  The name
-// index is a sequence of 4-byte big-endian values listing the byte
-// offset in the name list where each name begins.  The posting list
-// index is a sequence of index entries describing each successive
-// posting list.  Each index entry has the form:
-//
-//	trigram [3]
-//	file count [4]
-//	offset [4]
-//
-// Index entries are only written for the non-empty posting lists,
-// so finding the posting list for a specific trigram requires a
-// binary search over the posting list index.  In practice, the majority
-// of the possible trigrams are never seen, so omitting the missing
-// ones represents a significant storage savings.
-//
-// The trailer has the form:
-//
-//	offset of path list [4]
-//	offset of name list [4]
-//	offset of posting lists [4]
-//	offset of name index [4]
-//	offset of posting list index [4]
-//	"\ncsearch trailr\n"
+An index stored on disk has the format:
+
+	Index {
+		Magic (16) = "csearch index 1\n",
+		Path List (..),
+		Name List (..),
+		Posting Lists List (..),
+		Content Blobs (..),
+		Name Index (..),
+		Posting List Index (..),
+		Content Blob Index (..),
+		Trailer (..) ,
+	}
+
+The list of paths is a sorted sequence of NUL-terminated file or directory names.
+The index covers the file trees rooted at those paths.
+The list ends with an empty name ("\x00").
+
+	Path List {
+		Path Name (NUL-terminated) (..) ...,
+		End (1) = "\x00",
+	}
+
+The list of names is a sorted sequence of NUL-terminated file names.
+The initial entry in the list corresponds to file #0, the next to file #1, and so on.
+The list ends with an empty name ("\x00").
+
+	Name List {
+		File Name (NUL-terminated) (..) ...,
+		End (1) = "\x00",
+	}
+
+The list of posting lists are a sequence of posting lists.
+Each posting list has the form:
+
+	Posting List {
+		Trigram (3),
+		Deltas (..) ...,
+	}
+
+The trigram gives the 3 byte trigram that this list describes.
+The delta list is a sequence of varint-encoded deltas between file IDs, ending with a zero delta.
+For example, the delta list [2,5,1,1,0] encodes the file ID list 1, 6, 7, 8.
+The delta list [0] would encode the empty file ID list, but empty posting lists are usually not recorded at all.
+The list of posting lists ends with an entry with trigram "\xff\xff\xff" and a delta list consisting a single zero.
+
+The indexes enable efficient random access to the lists.
+
+The name index is a sequence of 4-byte big-endian values listing the byte offset in the name list where each name begins.
+
+The posting list index is a sequence of index entries describing each successive posting list.
+Each index entry has the form:
+
+	Posting List Index Entry {
+		Trigram (3),
+		File Count (4),
+		Offset (4),
+	}
+
+Index entries are only written for the non-empty posting lists,
+so finding the posting list for a specific trigram requires a binary search over the posting list index.
+In practice, the majority of the possible trigrams are never seen,
+so omitting the missing ones represents a significant storage savings.
+
+The chunk of content blobs contains all of the input blobs.
+
+	Blobs {
+		Blob (..) ...,
+	}
+
+The content blob index enables efficient access to the blobs.
+It is a sequence of 4 byte big-endian values listing the byte offset in the blob where each file begins.
+
+	Blob Index Entry {
+		Offset (4),
+		Length (4),
+	}
+
+The trailer has the form:
+
+	Trailer {
+		Offset of path list (4),
+		Offset of name list (4),
+		Offset of posting lists (4),
+		Offset of content blobs (4),
+		Offset of name index (4),
+		Offset of posting list index (4),
+		Offset of content blob index (4),
+		Trailer Magic (16) = "\ncsearch trailr\n",
+	}
+*/
+package index
 
 import (
 	"bytes"
@@ -86,8 +120,10 @@ type Index struct {
 	pathData  uint32
 	nameData  uint32
 	postData  uint32
+	blobData  uint32
 	nameIndex uint32
 	postIndex uint32
+	blobIndex uint32
 	numName   int
 	numPost   int
 }
@@ -99,13 +135,22 @@ func Open(file string) *Index {
 	if len(mm.d) < 4*4+len(trailerMagic) || string(mm.d[len(mm.d)-len(trailerMagic):]) != trailerMagic {
 		corrupt()
 	}
-	n := uint32(len(mm.d) - len(trailerMagic) - 5*4)
+	n := uint32(len(mm.d) - len(trailerMagic) - 4*7)
 	ix := &Index{data: mm}
+
 	ix.pathData = ix.uint32(n)
-	ix.nameData = ix.uint32(n + 4)
-	ix.postData = ix.uint32(n + 8)
-	ix.nameIndex = ix.uint32(n + 12)
-	ix.postIndex = ix.uint32(n + 16)
+	ix.nameData = ix.uint32(n + 4*1)
+	ix.postData = ix.uint32(n + 4*2)
+	ix.blobData = ix.uint32(n + 4*3)
+	ix.nameIndex = ix.uint32(n + 4*4)
+	ix.postIndex = ix.uint32(n + 4*5)
+	ix.blobIndex = ix.uint32(n + 4*6)
+
+	// TODO: add an extra indirection for content-based addressing & deduplication:
+	// - Name the files as their checksum
+	// - Add an aliases table (that can be merged).
+	// - When searching, emit matches for all names that matched a blob.
+
 	ix.numName = int((ix.postIndex-ix.nameIndex)/4) - 1
 	ix.numPost = int((n - ix.postIndex) / postEntrySize)
 	return ix
@@ -171,6 +216,13 @@ func (ix *Index) str(off uint32) []byte {
 // Name returns the name corresponding to the given fileid.
 func (ix *Index) Name(fileid uint32) string {
 	return string(ix.NameBytes(fileid))
+}
+
+// Data returns the data blob corresponding to the given fileid.
+func (ix *Index) Data(fileid uint32) []byte {
+	offset := ix.blobData + ix.uint32(ix.blobIndex+8*fileid)
+	size := ix.uint32(ix.blobIndex + 8*fileid + 4)
+	return ix.data.d[offset : offset+size]
 }
 
 // listAt returns the index list entry at the given offset.

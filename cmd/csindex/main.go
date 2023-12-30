@@ -17,7 +17,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 
-	"sgrankin.dev/cs/blobstore"
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/livegrep/server/config"
 )
@@ -61,7 +60,6 @@ func usage() {
 
 var (
 	gitPath   = flag.String("git", "data", "The path to the git repo")
-	dataPath  = flag.String("data", "data/data.db", "The path to the blob data DB")
 	indexPath = flag.String("index", "data/csindex", "The path to the index file")
 )
 
@@ -74,11 +72,6 @@ func main() {
 		Name:      "torvalds/linux",
 		Revisions: []string{"HEAD"},
 	}}
-
-	blobs, err := blobstore.Open(*dataPath)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	repo, err := git.PlainOpen(*gitPath)
 	if err != nil {
@@ -127,22 +120,6 @@ func main() {
 				path := repoRev + ":" + f.Name + ":" + f.Hash.String()
 				ix.Add(path, r)
 				r.Close()
-			}
-			{
-				// TODO: skip blobs that are already stored.
-
-				r, err := f.Blob.Reader()
-				if err != nil {
-					log.Fatal(err)
-				}
-				blob, err := blobs.Create(f.Hash[:], int(f.Blob.Size))
-				if err != nil {
-					log.Fatal(err)
-				}
-				if _, err := blob.ReadFrom(r); err != nil {
-					log.Fatal(err)
-				}
-				blob.Close()
 			}
 
 			return nil
