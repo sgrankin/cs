@@ -1,3 +1,8 @@
+/**
+ * Copyright 2011-2013 Nelson Elhage
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 $ = require('jquery');
 _ = require('underscore');
 

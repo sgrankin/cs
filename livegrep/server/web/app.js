@@ -1,3 +1,8 @@
+/**
+ * Copyright 2011-2013 Nelson Elhage
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 // Bootstrap depends on a jquery.
 // Imports are resolved at file load... so set the global jquery in a separate module.
 import "./globals.js"

@@ -1,3 +1,8 @@
+/**
+ * Copyright 2011-2013 Nelson Elhage
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 import { HTMLFactory } from '../3rdparty/html.js';
 import { View, Model, Collection } from 'backbone';
 import { getJSON, set } from 'js-cookie';
