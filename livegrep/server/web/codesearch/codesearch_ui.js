@@ -1,9 +1,9 @@
-var html = require('../3rdparty/html.js');
-var Backbone = require('backbone');
-var Cookies = require('js-cookie');
+import { HTMLFactory } from '../3rdparty/html.js';
+import { View, Model, Collection } from 'backbone';
+import { getJSON, set } from 'js-cookie';
 
-var Codesearch = require('./codesearch.js').Codesearch;
-var RepoSelector = require('./repo_selector.js');
+import { Codesearch } from './codesearch.js';
+import { init as _init, updateSelected, updateOptions } from './repo_selector.js';
 
 var KeyCodes = {
   SLASH_OR_QUESTION_MARK: 191
@@ -13,10 +13,10 @@ function getSelectedText() {
   return window.getSelection ? window.getSelection().toString() : null;
 }
 
-function init(initData) {
+export function init(initData) {
   "use strict";
 
-  var h = new html.HTMLFactory();
+  var h = new HTMLFactory();
   var last_url_update = 0;
 
   function vercmp(a, b) {
@@ -149,7 +149,7 @@ function init(initData) {
     return out;
   }
 
-  var MatchView = Backbone.View.extend({
+  var MatchView = View.extend({
     tagName: 'div',
     initialize: function () {
       this.model.on('change', this.render, this);
@@ -231,7 +231,7 @@ function init(initData) {
    *
    * This model wraps the JSON response from the Codesearch backend for an individual match.
    */
-  var Match = Backbone.Model.extend({
+  var Match = Model.extend({
     path_info: function () {
       var tree = this.get('tree');
       var version = this.get('version');
@@ -253,7 +253,7 @@ function init(initData) {
   });
 
   /** A set of Matches at a single path. */
-  var FileGroup = Backbone.Model.extend({
+  var FileGroup = Model.extend({
     initialize: function (path_info) {
       // The id attribute is used by collections to fetch models
       this.id = path_info.id;
@@ -313,7 +313,7 @@ function init(initData) {
   });
 
   /** A set of matches that are automatically grouped by path. */
-  var SearchResultSet = Backbone.Collection.extend({
+  var SearchResultSet = Collection.extend({
     add_match: function (match) {
       var path_info = match.path_info();
       var file_group = this.get(path_info.id);
@@ -338,7 +338,7 @@ function init(initData) {
    *
    * XXX almost identical to Match
    */
-  var FileMatch = Backbone.Model.extend({
+  var FileMatch = Model.extend({
     path_info: function () {
       var tree = this.get('tree');
       var version = this.get('version');
@@ -357,7 +357,7 @@ function init(initData) {
     },
   });
 
-  var FileMatchView = Backbone.View.extend({
+  var FileMatchView = View.extend({
     tagName: 'div',
 
     render: function () {
@@ -383,7 +383,7 @@ function init(initData) {
     }
   });
 
-  var SearchState = Backbone.Model.extend({
+  var SearchState = Model.extend({
     defaults: function () {
       return {
         context: true,
@@ -398,7 +398,7 @@ function init(initData) {
     initialize: function () {
       this.search_map = {};
       this.search_results = new SearchResultSet();
-      this.file_search_results = new Backbone.Collection();
+      this.file_search_results = new Collection();
       this.search_id = 0;
       this.on('change:displaying', this.new_search, this);
     },
@@ -510,7 +510,7 @@ function init(initData) {
     }
   });
 
-  var FileGroupView = Backbone.View.extend({
+  var FileGroupView = View.extend({
     tagName: 'div',
 
     render_header: function (tree, version, path) {
@@ -565,7 +565,7 @@ function init(initData) {
     }
   });
 
-  var MatchesView = Backbone.View.extend({
+  var MatchesView = View.extend({
     el: $('#results'),
     events: {
       'click .file-extension': '_limitExtension',
@@ -677,7 +677,7 @@ function init(initData) {
     }
   });
 
-  var ResultView = Backbone.View.extend({
+  var ResultView = View.extend({
     el: $('#resultarea'),
     initialize: function () {
       this.matches_view = new MatchesView({ model: this.model });
@@ -792,7 +792,7 @@ function init(initData) {
           CodesearchUI.inputs_case.filter('[value=auto]').attr('checked', true);
         }
 
-        RepoSelector.init();
+        _init();
         CodesearchUI.update_repo_options();
 
         CodesearchUI.init_query();
@@ -908,10 +908,10 @@ function init(initData) {
           repos = repos.concat(parms.repo);
         if (parms['repo[]'])
           repos = repos.concat(parms['repo[]']);
-        RepoSelector.updateSelected(repos);
+        updateSelected(repos);
       },
       init_controls_from_prefs: function () {
-        var prefs = Cookies.getJSON('prefs');
+        var prefs = getJSON('prefs');
         if (!prefs) {
           prefs = {};
         }
@@ -919,9 +919,9 @@ function init(initData) {
           CodesearchUI.input_regex.prop('checked', prefs['regex']);
         }
         if (prefs['repos'] !== undefined) {
-          RepoSelector.updateSelected(prefs['repos']);
+          updateSelected(prefs['repos']);
         } else if (CodesearchUI.defaultSearchRepos !== undefined) {
-          RepoSelector.updateSelected(CodesearchUI.defaultSearchRepos);
+          updateSelected(CodesearchUI.defaultSearchRepos);
         }
         if (prefs['context'] !== undefined) {
           CodesearchUI.input_context.prop('checked', prefs['context']);
@@ -930,12 +930,12 @@ function init(initData) {
       set_pref: function (key, value) {
         // Load from the cookie again every time in case some other pref has been
         // changed out from under us.
-        var prefs = Cookies.getJSON('prefs');
+        var prefs = getJSON('prefs');
         if (!prefs) {
           prefs = {};
         }
         prefs[key] = value;
-        Cookies.set('prefs', prefs, { expires: 36500 });
+        set('prefs', prefs, { expires: 36500 });
       },
       parse_query_params: function () {
         var urlParams = {};
@@ -967,7 +967,7 @@ function init(initData) {
         if (!CodesearchUI.input_backend)
           return;
         var backend = CodesearchUI.input_backend.val();
-        RepoSelector.updateOptions(_.keys(CodesearchUI.repo_urls[backend]));
+        updateOptions(_.keys(CodesearchUI.repo_urls[backend]));
       },
       keypress: function () {
         CodesearchUI.clear_timer();
@@ -1020,6 +1020,3 @@ function init(initData) {
   CodesearchUI.onload();
 }
 
-module.exports = {
-  init: init
-}

@@ -2,24 +2,24 @@ $ = require('jquery');
 _ = require('underscore');
 
 "use strict";
-var Codesearch = function() {
+export var Codesearch = function () {
   return {
     delegate: null,
     retry_time: 50,
     next_search: null,
     in_flight: null,
-    connect: function(delegate) {
+    connect: function (delegate) {
       if (delegate !== undefined)
         Codesearch.delegate = delegate;
       if (Codesearch.delegate.on_connect)
         setTimeout(Codesearch.delegate.on_connect, 0)
     },
-    new_search: function(opts) {
+    new_search: function (opts) {
       Codesearch.next_search = opts;
       if (Codesearch.in_flight == null)
         Codesearch.dispatch()
     },
-    dispatch: function() {
+    dispatch: function () {
       if (!Codesearch.next_search)
         return;
       Codesearch.in_flight = Codesearch.next_search;
@@ -55,7 +55,7 @@ var Codesearch = function() {
         });
         Codesearch.delegate.search_done(opts.id, elapsed, data.search_type, data.info.why);
       });
-      xhr.fail(function(data) {
+      xhr.fail(function (data) {
         window._err = data;
         if (data.status >= 400 && data.status < 500) {
           var err = JSON.parse(data.responseText);
@@ -69,14 +69,10 @@ var Codesearch = function() {
           console.log("server error", data.status, data.responseText);
         }
       });
-      xhr.always(function() {
+      xhr.always(function () {
         Codesearch.in_flight = null;
         setTimeout(Codesearch.dispatch, 0);
       });
     }
   };
 }();
-
-module.exports = {
-  Codesearch: Codesearch
-}

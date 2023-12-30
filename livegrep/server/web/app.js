@@ -5,9 +5,12 @@ import "./globals.js"
 import "bootstrap";
 import "bootstrap-select";
 
+import * as fileview from "./fileview/fileview";
+import * as codesearch from "./codesearch/codesearch_ui.js";
+
 pages = {
-  codesearch: require("./codesearch/codesearch_ui.js"),
-  fileview: require("./fileview/fileview.js"),
+  codesearch,
+  fileview,
 };
 
 $(function () {
