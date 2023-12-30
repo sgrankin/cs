@@ -37,8 +37,8 @@ func (re *Regexp) String() string {
 
 // Compile parses a regular expression and returns, if successful,
 // a Regexp object that can be used to match against lines of text.
-func Compile(expr string) (*Regexp, error) {
-	syn, err := syntax.Parse(expr, syntax.Perl)
+func Compile(expr string, flags syntax.Flags) (*Regexp, error) {
+	syn, err := syntax.Parse(expr, syntax.Perl&^syntax.OneLine|flags)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +78,9 @@ func Compile(expr string) (*Regexp, error) {
 }
 
 func (re *Regexp) Clone() *Regexp {
+	if re == nil {
+		return nil
+	}
 	r := Regexp{
 		expr:    re.expr,
 		syn:     re.syn,
@@ -124,8 +127,6 @@ func reverse(syn *syntax.Regexp) *syntax.Regexp {
 		return nil
 	}
 	rsyn := *syn
-	rsyn.Sub = slices.Clone(rsyn.Sub)
-	rsyn.Rune = slices.Clone(rsyn.Rune)
 	switch rsyn.Op {
 	case syntax.OpConcat:
 		slices.Reverse(rsyn.Sub)
@@ -133,7 +134,17 @@ func reverse(syn *syntax.Regexp) *syntax.Regexp {
 	case syntax.OpLiteral:
 		slices.Reverse(rsyn.Rune)
 		slices.Reverse(rsyn.Rune0[:])
+	case syntax.OpBeginLine:
+		rsyn.Op = syntax.OpEndLine
+	case syntax.OpEndLine:
+		rsyn.Op = syntax.OpBeginLine
+	case syntax.OpBeginText:
+		rsyn.Op = syntax.OpEndText
+	case syntax.OpEndText:
+		rsyn.Op = syntax.OpBeginText
 	}
+	rsyn.Sub = slices.Clone(rsyn.Sub)
+	rsyn.Rune = slices.Clone(rsyn.Rune)
 	for i, sub := range rsyn.Sub {
 		rsyn.Sub[i] = reverse(sub)
 	}

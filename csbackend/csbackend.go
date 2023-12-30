@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"log"
 	"regexp/syntax"
 	"runtime"
 	"strings"
@@ -37,39 +36,41 @@ func (*CSBackend) Info(context.Context) (*csapi.ServerInfo, error) {
 
 // Search implements csapi.CodeSearch.
 func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearchResult, error) {
-	pat := "(?m)" + req.Line
+	pat := req.Line
+
+	var flags syntax.Flags
 	if req.FoldCase {
-		pat = "(?i)" + pat
+		flags |= syntax.FoldCase
 	}
-	re, err := regexp.Compile(pat)
+	re, err := regexp.Compile(pat, flags)
 	if err != nil {
 		return nil, err
 	}
 	var fre *regexp.Regexp
 	if len(req.File) > 0 {
-		fre, err = regexp.Compile(strings.Join(req.File, "|"))
+		fre, err = regexp.Compile(strings.Join(req.File, "|"), syntax.FoldCase)
 		if err != nil {
 			return nil, err
 		}
 	}
 	var nfre *regexp.Regexp
 	if len(req.NotFile) > 0 {
-		nfre, err = regexp.Compile(strings.Join(req.NotFile, "|"))
+		nfre, err = regexp.Compile(strings.Join(req.NotFile, "|"), syntax.FoldCase)
 		if err != nil {
 			return nil, err
 		}
 	}
-	syn, err := syntax.Parse(pat, syntax.PerlX)
+	syn, err := syntax.Parse(pat, syntax.PerlX|flags)
 	if err != nil {
 		return nil, err
 	}
 
 	q := index.RegexpQuery(syn)
 
-	// Find filename matches:
+	// Find filename matches.
 	fresults := make(chan []csapi.FileResult, 1)
 	defer close(fresults)
-	go func() {
+	go func(re, fre, nfre *regexp.Regexp) {
 		res := []csapi.FileResult{}
 		for _, fileid := range b.ix.PostingQuery(&index.Query{Op: index.QAll}) {
 			postName := b.ix.NameBytes(fileid)
@@ -95,14 +96,14 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 			}
 		}
 		fresults <- res
-	}()
+	}(re.Clone(), fre.Clone(), nfre.Clone())
 
 	post := b.ix.PostingQuery(q)
 	if fre != nil || nfre != nil {
+		// Prefilter the files based on name regex.
 		fnames := make([]uint32, 0, len(post))
 		for _, fileid := range post {
 			postName := b.ix.NameBytes(fileid)
-			// TODO: This is just silly...
 			_, _, name := splitname(postName)
 			if fre != nil && regexp.Match(fre, name) == nil {
 				continue
@@ -112,8 +113,6 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 			}
 			fnames = append(fnames, fileid)
 		}
-
-		log.Printf("filename regexp matched %d files\n", len(fnames)) // XXX
 		post = fnames
 	}
 
@@ -163,7 +162,15 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		}
 	}
 
+	exitReason := csapi.ExitReasonNone
+	if len(results) >= int(req.MaxMatches) {
+		exitReason = csapi.ExitReasonMatchLimit
+	}
+
 	return &csapi.CodeSearchResult{
+		Stats: csapi.SearchStats{
+			ExitReason: csapi.ExitReason(exitReason),
+		},
 		Results:     results,
 		FileResults: <-fresults,
 	}, nil

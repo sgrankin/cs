@@ -2,7 +2,6 @@ package csapi
 
 import (
 	"context"
-	"fmt"
 )
 
 type CodeSearch interface {
@@ -52,14 +51,14 @@ type FileResult struct {
 	Bounds              Bounds
 }
 
-type ExitReason int
+type ExitReason string
 
-func (v ExitReason) String() string { return fmt.Sprintf("%d", v) }
+func (v ExitReason) String() string { return string(v) }
 
 const (
-	ExitReasonNone = iota
-	ExitReasonTimeout
-	ExitReasonMatchLimit
+	ExitReasonNone       = "NONE"
+	ExitReasonTimeout    = "TIMEOUT"
+	ExitReasonMatchLimit = "MATCH_LIMIT"
 )
 
 type SearchStats struct {

@@ -165,11 +165,12 @@ var matchTests = []struct {
 	{`xxx`, "banana xxx phone", []Range{{7, 10}}},
 	{`xyz`, "banana xyz phone", []Range{{7, 10}}},
 	{`[ax][by][cz]`, "banana axyzb phone", []Range{{8, 11}}},
+	{`xxx$`, "banana xxx", []Range{{7, 10}}},
 }
 
 func TestMatch(t *testing.T) {
 	for _, tt := range matchTests {
-		re, err := Compile("(?m)" + tt.re)
+		re, err := Compile(tt.re, 0)
 		if err != nil {
 			t.Errorf("Compile(%#q): %v", tt.re, err)
 			continue
