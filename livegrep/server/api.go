@@ -182,7 +182,7 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *csapi.Query)
 }
 
 func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	backendName := r.URL.Query().Get(":backend")
+	backendName := r.PathValue("backend")
 	var backend *Backend
 	if backendName != "" {
 		backend = s.bk[backendName]

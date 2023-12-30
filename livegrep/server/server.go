@@ -18,8 +18,6 @@ import (
 	texttemplate "text/template"
 	"time"
 
-	"github.com/bmizerany/pat"
-
 	"sgrankin.dev/cs/livegrep/server/config"
 	"sgrankin.dev/cs/livegrep/server/log"
 	"sgrankin.dev/cs/livegrep/server/reqid"
@@ -145,7 +143,7 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 }
 
 func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	repoName, path, err := getRepoPathFromURL(s.serveFilePathRegex, r.URL.Path)
+	repoName, path, err := getRepoPathFromURL(s.serveFilePathRegex, r.PathValue("path"))
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
@@ -347,24 +345,24 @@ func New(cfg *config.Config) (http.Handler, error) {
 	}
 	srv.serveFilePathRegex = serveFilePathRegex
 
-	m := pat.New()
-	m.Add("GET", "/debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
-	m.Add("GET", "/debug/stats", srv.Handler(srv.ServeStats))
-	m.Add("GET", "/search/:backend", srv.Handler(srv.ServeSearch))
-	m.Add("GET", "/search/", srv.Handler(srv.ServeSearch))
-	m.Add("GET", "/view/", srv.Handler(srv.ServeFile))
-	m.Add("GET", "/about", srv.Handler(srv.ServeAbout))
-	m.Add("GET", "/help", srv.Handler(srv.ServeHelp))
-	m.Add("GET", "/opensearch.xml", srv.Handler(srv.ServeOpensearch))
-	m.Add("GET", "/", srv.Handler(srv.ServeRoot))
+	m := http.NewServeMux()
+	m.HandleFunc("GET /debug/healthcheck", srv.ServeHealthcheck)
+	m.Handle("GET /debug/stats", srv.Handler(srv.ServeStats))
+	m.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
+	m.Handle("GET /search/", srv.Handler(srv.ServeSearch))
+	m.Handle("GET /view/{path...}", srv.Handler(srv.ServeFile))
+	m.Handle("GET /about", srv.Handler(srv.ServeAbout))
+	m.Handle("GET /help", srv.Handler(srv.ServeHelp))
+	m.Handle("GET /opensearch.xml", srv.Handler(srv.ServeOpensearch))
+	m.Handle("GET /", srv.Handler(srv.ServeRoot))
 
 	// GET (with query parameters) is for backward compatibility; the UI now
 	// uses POST (with form parameters).
-	m.Add("GET", "/api/v1/search/:backend", srv.Handler(srv.ServeAPISearch))
-	m.Add("GET", "/api/v1/search/", srv.Handler(srv.ServeAPISearch))
-	m.Add("POST", "/api/v1/search/:backend", srv.Handler(srv.ServeAPISearch))
-	m.Add("POST", "/api/v1/search/", srv.Handler(srv.ServeAPISearch))
-	m.Add("GET", "/api/v1/repos", srv.Handler(srv.ServeRepoInfo))
+	m.Handle("GET /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
+	m.Handle("GET /api/v1/search/", srv.Handler(srv.ServeAPISearch))
+	m.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
+	m.Handle("POST /api/v1/search/", srv.Handler(srv.ServeAPISearch))
+	m.Handle("GET /api/v1/repos", srv.Handler(srv.ServeRepoInfo))
 
 	var h http.Handler = m
 
@@ -400,8 +398,8 @@ func buildRepoRegex(repoNames []string) (*regexp.Regexp, error) {
 	return repoFileRegex, nil
 }
 
-func getRepoPathFromURL(repoRegex *regexp.Regexp, url string) (repo string, path string, err error) {
-	matches := repoRegex.FindStringSubmatch(pat.Tail("/view/", url))
+func getRepoPathFromURL(repoRegex *regexp.Regexp, urlPath string) (repo string, path string, err error) {
+	matches := repoRegex.FindStringSubmatch(urlPath)
 	if len(matches) == 0 {
 		return "", "", serveUrlParseError
 	}
