@@ -5,7 +5,7 @@
   <head>
     <title>{{.Title}}</title>
     {{linkTag .Nonce "shortcut icon" "/static/favicon.ico" .AssetHashes}}
-    {{linkTag .Nonce "stylesheet" "static/app.css" .AssetHashes}}
+    {{linkTag .Nonce "stylesheet" "/static/app.css" .AssetHashes}}
     {{if .ScriptData}}
     <script{{.Nonce}}>
       window.scriptData = {{.ScriptData}};

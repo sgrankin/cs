@@ -3,8 +3,6 @@ package server
 import (
 	"bufio"
 	"embed"
-	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -19,8 +17,7 @@ var templatesFS embed.FS
 func linkTag(nonce template.HTMLAttr, rel string, s string, m map[string]string) template.HTML {
 	hash := m[strings.TrimPrefix(s, "/")]
 	href := s + "?v=" + hash
-	hashBytes, _ := hex.DecodeString(hash)
-	integrity := "sha256-" + base64.StdEncoding.EncodeToString(hashBytes)
+	integrity := "sha256-" + hash
 	return template.HTML(fmt.Sprintf(
 		`<link%s rel="%s" href="%s" integrity="%s" />`,
 		nonce, rel, href, integrity,
@@ -30,8 +27,7 @@ func linkTag(nonce template.HTMLAttr, rel string, s string, m map[string]string)
 func scriptTag(nonce template.HTMLAttr, s string, m map[string]string) template.HTML {
 	hash := m[strings.TrimPrefix(s, "/")]
 	href := s + "?v=" + hash
-	hashBytes, _ := hex.DecodeString(hash)
-	integrity := "sha256-" + base64.StdEncoding.EncodeToString(hashBytes)
+	integrity := "sha256-" + hash
 	return template.HTML(fmt.Sprintf(
 		`<script%s src="%s" integrity="%s"></script>`,
 		nonce, href, integrity,
@@ -48,11 +44,11 @@ func getFuncs() map[string]interface{} {
 }
 
 func LoadTemplates(templates map[string]*template.Template) error {
-	pattern := "/templates/common/*.html"
+	pattern := "templates/common/*.html"
 	common := template.New("").Funcs(getFuncs())
 	common = template.Must(common.ParseFS(templatesFS, pattern))
 
-	pattern = "/templates/*.html"
+	pattern = "templates/*.html"
 	paths, err := fs.Glob(templatesFS, pattern)
 	if err != nil {
 		return err

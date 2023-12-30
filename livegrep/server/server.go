@@ -3,11 +3,13 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"net/http"
-	"path"
 	"regexp"
 	"sort"
 	texttemplate "text/template"
@@ -54,16 +56,25 @@ func (s *server) loadTemplates() {
 		panic(fmt.Sprintf("loading templates: %v", err))
 	}
 
-	p := "/templates/opensearch.xml"
+	p := "templates/opensearch.xml"
 	s.OpenSearch = texttemplate.Must(texttemplate.ParseFS(templatesFS, p))
 
 	s.AssetHashes = make(map[string]string)
-	err = LoadAssetHashes(
-		path.Join("hashes.txt"),
-		s.AssetHashes)
-	if err != nil {
-		panic(fmt.Sprintf("loading templates: %v", err))
-	}
+	fs.WalkDir(staticFS, "static", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			panic(err) // TODO: log.fatal or something
+		}
+		if d.IsDir() {
+			return nil
+		}
+		bytes, err := staticFS.ReadFile(path)
+		if err != nil {
+			panic(err)
+		}
+		hash := sha256.Sum256(bytes)
+		s.AssetHashes[path] = base64.URLEncoding.EncodeToString(hash[:])
+		return nil
+	})
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

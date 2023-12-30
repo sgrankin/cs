@@ -1,7 +1,9 @@
-require("bootstrap");
-require("bootstrap-select");
+// Bootstrap depends on a jquery.
+// Imports are resolved at file load... so set the global jquery in a separate module.
+import "./globals.js"
 
-$ = require("jquery");
+import "bootstrap";
+import "bootstrap-select";
 
 pages = {
   codesearch: require("./codesearch/codesearch_ui.js"),
