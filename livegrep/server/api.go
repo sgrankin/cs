@@ -10,13 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
-
 	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/log"
-	"sgrankin.dev/cs/livegrep/server/reqid"
 )
 
 type Bounds struct {
@@ -79,12 +74,10 @@ func writeError(ctx context.Context, w http.ResponseWriter, status int, code, me
 }
 
 func writeQueryError(ctx context.Context, w http.ResponseWriter, err error) {
-	if code := grpc.Code(err); code == codes.InvalidArgument {
-		writeError(ctx, w, 400, "query", grpc.ErrorDesc(err))
-	} else {
-		writeError(ctx, w, 500, "internal_error",
-			fmt.Sprintf("Talking to backend: %s", err.Error()))
-	}
+	// TODO: is this an invalid argument?
+	// writeError(ctx, w, 400, "query", grpc.ErrorDesc(err))
+	writeError(ctx, w, 500, "internal_error",
+		fmt.Sprintf("Talking to backend: %s", err.Error()))
 }
 
 func extractQuery(ctx context.Context, r *http.Request) (Query, bool, error) {
@@ -176,10 +169,6 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *Query) (*api
 
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-
-	if id, ok := reqid.FromContext(ctx); ok {
-		ctx = metadata.AppendToOutgoingContext(ctx, "Request-Id", string(id))
-	}
 
 	search, err = backend.Codesearch.Search(ctx, *q)
 	if err != nil {

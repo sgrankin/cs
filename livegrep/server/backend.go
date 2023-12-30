@@ -5,8 +5,6 @@ import (
 	"net/url"
 	"sync"
 	"time"
-
-	"google.golang.org/grpc"
 )
 
 type Tree struct {
@@ -48,9 +46,7 @@ type Backend struct {
 	Codesearch CodeSearch
 }
 
-func NewBackend(id string, addr string, extraOpts ...grpc.DialOption) (*Backend, error) {
-	dialOpts := []grpc.DialOption{grpc.WithInsecure()}
-	dialOpts = append(dialOpts, extraOpts...)
+func NewBackend(id string, addr string) (*Backend, error) {
 	bk := &Backend{
 		Id:         id,
 		Addr:       addr,

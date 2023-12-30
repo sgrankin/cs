@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/bmizerany/pat"
-	"google.golang.org/grpc"
 
 	"sgrankin.dev/cs/livegrep/server/config"
 	"sgrankin.dev/cs/livegrep/server/log"
@@ -319,20 +318,8 @@ func New(cfg *config.Config) (http.Handler, error) {
 	}
 	srv.loadTemplates()
 
-	dialOpts := []grpc.DialOption{}
-	callOpts := []grpc.CallOption{}
-	if cfg.GrpcMaxRecvMessageSize != 0 {
-		callOpts = append(callOpts, grpc.MaxRecvMsgSizeCallOption{cfg.GrpcMaxRecvMessageSize})
-	}
-	if cfg.GrpcMaxSendMessageSize != 0 {
-		callOpts = append(callOpts, grpc.MaxSendMsgSizeCallOption{cfg.GrpcMaxSendMessageSize})
-	}
-	if len(callOpts) > 0 {
-		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(callOpts...))
-	}
-
 	for _, bk := range srv.config.Backends {
-		be, e := NewBackend(bk.Id, bk.Addr, dialOpts...)
+		be, e := NewBackend(bk.Id, bk.Addr)
 		if e != nil {
 			return nil, e
 		}
