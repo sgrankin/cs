@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/fs"
 	"net/http"
 	"path"
 	"regexp"
@@ -356,11 +355,7 @@ func New(cfg *config.Config) (http.Handler, error) {
 	var h http.Handler = m
 
 	mux := http.NewServeMux()
-	staticDir, err := fs.Sub(staticFS, "static")
-	if err != nil {
-		panic(err) // TODO: send through log or something...
-	}
-	mux.Handle("/static/", http.FileServerFS(staticDir))
+	mux.Handle("/static/", http.FileServerFS(staticFS))
 	mux.Handle("/", h)
 
 	srv.inner = mux
