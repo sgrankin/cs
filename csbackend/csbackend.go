@@ -165,6 +165,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	exitReason := csapi.ExitReasonNone
 	if len(results) >= int(req.MaxMatches) {
 		exitReason = csapi.ExitReasonMatchLimit
+		results = results[:req.MaxMatches]
 	}
 
 	return &csapi.CodeSearchResult{
