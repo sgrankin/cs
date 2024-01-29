@@ -15,9 +15,9 @@ type Query struct {
 	Repo, NotRepo, Tags, NotTags string
 	FoldCase                     bool
 
-	MaxMatches   int32
+	MaxMatches   int
 	FilenameOnly bool
-	ContextLines int64
+	ContextLines int
 }
 
 type ServerInfo struct {

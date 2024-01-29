@@ -229,7 +229,7 @@ func ParseQuery(query string, globalRegex bool) (csapi.Query, error) {
 		v := v[0]
 		i, err := strconv.Atoi(v)
 		if err == nil {
-			out.MaxMatches = int32(i)
+			out.MaxMatches = i
 		} else {
 			return out, errors.New("Value given to max_matches: must be a valid integer")
 		}

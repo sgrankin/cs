@@ -7,11 +7,6 @@ import (
 	"html/template"
 )
 
-type Backend struct {
-	Id   string `json:"id"`
-	Addr string `json:"addr"`
-}
-
 type Config struct {
 	Feedback struct {
 		// The mailto address for the "feedback" url.
@@ -37,7 +32,7 @@ type Config struct {
 		URI string `json:"uri"`
 	} `json:"sentry"`
 
-	DefaultMaxMatches int32 `json:"default_max_matches"`
+	DefaultMaxMatches int `json:"default_max_matches"`
 
 	// Same json config structure that the backend uses when building indexes;
 	// used here for repository browsing.

@@ -29,6 +29,8 @@ func New() *CSBackend {
 	return &CSBackend{ix}
 }
 
+var _ csapi.CodeSearch = (*CSBackend)(nil)
+
 // Info implements csapi.CodeSearch.
 func (*CSBackend) Info(context.Context) (*csapi.ServerInfo, error) {
 	return &csapi.ServerInfo{}, nil
@@ -47,20 +49,15 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		return nil, err
 	}
 
-	var fre *regexp.Regexp
-	if len(req.File) > 0 {
-		fre, err = regexp.Compile(strings.Join(req.File, "|"), syntax.FoldCase)
-		if err != nil {
-			return nil, err
-		}
+	treeFilter, err := newRegexpFilter(req.Repo, req.NotRepo)
+	if err != nil {
+		return nil, err
 	}
-	var nfre *regexp.Regexp
-	if len(req.NotFile) > 0 {
-		nfre, err = regexp.Compile(strings.Join(req.NotFile, "|"), syntax.FoldCase)
-		if err != nil {
-			return nil, err
-		}
+	fileFilter, err := newRegexpFilter(strings.Join(req.File, "|"), strings.Join(req.NotFile, "|"))
+	if err != nil {
+		return nil, err
 	}
+
 	syn, err := syntax.Parse(pat, syntax.PerlX|flags)
 	if err != nil {
 		return nil, err
@@ -69,61 +66,42 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	// Find filename matches.
 	fresults := make(chan []csapi.FileResult, 1)
 	defer close(fresults)
-	go func(re, fre, nfre *regexp.Regexp) {
+	go func(re *regexp.Regexp, treeFilter, fileFilter *regexpFilter) {
 		res := []csapi.FileResult{}
 		for _, fileid := range b.ix.PostingQuery(&index.Query{Op: index.QAll}) {
 			postName := b.ix.NameBytes(fileid)
 			tree, version, name := splitname(postName)
-			if fre != nil && regexp.Match(fre, name) == nil {
+			if !treeFilter.Accept(tree) || !fileFilter.Accept(name) {
 				continue
 			}
-			if nfre != nil && regexp.Match(nfre, name) != nil {
-				continue
-			}
-			rng := regexp.Match(re, name)
-			if rng == nil {
+			m := regexp.Match(re, name)
+			if m == nil {
 				continue
 			}
 			res = append(res, csapi.FileResult{
 				Tree:    string(tree),
 				Version: string(version),
 				Path:    string(name),
-				Bounds:  csapi.Bounds{Left: rng.Start, Right: rng.End},
+				Bounds:  csapi.Bounds{Left: m.Start, Right: m.End},
 			})
-			if len(res) >= int(req.MaxMatches) {
+			if len(res) >= req.MaxMatches {
 				break
 			}
 		}
 		fresults <- res
-	}(re.Clone(), fre.Clone(), nfre.Clone())
+	}(re.Clone(), treeFilter.Clone(), fileFilter.Clone())
 
 	csResult := csapi.CodeSearchResult{
 		Stats: csapi.SearchStats{
 			ExitReason: csapi.ExitReasonNone,
 		},
 	}
+
 	if !req.FilenameOnly {
 		q := index.RegexpQuery(syn)
 		post := b.ix.PostingQuery(q)
-		if fre != nil || nfre != nil {
-			// Pre-filter the files based on name regex.
-			fnames := make([]uint32, 0, len(post))
-			for _, fileid := range post {
-				postName := b.ix.NameBytes(fileid)
-				_, _, name := splitname(postName)
-				if fre != nil && regexp.Match(fre, name) == nil {
-					continue
-				}
-				if nfre != nil && regexp.Match(nfre, name) != nil {
-					continue
-				}
-				fnames = append(fnames, fileid)
-			}
-			post = fnames
-		}
 
-		results := make([]csapi.SearchResult, 0, req.MaxMatches)
-
+		results := make([]csapi.SearchResult, 0, min(req.MaxMatches, len(post)))
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
@@ -135,14 +113,20 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		var wg sync.WaitGroup
 		for range numWorkers {
 			wg.Add(1)
-			go func(re *regexp.Regexp) {
+			go func(re *regexp.Regexp, treeFilter, fileFilter *regexpFilter) {
 				defer wg.Done()
-				for ctx.Err() == nil { // Not cancelled?
+				for ctx.Err() == nil { // Cancelled?
 					i := idx.Add(1)
 					if int(i) >= len(post) {
 						return // No more work.
 					}
-					results := searchFile(b.ix, post[i], re, int(req.ContextLines), int(req.MaxMatches))
+					postName := b.ix.NameBytes(post[i])
+					tree, version, name := splitname(postName)
+					if !treeFilter.Accept(tree) || !fileFilter.Accept(name) {
+						continue
+					}
+					blob := b.ix.Data(post[i])
+					results := searchFile(re, blob, tree, version, name, req.ContextLines, req.MaxMatches)
 					if len(results) == 0 {
 						continue
 					}
@@ -152,7 +136,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 						return // Cancelled
 					}
 				}
-			}(re.Clone())
+			}(re.Clone(), treeFilter.Clone(), fileFilter.Clone())
 		}
 		go func() {
 			// When all workers are done (either due to running out of files or cancellation) we're done searching.
@@ -162,12 +146,12 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 
 		for perFileResults := range perFileResults {
 			results = append(results, perFileResults...)
-			if len(results) >= int(req.MaxMatches) {
+			if len(results) >= req.MaxMatches {
 				cancel()
 				break
 			}
 		}
-		if len(results) >= int(req.MaxMatches) {
+		if len(results) >= req.MaxMatches {
 			csResult.Stats.ExitReason = csapi.ExitReasonMatchLimit
 			results = results[:req.MaxMatches]
 		}
@@ -175,7 +159,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	}
 
 	fileResults := <-fresults
-	if len(fileResults) >= int(req.MaxMatches) {
+	if len(fileResults) >= req.MaxMatches {
 		fileResults = fileResults[:req.MaxMatches]
 		csResult.Stats.ExitReason = csapi.ExitReasonMatchLimit
 	}
@@ -183,34 +167,30 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	return &csResult, nil
 }
 
-func searchFile(ix *index.Index, fileid uint32, re *regexp.Regexp, contextLines int, maxMatches int) []csapi.SearchResult {
+func searchFile(re *regexp.Regexp, blob, tree, version, name []byte, contextLines, maxMatches int) []csapi.SearchResult {
 	var results []csapi.SearchResult
-	blob := ix.Data(fileid)
-	rng := regexp.Match(re, blob)
-	if rng == nil {
+	m := regexp.Match(re, blob)
+	if m == nil {
 		return nil
 	}
 
-	// We delay extracting the file details until we have a match.
-	postName := ix.NameBytes(fileid)
-	tree, version, name := splitname(postName)
 	lineNum := 1
 	lineNumUntil := 0
 
-	for rng != nil {
-		lineStart := bytes.LastIndexByte(blob[:rng.End], '\n') + 1
+	for m != nil {
+		lineStart := bytes.LastIndexByte(blob[:m.End], '\n') + 1
 		if lineStart < 0 {
 			// Clamp start to beginning of file.
 			lineStart = 0
 		}
 		lineEnd := len(blob)
-		if rng.End < len(blob) {
-			lineEnd = bytes.IndexByte(blob[rng.End:], '\n')
+		if m.End < len(blob) {
+			lineEnd = bytes.IndexByte(blob[m.End:], '\n')
 			// Clamp end to beginning of file.
 			if lineEnd < 0 {
 				lineEnd = len(blob)
 			} else {
-				lineEnd += rng.End
+				lineEnd += m.End
 			}
 		}
 		// How many newlines have we missed?
@@ -223,7 +203,7 @@ func searchFile(ix *index.Index, fileid uint32, re *regexp.Regexp, contextLines 
 
 			LineNumber: lineNum,
 			Line:       string(blob[lineStart:lineEnd]),
-			Bounds:     csapi.Bounds{Left: rng.Start - lineStart, Right: rng.End - lineStart},
+			Bounds:     csapi.Bounds{Left: m.Start - lineStart, Right: m.End - lineStart},
 
 			ContextBefore: lastLines(blob[:lineStart], contextLines),
 			ContextAfter:  firstLines(blob[lineEnd:], contextLines),
@@ -234,7 +214,7 @@ func searchFile(ix *index.Index, fileid uint32, re *regexp.Regexp, contextLines 
 		if len(results) >= maxMatches {
 			break
 		}
-		rng = regexp.Match(re, blob[lineEnd+1:]).Add(lineEnd + 1)
+		m = regexp.Match(re, blob[lineEnd+1:]).Add(lineEnd + 1)
 	}
 	return results
 }
@@ -309,4 +289,41 @@ func lastLines(b []byte, n int) (res []string) {
 	return
 }
 
-var _ csapi.CodeSearch = (*CSBackend)(nil)
+// RegexpFilter creates a filter function based on the given regexp.
+// Either or both accept or reject parameters can be empty, in which case they're not used.
+// If both are empty, the returned function always returns true.
+type regexpFilter struct {
+	acceptRe *regexp.Regexp
+	rejectRe *regexp.Regexp
+}
+
+func newRegexpFilter(accept, reject string) (*regexpFilter, error) {
+	var acceptRe *regexp.Regexp
+	var err error
+	if accept != "" {
+		acceptRe, err = regexp.Compile(accept, syntax.FoldCase)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var rejectRe *regexp.Regexp
+	if reject != "" {
+		rejectRe, err = regexp.Compile(reject, syntax.FoldCase)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &regexpFilter{acceptRe, rejectRe}, nil
+}
+
+func (f *regexpFilter) Accept(s []byte) bool {
+	return (f.acceptRe == nil || regexp.Match(f.acceptRe, s) != nil) &&
+		(f.rejectRe == nil || regexp.Match(f.rejectRe, s) == nil)
+}
+
+func (f *regexpFilter) Clone() *regexpFilter {
+	return &regexpFilter{
+		f.acceptRe.Clone(),
+		f.rejectRe.Clone(),
+	}
+}
