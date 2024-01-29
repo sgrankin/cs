@@ -13,7 +13,7 @@ import (
 )
 
 var buildOpts = api.BuildOptions{
-	EntryPoints: []string{"web/app.js", "web/app.css"},
+	EntryPoints: []string{"web/app.ts", "web/app.css"},
 	Outdir:      "static",
 	Bundle:      true,
 	Write:       true,
