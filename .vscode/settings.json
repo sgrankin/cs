@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "*.html": "gotmpl",
+        "*.xml": "gotmpl"
+    },
+    "gopls": {
+        "build.templateExtensions": [
+            "html",
+            "xml"
+        ],
+    },
+    "prettier.useTabs": true,
+    "[typescript]": {
+        "editor.useTabStops": true
+    }
+}
