@@ -747,7 +747,7 @@ export function init(initData) {
 			if (this.model.get('time')) {
 				this.$('#searchtimebox').show();
 				var time = this.model.get('time');
-				this.time.text((time / 1000) + "s")
+				this.time.text(time + " µs")
 			} else {
 				this.$('#searchtimebox').hide();
 			}
