@@ -114,10 +114,9 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				// Encode the repo and hash into the file name.
-				// The repo is used for search results.
-				// The hash is used for direct lookup when searching.
-				path := repoRev + ":" + f.Name + ":" + f.Hash.String()
+				// Encode the repo & revision into the file name.
+				// The repo is used for search filtering, etc.
+				path := repoRev + ":" + f.Name
 				ix.Add(path, r)
 				r.Close()
 			}
