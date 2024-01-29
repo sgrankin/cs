@@ -317,9 +317,9 @@ func New(cfg *config.Config) (http.Handler, error) {
 	}
 	srv.loadTemplates()
 
-	be, e := NewBackend("backend")
-	if e != nil {
-		return nil, e
+	be, err := NewBackend("-")
+	if err != nil {
+		return nil, err
 	}
 	be.Start()
 	srv.bk[be.Id] = be
