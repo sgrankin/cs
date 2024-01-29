@@ -46,6 +46,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	if err != nil {
 		return nil, err
 	}
+
 	var fre *regexp.Regexp
 	if len(req.File) > 0 {
 		fre, err = regexp.Compile(strings.Join(req.File, "|"), syntax.FoldCase)
@@ -64,8 +65,6 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	if err != nil {
 		return nil, err
 	}
-
-	q := index.RegexpQuery(syn)
 
 	// Find filename matches.
 	fresults := make(chan []csapi.FileResult, 1)
@@ -98,83 +97,90 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		fresults <- res
 	}(re.Clone(), fre.Clone(), nfre.Clone())
 
-	post := b.ix.PostingQuery(q)
-	if fre != nil || nfre != nil {
-		// Prefilter the files based on name regex.
-		fnames := make([]uint32, 0, len(post))
-		for _, fileid := range post {
-			postName := b.ix.NameBytes(fileid)
-			_, _, name := splitname(postName)
-			if fre != nil && regexp.Match(fre, name) == nil {
-				continue
-			}
-			if nfre != nil && regexp.Match(nfre, name) != nil {
-				continue
-			}
-			fnames = append(fnames, fileid)
-		}
-		post = fnames
+	csResult := csapi.CodeSearchResult{
+		Stats: csapi.SearchStats{
+			ExitReason: csapi.ExitReasonNone,
+		},
 	}
-
-	results := make([]csapi.SearchResult, 0, req.MaxMatches)
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var idx atomic.Int64 // Each worker will claim a posting atomically.
-	idx.Store(-1)
-
-	numWorkers := min(runtime.GOMAXPROCS(0), len(post))
-	perFileResults := make(chan []csapi.SearchResult, numWorkers)
-	var wg sync.WaitGroup
-	for range numWorkers {
-		wg.Add(1)
-		go func(re *regexp.Regexp) {
-			defer wg.Done()
-			for ctx.Err() == nil { // Not cancelled?
-				i := idx.Add(1)
-				if int(i) >= len(post) {
-					return // No more work.
-				}
-				results := searchFile(b.ix, post[i], re, int(req.ContextLines), int(req.MaxMatches))
-				if len(results) == 0 {
+	if !req.FilenameOnly {
+		q := index.RegexpQuery(syn)
+		post := b.ix.PostingQuery(q)
+		if fre != nil || nfre != nil {
+			// Pre-filter the files based on name regex.
+			fnames := make([]uint32, 0, len(post))
+			for _, fileid := range post {
+				postName := b.ix.NameBytes(fileid)
+				_, _, name := splitname(postName)
+				if fre != nil && regexp.Match(fre, name) == nil {
 					continue
 				}
-				select {
-				case perFileResults <- results:
-				case <-ctx.Done():
-					return // Cancelled
+				if nfre != nil && regexp.Match(nfre, name) != nil {
+					continue
 				}
+				fnames = append(fnames, fileid)
 			}
-		}(re.Clone())
-	}
-	go func() {
-		// When all workers are done (either due to running out of files or cancellation) we're done searching.
-		wg.Wait()
-		close(perFileResults)
-	}()
-
-	for perFileResults := range perFileResults {
-		results = append(results, perFileResults...)
-		if len(results) >= int(req.MaxMatches) {
-			cancel()
-			break
+			post = fnames
 		}
+
+		results := make([]csapi.SearchResult, 0, req.MaxMatches)
+
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		var idx atomic.Int64 // Each worker will claim a posting atomically.
+		idx.Store(-1)
+
+		numWorkers := min(runtime.GOMAXPROCS(0), len(post))
+		perFileResults := make(chan []csapi.SearchResult, numWorkers)
+		var wg sync.WaitGroup
+		for range numWorkers {
+			wg.Add(1)
+			go func(re *regexp.Regexp) {
+				defer wg.Done()
+				for ctx.Err() == nil { // Not cancelled?
+					i := idx.Add(1)
+					if int(i) >= len(post) {
+						return // No more work.
+					}
+					results := searchFile(b.ix, post[i], re, int(req.ContextLines), int(req.MaxMatches))
+					if len(results) == 0 {
+						continue
+					}
+					select {
+					case perFileResults <- results:
+					case <-ctx.Done():
+						return // Cancelled
+					}
+				}
+			}(re.Clone())
+		}
+		go func() {
+			// When all workers are done (either due to running out of files or cancellation) we're done searching.
+			wg.Wait()
+			close(perFileResults)
+		}()
+
+		for perFileResults := range perFileResults {
+			results = append(results, perFileResults...)
+			if len(results) >= int(req.MaxMatches) {
+				cancel()
+				break
+			}
+		}
+		if len(results) >= int(req.MaxMatches) {
+			csResult.Stats.ExitReason = csapi.ExitReasonMatchLimit
+			results = results[:req.MaxMatches]
+		}
+		csResult.Results = results
 	}
 
-	exitReason := csapi.ExitReasonNone
-	if len(results) >= int(req.MaxMatches) {
-		exitReason = csapi.ExitReasonMatchLimit
-		results = results[:req.MaxMatches]
+	fileResults := <-fresults
+	if len(fileResults) >= int(req.MaxMatches) {
+		fileResults = fileResults[:req.MaxMatches]
+		csResult.Stats.ExitReason = csapi.ExitReasonMatchLimit
 	}
-
-	return &csapi.CodeSearchResult{
-		Stats: csapi.SearchStats{
-			ExitReason: csapi.ExitReason(exitReason),
-		},
-		Results:     results,
-		FileResults: <-fresults,
-	}, nil
+	csResult.FileResults = fileResults
+	return &csResult, nil
 }
 
 func searchFile(ix *index.Index, fileid uint32, re *regexp.Regexp, contextLines int, maxMatches int) []csapi.SearchResult {
