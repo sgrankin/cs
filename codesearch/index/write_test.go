@@ -5,25 +5,26 @@
 package index
 
 import (
-	"bytes"
 	"os"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 var trivialFiles = map[string]string{
+	"afile4":   "\ndabc\n",
 	"f0":       "\n\n",
 	"file1":    "\na\n",
-	"thefile2": "\nab\n",
 	"file3":    "\nabc\n",
-	"afile4":   "\ndabc\n",
 	"file5":    "\nxyzw\n",
+	"thefile2": "\nab\n",
 }
 
 var trivialIndex = join(
 	// header
-	"csearch index 1\n",
+	"csearch index 2\n",
 
 	// list of paths
 	"\x00",
@@ -51,6 +52,14 @@ var trivialIndex = join(
 	"zw\n", fileList(4), // file5
 	"\xff\xff\xff", fileList(),
 
+	// Blobs
+	"\ndabc\n",
+	"\n\n",
+	"\na\n",
+	"\nabc\n",
+	"\nxyzw\n",
+	"\nab\n",
+
 	// name index
 	u32(0),
 	u32(6+1),
@@ -74,12 +83,24 @@ var trivialIndex = join(
 	"zw\n", u32(1), u32(5+6+5+5+5+6+6+5+5+5),
 	"\xff\xff\xff", u32(0), u32(5+6+5+5+5+6+6+5+5+5+5),
 
+	// Blob index
+	u32(0), u32(6),
+	u32(0+6), u32(2),
+	u32(0+6+2), u32(3),
+	u32(0+6+2+3), u32(5),
+	u32(0+6+2+3+5), u32(6),
+	u32(0+6+2+3+5+6), u32(4),
+
 	// trailer
-	u32(16),
-	u32(16+1),
-	u32(16+1+38),
-	u32(16+1+38+62),
-	u32(16+1+38+62+28),
+	u32(16), u32(1),
+	u32(16+1), u32(38),
+	u32(16+1+38), u32(62),
+	u32(16+1+38+62), u32(26),
+	u32(16+1+38+62+26), u32(28),
+	u32(16+1+38+62+26+28), u32(132),
+	u32(16+1+38+62+26+28+132), u32(48),
+
+	u32(351), u32(56), // TODO
 
 	"\ncsearch trailr\n",
 )
@@ -146,12 +167,8 @@ func testTrivialWrite(t *testing.T, doFlush bool) {
 		t.Fatalf("reading _test/index.triv: %v", err)
 	}
 	want := []byte(trivialIndex)
-	if !bytes.Equal(data, want) {
-		i := 0
-		for i < len(data) && i < len(want) && data[i] == want[i] {
-			i++
-		}
-		t.Fatalf("wrong index:\nhave: %q %q\nwant: %q %q", data[:i], data[i:], want[:i], want[i:])
+	if diff := cmp.Diff(want, data); diff != "" {
+		t.Errorf("wrong index: (-want+got)\n%s", diff)
 	}
 }
 

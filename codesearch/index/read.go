@@ -8,7 +8,7 @@
 An index stored on disk has the format:
 
 	Index {
-		Magic (16) = "csearch index 1\n",
+		Magic (16) = "csearch index 2\n",
 		Path List (..),
 		Name List (..),
 		Posting Lists List (..),
@@ -45,6 +45,11 @@ Each posting list has the form:
 		Deltas (..) ...,
 	}
 
+	Posting List List {
+		Posting List (..) ...,
+		End (4) = "\xff\xff\xff" "\x00",
+	}
+
 The trigram gives the 3 byte trigram that this list describes.
 The delta list is a sequence of varint-encoded deltas between file IDs, ending with a zero delta.
 For example, the delta list [2,5,1,1,0] encodes the file ID list 1, 6, 7, 8.
@@ -79,20 +84,30 @@ The content blob index enables efficient access to the blobs.
 It is a sequence of 4 byte big-endian values listing the byte offset in the blob where each file begins.
 
 	Blob Index Entry {
-		Offset (4),
+		Offset in Blob Segment (4),
 		Length (4),
 	}
 
 The trailer has the form:
 
+	Segment Entry {
+		Offset in file (4),
+		Length (4),
+	}
+
+	Segment List {
+		Path List Segment Entry (8),
+		Name List Segment Entry (8),
+		Posting Lists (8),
+		Content Blobs (8),
+		Name Index (8),
+		Posting List Index (8),
+		Content Blob Index (8),
+	}
+
 	Trailer {
-		Offset of path list (4),
-		Offset of name list (4),
-		Offset of posting lists (4),
-		Offset of content blobs (4),
-		Offset of name index (4),
-		Offset of posting list index (4),
-		Offset of content blob index (4),
+		Offset of Segment List (4),
+		Length of Segment List (4)
 		Trailer Magic (16) = "\ncsearch trailr\n",
 	}
 */
@@ -109,7 +124,7 @@ import (
 )
 
 const (
-	magic        = "csearch index 1\n"
+	magic        = "csearch index 2\n"
 	trailerMagic = "\ncsearch trailr\n"
 )
 
@@ -117,15 +132,20 @@ const (
 type Index struct {
 	Verbose   bool
 	data      mmapData
-	pathData  uint32
-	nameData  uint32
-	postData  uint32
-	blobData  uint32
-	nameIndex uint32
-	postIndex uint32
-	blobIndex uint32
+	pathData  []byte
+	nameData  []byte
+	postData  []byte
+	blobData  []byte
+	nameIndex []byte
+	postIndex []byte
+	blobIndex []byte
 	numName   int
 	numPost   int
+}
+
+type segment struct {
+	offset uint32
+	length uint32
 }
 
 const postEntrySize = 3 + 4 + 4
@@ -135,24 +155,32 @@ func Open(file string) *Index {
 	if len(mm.d) < 4*4+len(trailerMagic) || string(mm.d[len(mm.d)-len(trailerMagic):]) != trailerMagic {
 		corrupt()
 	}
-	n := uint32(len(mm.d) - len(trailerMagic) - 4*7)
+
 	ix := &Index{data: mm}
 
-	ix.pathData = ix.uint32(n)
-	ix.nameData = ix.uint32(n + 4*1)
-	ix.postData = ix.uint32(n + 4*2)
-	ix.blobData = ix.uint32(n + 4*3)
-	ix.nameIndex = ix.uint32(n + 4*4)
-	ix.postIndex = ix.uint32(n + 4*5)
-	ix.blobIndex = ix.uint32(n + 4*6)
+	segsOffset := ix.uint32(uint32(len(mm.d) - len(trailerMagic) - 4*2))
+	segsLength := ix.uint32(uint32(len(mm.d) - len(trailerMagic) - 4*1))
+	if segsLength != 7*8 {
+		log.Panicf("Corrupt file format: unexpected segment index length %d", segsLength)
+	}
+
+	// TODO: make use of binary marshalling or something....
+	ix.pathData = ix.slice(ix.uint32(uint32(segsOffset+8*0)), int(ix.uint32(uint32(segsOffset+8*0+4))))
+	ix.nameData = ix.slice(ix.uint32(uint32(segsOffset+8*1)), int(ix.uint32(uint32(segsOffset+8*1+4))))
+	ix.postData = ix.slice(ix.uint32(uint32(segsOffset+8*2)), int(ix.uint32(uint32(segsOffset+8*2+4))))
+	ix.blobData = ix.slice(ix.uint32(uint32(segsOffset+8*3)), int(ix.uint32(uint32(segsOffset+8*3+4))))
+	ix.nameIndex = ix.slice(ix.uint32(uint32(segsOffset+8*4)), int(ix.uint32(uint32(segsOffset+8*4+4))))
+	ix.postIndex = ix.slice(ix.uint32(uint32(segsOffset+8*5)), int(ix.uint32(uint32(segsOffset+8*5+4))))
+	ix.blobIndex = ix.slice(ix.uint32(uint32(segsOffset+8*6)), int(ix.uint32(uint32(segsOffset+8*6+4))))
 
 	// TODO: add an extra indirection for content-based addressing & deduplication:
 	// - Name the files as their checksum
 	// - Add an aliases table (that can be merged).
 	// - When searching, emit matches for all names that matched a blob.
 
-	ix.numName = int((ix.postIndex-ix.nameIndex)/4) - 1
-	ix.numPost = int((n - ix.postIndex) / postEntrySize)
+	// BUG BUG BUG these numbers should be based on section size, not ... random math
+	ix.numName = len(ix.nameIndex)/4 - 1
+	ix.numPost = len(ix.postIndex) / postEntrySize
 	return ix
 }
 
@@ -174,6 +202,10 @@ func (ix *Index) uint32(off uint32) uint32 {
 	return binary.BigEndian.Uint32(ix.slice(off, 4))
 }
 
+func asUint32(b []byte) uint32 {
+	return binary.BigEndian.Uint32(b[:4])
+}
+
 // uvarint returns the varint value at the given offset in the index data.
 func (ix *Index) uvarint(off uint32) uint32 {
 	v, n := binary.Uvarint(ix.slice(off, -1))
@@ -185,23 +217,23 @@ func (ix *Index) uvarint(off uint32) uint32 {
 
 // Paths returns the list of indexed paths.
 func (ix *Index) Paths() []string {
-	off := ix.pathData
+	off := 0
 	var x []string
 	for {
-		s := ix.str(off)
+		s := asStringbytes(ix.pathData[off:])
 		if len(s) == 0 {
 			break
 		}
 		x = append(x, string(s))
-		off += uint32(len(s) + 1)
+		off += len(s) + 1
 	}
 	return x
 }
 
 // NameBytes returns the name corresponding to the given fileid.
 func (ix *Index) NameBytes(fileid uint32) []byte {
-	off := ix.uint32(ix.nameIndex + 4*fileid)
-	return ix.str(ix.nameData + off)
+	off := asUint32(ix.nameIndex[4*fileid:])
+	return asStringbytes(ix.nameData[off:])
 }
 
 func (ix *Index) str(off uint32) []byte {
@@ -213,6 +245,14 @@ func (ix *Index) str(off uint32) []byte {
 	return str[:i]
 }
 
+func asStringbytes(b []byte) []byte {
+	i := bytes.IndexByte(b, '\x00')
+	if i < 0 {
+		corrupt()
+	}
+	return b[:i]
+}
+
 // Name returns the name corresponding to the given fileid.
 func (ix *Index) Name(fileid uint32) string {
 	return string(ix.NameBytes(fileid))
@@ -220,9 +260,9 @@ func (ix *Index) Name(fileid uint32) string {
 
 // Data returns the data blob corresponding to the given fileid.
 func (ix *Index) Data(fileid uint32) []byte {
-	offset := ix.blobData + ix.uint32(ix.blobIndex+8*fileid)
-	size := ix.uint32(ix.blobIndex + 8*fileid + 4)
-	return ix.data.d[offset : offset+size]
+	offset := asUint32(ix.blobIndex[8*fileid:])
+	size := asUint32(ix.blobIndex[8*fileid+4:])
+	return ix.blobData[offset : offset+size]
 }
 
 // Metadata returns the metadata keys and values that start with the given prefix.
@@ -250,7 +290,7 @@ type KeyVal struct {
 
 // listAt returns the index list entry at the given offset.
 func (ix *Index) listAt(off uint32) (trigram, count, offset uint32) {
-	d := ix.slice(ix.postIndex+off, postEntrySize)
+	d := ix.postIndex[off : off+postEntrySize]
 	trigram = uint32(d[0])<<16 | uint32(d[1])<<8 | uint32(d[2])
 	count = binary.BigEndian.Uint32(d[3:])
 	offset = binary.BigEndian.Uint32(d[3+4:])
@@ -258,7 +298,7 @@ func (ix *Index) listAt(off uint32) (trigram, count, offset uint32) {
 }
 
 func (ix *Index) dumpPosting() {
-	d := ix.slice(ix.postIndex, postEntrySize*ix.numPost)
+	d := ix.postIndex
 	for i := 0; i < ix.numPost; i++ {
 		j := i * postEntrySize
 		t := uint32(d[j])<<16 | uint32(d[j+1])<<8 | uint32(d[j+2])
@@ -270,7 +310,7 @@ func (ix *Index) dumpPosting() {
 
 func (ix *Index) findList(trigram uint32) (count int, offset uint32) {
 	// binary search
-	d := ix.slice(ix.postIndex, postEntrySize*ix.numPost)
+	d := ix.postIndex
 	i := sort.Search(ix.numPost, func(i int) bool {
 		i *= postEntrySize
 		t := uint32(d[i])<<16 | uint32(d[i+1])<<8 | uint32(d[i+2])
@@ -307,7 +347,7 @@ func (r *postReader) init(ix *Index, trigram uint32, restrict []uint32) {
 	r.count = count
 	r.offset = offset
 	r.fileid = ^uint32(0)
-	r.d = ix.slice(ix.postData+offset+3, -1)
+	r.d = ix.postData[+offset+3:]
 	r.restrict = restrict
 }
 

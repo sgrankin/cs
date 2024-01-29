@@ -109,6 +109,7 @@ func Merge(dst, src1, src2 string) {
 	ix3 := bufCreate(dst)
 	ix3.writeString(magic)
 
+	segments := [7]segment{}
 	// Merged list of paths.
 	pathData := ix3.offset()
 	mi1 := 0
@@ -131,6 +132,7 @@ func Merge(dst, src1, src2 string) {
 		ix3.writeString("\x00")
 	}
 	ix3.writeString("\x00")
+	segments[0] = segment{pathData, ix3.offset() - pathData}
 
 	// Merged list of names.
 	nameData := ix3.offset()
@@ -165,6 +167,7 @@ func Merge(dst, src1, src2 string) {
 		panic("merge: inconsistent index")
 	}
 	nameIndexFile.writeUint32(ix3.offset())
+	segments[1] = segment{nameData, ix3.offset() - nameData}
 
 	// To merge blobs, create an array of slices in order of the new posting IDs, and then write them to destination.
 	blobs := [][]byte{}
@@ -172,23 +175,21 @@ func Merge(dst, src1, src2 string) {
 	mi1 = 0
 	mi2 = 0
 	for new < numName {
-		var blob []byte
 		if mi1 < len(map1) && map1[mi1].new == new {
 			for i := map1[mi1].lo; i < map1[mi1].hi; i++ {
-				blob = ix1.Data(i)
+				blobs = append(blobs, ix1.Data(i))
 				new++
 			}
 			mi1++
 		} else if mi2 < len(map2) && map2[mi2].new == new {
 			for i := map2[mi2].lo; i < map2[mi2].hi; i++ {
-				blob = ix2.Data(i)
+				blobs = append(blobs, ix2.Data(i))
 				new++
 			}
 			mi2++
 		} else {
 			panic("merge: inconsistent index")
 		}
-		blobs = append(blobs, blob)
 	}
 
 	blobFile := bufCreate("")
@@ -250,36 +251,43 @@ func Merge(dst, src1, src2 string) {
 			w.endTrigram()
 		}
 	}
+	segments[2] = segment{postData, ix3.offset() - postData}
 
 	blobData := ix3.offset()
 	copyFile(ix3, blobFile)
+	segments[3] = segment{blobData, ix3.offset() - blobData}
 
 	// Name index
 	nameIndex := ix3.offset()
 	copyFile(ix3, nameIndexFile)
+	segments[4] = segment{nameIndex, ix3.offset() - nameIndex}
 
 	// Posting list index
 	postIndex := ix3.offset()
 	copyFile(ix3, w.postIndexFile)
+	segments[5] = segment{postIndex, ix3.offset() - postIndex}
 
+	// Blob index: (offset, length) pairs
 	blobIndex := ix3.offset()
 	for i, off := range blobOffsets {
 		ix3.writeUint32(off)
 		ix3.writeUint32(blobSizes[i])
 	}
+	segments[6] = segment{blobIndex, ix3.offset() - blobIndex}
 
-	ix3.writeUint32(pathData)
-	ix3.writeUint32(nameData)
-	ix3.writeUint32(postData)
-	ix3.writeUint32(blobData)
-	ix3.writeUint32(nameIndex)
-	ix3.writeUint32(postIndex)
-	ix3.writeUint32(blobIndex)
+	off := ix3.offset()
+	for _, segment := range segments {
+		ix3.writeUint32(segment.offset)
+		ix3.writeUint32(segment.length)
+	}
+	ix3.writeUint32(off)
+	ix3.writeUint32(uint32(len(segments) * 4 * 2))
 	ix3.writeString(trailerMagic)
 	ix3.flush()
 
 	os.Remove(nameIndexFile.name)
 	os.Remove(w.postIndexFile.name)
+	os.Remove(blobFile.name)
 }
 
 type postMapReader struct {
@@ -319,7 +327,7 @@ func (r *postMapReader) load() {
 		r.fileid = ^uint32(0)
 		return
 	}
-	r.d = r.ix.slice(r.ix.postData+r.offset+3, -1)
+	r.d = r.ix.postData[r.offset+3:]
 	r.oldid = ^uint32(0)
 	r.i = 0
 }

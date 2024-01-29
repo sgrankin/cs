@@ -209,36 +209,48 @@ func (ix *IndexWriter) SetMetadata(name, value string) {
 func (ix *IndexWriter) Flush() {
 	ix.addName("")
 
-	var off [7]uint32
+	segments := [7]segment{}
 	ix.main.writeString(magic)
-	off[0] = ix.main.offset()
+
+	off := ix.main.offset()
 	for _, p := range ix.paths {
 		ix.main.writeString(p)
 		ix.main.writeString("\x00")
 	}
 	ix.main.writeString("\x00")
+	segments[0] = segment{off, ix.main.offset() - off}
 
-	off[1] = ix.main.offset()
+	off = ix.main.offset()
 	copyFile(ix.main, ix.nameData)
+	segments[1] = segment{off, ix.main.offset() - off}
 
-	off[2] = ix.main.offset()
+	off = ix.main.offset()
 	ix.mergePost(ix.main)
+	segments[2] = segment{off, ix.main.offset() - off}
 
-	off[3] = ix.main.offset()
+	off = ix.main.offset()
 	copyFile(ix.main, ix.blobData)
+	segments[3] = segment{off, ix.main.offset() - off}
 
-	off[4] = ix.main.offset()
+	off = ix.main.offset()
 	copyFile(ix.main, ix.nameIndex)
+	segments[4] = segment{off, ix.main.offset() - off}
 
-	off[5] = ix.main.offset()
+	off = ix.main.offset()
 	copyFile(ix.main, ix.postIndex)
+	segments[5] = segment{off, ix.main.offset() - off}
 
-	off[6] = ix.main.offset()
+	off = ix.main.offset()
 	copyFile(ix.main, ix.blobIndex)
+	segments[6] = segment{off, ix.main.offset() - off}
 
-	for _, v := range off {
-		ix.main.writeUint32(v)
+	off = ix.main.offset()
+	for _, segment := range segments {
+		ix.main.writeUint32(segment.offset)
+		ix.main.writeUint32(segment.length)
 	}
+	ix.main.writeUint32(off)
+	ix.main.writeUint32(uint32(len(segments) * 4 * 2))
 	ix.main.writeString(trailerMagic)
 
 	os.Remove(ix.nameData.name)
@@ -247,6 +259,8 @@ func (ix *IndexWriter) Flush() {
 	}
 	os.Remove(ix.nameIndex.name)
 	os.Remove(ix.postIndex.name)
+	os.Remove(ix.blobIndex.name)
+	os.Remove(ix.blobData.name)
 
 	log.Printf("%d data bytes, %d index bytes", ix.totalBytes, ix.main.offset())
 
