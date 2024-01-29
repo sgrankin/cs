@@ -225,6 +225,29 @@ func (ix *Index) Data(fileid uint32) []byte {
 	return ix.data.d[offset : offset+size]
 }
 
+// Metadata returns the metadata keys and values that start with the given prefix.
+// The prefix may be "" to get all metadata.
+func (ix *Index) Metadata(prefix string) []KeyVal {
+	prefix = "·" + prefix
+	start := sort.Search(ix.numName, func(i int) bool { return ix.NameBytes(uint32(i))[0] >= '·' })
+	end := sort.Search(ix.numName, func(i int) bool { return ix.NameBytes(uint32(i))[0] > '·' })
+	if start == end {
+		return nil
+	}
+	result := make([]KeyVal, 0, end-start)
+	for i := start; i < end; i++ {
+		result = append(result, KeyVal{
+			string(ix.NameBytes(uint32(i))[1:]),
+			string(ix.Data(uint32(i))),
+		})
+	}
+	return result
+}
+
+type KeyVal struct {
+	Key, Value string
+}
+
 // listAt returns the index list entry at the given offset.
 func (ix *Index) listAt(off uint32) (trigram, count, offset uint32) {
 	d := ix.slice(ix.postIndex+off, postEntrySize)
@@ -395,9 +418,11 @@ func (ix *Index) postingQuery(q *Query, restrict []uint32) (ret []uint32) {
 		if restrict != nil {
 			return restrict
 		}
-		list = make([]uint32, ix.numName)
-		for i := range list {
-			list[i] = uint32(i)
+		list = make([]uint32, 0, ix.numName)
+		for i := range ix.numName {
+			if ix.NameBytes(uint32(i))[0] != '·' {
+				list = append(list, uint32(i))
+			}
 		}
 		return list
 	case QAnd:

@@ -118,6 +118,13 @@ func (ix *IndexWriter) AddFile(name string) {
 // Add adds the file f to the index under the given name.
 // It logs errors using package log.
 func (ix *IndexWriter) Add(name string, f io.Reader) {
+	if strings.HasPrefix(name, "·") {
+		if ix.LogSkip {
+			log.Printf("%s: may not start with '·'", name)
+		}
+		return
+	}
+
 	ix.trigram.Reset()
 	ix.inbuf.Reset(f)
 
@@ -185,6 +192,17 @@ func (ix *IndexWriter) Add(name string, f io.Reader) {
 	}
 	ix.blobIndex.writeUint32(off)
 	ix.blobIndex.writeUint32(uint32(fLen))
+}
+
+// SetMedata prefixes name with '·' and then adds it as an unindexed file to the index.
+func (ix *IndexWriter) SetMetadata(name, value string) {
+	// NOTE: addName will allocate an index slot and the tuple written to blobIndex will match this slot.
+	name = "·" + name
+	ix.addName(name)
+	off := ix.blobData.offset()
+	ix.blobData.writeString(value)
+	ix.blobIndex.writeUint32(off)
+	ix.blobIndex.writeUint32(uint32(len(value)))
 }
 
 // Flush flushes the index entry to the target file.
