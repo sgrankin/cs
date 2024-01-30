@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-var $ = require('jquery');
-var _ = require('underscore');
+import $ from "jquery";
+import { isEqual } from "underscore";
 
-function init() {
+export function init() {
 	$('#repos').selectpicker({
 		actionsBox: true,
 		selectedTextFormat: 'count > 4',
@@ -42,13 +42,13 @@ function init() {
 	});
 }
 
-function updateOptions(newOptions) {
+export function updateOptions(newOptions) {
 	// Skip update if the options are the same, to avoid losing selected state.
 	var currentOptions = [];
 	$('#repos').find('option').each(function () {
 		currentOptions.push($(this).attr('value'));
 	});
-	if (_.isEqual(currentOptions, newOptions)) {
+	if (isEqual(currentOptions, newOptions)) {
 		return;
 	}
 
@@ -75,12 +75,6 @@ function updateOptions(newOptions) {
 	$('#repos').selectpicker('refresh');
 }
 
-function updateSelected(newSelected) {
+export function updateSelected(newSelected) {
 	$('#repos').selectpicker('val', newSelected);
-}
-
-module.exports = {
-	init: init,
-	updateOptions: updateOptions,
-	updateSelected: updateSelected
 }

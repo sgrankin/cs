@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-$ = require('jquery');
+import $ from "jquery";
 
 var KeyCodes = {
 	ESCAPE: 27,
