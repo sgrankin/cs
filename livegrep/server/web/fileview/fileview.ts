@@ -8,7 +8,7 @@ import $ from "jquery";
 var KeyCodes = {
 	ESCAPE: 27,
 	ENTER: 13,
-	SLASH_OR_QUESTION_MARK: 191
+	SLASH_OR_QUESTION_MARK: 191,
 };
 
 function getSelectedText() {
@@ -35,7 +35,7 @@ function scrollToRange(range, elementContainer) {
 		// We have a range, try and center the entire range. If it's to high
 		// for the viewport, fallback to revealing the first element.
 		var lastLineElement = elementContainer.find("#L" + range.end);
-		var rangeHeight = (lastLineElement.offset().top + lastLineElement.height()) - firstLineElement.offset().top;
+		var rangeHeight = lastLineElement.offset().top + lastLineElement.height() - firstLineElement.offset().top;
 		if (rangeHeight <= viewportHeight) {
 			// Range fits in viewport, center it
 			scrollOffset = 0.5 * (viewportHeight - rangeHeight);
@@ -67,7 +67,7 @@ function parseHashForLineRange(hashString) {
 		}
 		return {
 			start: startLine,
-			end: endLine
+			end: endLine,
 		};
 	}
 
@@ -79,13 +79,13 @@ function addHighlightClassesForRange(range, root) {
 	for (var lineNumber = range.start; lineNumber <= range.end; lineNumber++) {
 		idSelectors.push("#L" + lineNumber);
 	}
-	root.find(idSelectors.join(",")).addClass('highlighted');
+	root.find(idSelectors.join(",")).addClass("highlighted");
 }
 
 function expandRangeToElement(element) {
 	var range = parseHashForLineRange(document.location.hash);
 	if (range) {
-		var elementLine = parseInt(element.attr('id').replace('L', ''), 10);
+		var elementLine = parseInt(element.attr("id").replace("L", ""), 10);
 		if (elementLine < range.start) {
 			range.end = range.start;
 			range.start = elementLine;
@@ -97,37 +97,40 @@ function expandRangeToElement(element) {
 }
 
 export function init(initData) {
-	var root = $('.file-content');
-	var lineNumberContainer = root.find('.line-numbers');
-	var helpScreen = $('.help-screen');
+	var root = $(".file-content");
+	var lineNumberContainer = root.find(".line-numbers");
+	var helpScreen = $(".help-screen");
 
 	function doSearch(event, query, newTab) {
 		var url;
 		if (query !== undefined) {
-			url = '/search?q=' + encodeURIComponent(query) + '&repo=' + encodeURIComponent(initData.repo_info.name);
+			url = "/search?q=" + encodeURIComponent(query) + "&repo=" + encodeURIComponent(initData.repo_info.name);
 		} else {
-			url = '/search';
+			url = "/search";
 		}
 		if (newTab === true) {
 			window.open(url);
 		} else {
-			window.location.href = url
+			window.location.href = url;
 		}
 	}
 
 	function showHelp() {
-		helpScreen.removeClass('hidden').children().on('click', function (event) {
-			// Prevent clicks inside the element to reach the document
-			event.stopImmediatePropagation();
-			return true;
-		});
+		helpScreen
+			.removeClass("hidden")
+			.children()
+			.on("click", function (event) {
+				// Prevent clicks inside the element to reach the document
+				event.stopImmediatePropagation();
+				return true;
+			});
 
-		$(document).on('click', hideHelp);
+		$(document).on("click", hideHelp);
 	}
 
 	function hideHelp() {
-		helpScreen.addClass('hidden').children().off('click');
-		$(document).off('click', hideHelp);
+		helpScreen.addClass("hidden").children().off("click");
+		$(document).off("click", hideHelp);
 		return true;
 	}
 
@@ -137,7 +140,7 @@ export function init(initData) {
 		}
 
 		// Clear current highlights
-		lineNumberContainer.find('.highlighted').removeClass('highlighted');
+		lineNumberContainer.find(".highlighted").removeClass("highlighted");
 
 		// Highlight the current range from the hash, if any
 		var range = parseHashForLineRange(document.location.hash);
@@ -149,8 +152,8 @@ export function init(initData) {
 		}
 
 		// Update the external-browse link
-		$('#external-link').attr('href', getExternalLink(range));
-		updateFragments(range, $('#permalink, #back-to-head'));
+		$("#external-link").attr("href", getExternalLink(range));
+		updateFragments(range, $("#permalink, #back-to-head"));
 	}
 
 	function getLineNumber(range) {
@@ -173,36 +176,39 @@ export function init(initData) {
 		var repoName = initData.repo_info.name;
 		var filePath = initData.file_path;
 
-		url = initData.repo_info.metadata['url_pattern'];
+		let url = initData.repo_info.metadata["url_pattern"];
 
 		// If url not found, warn user and fail gracefully
-		if (!url) { // deal with both undefined and empty string
-			console.error("The index file you provided does not provide repositories[x].metadata.url_pattern. External links to file sources will not work. See the README for more information on file viewing.");
+		if (!url) {
+			// deal with both undefined and empty string
+			console.error(
+				"The index file you provided does not provide repositories[x].metadata.url_pattern. External links to file sources will not work. See the README for more information on file viewing.",
+			);
 			return;
 		}
 
 		// If {path} already has a slash in front of it, trim extra leading
 		// slashes from `pathInRepo` to avoid a double-slash in the URL.
-		if (url.indexOf('/{path}') !== -1) {
-			filePath = filePath.replace(/^\/+/, '');
+		if (url.indexOf("/{path}") !== -1) {
+			filePath = filePath.replace(/^\/+/, "");
 		}
 
 		// XXX code copied
-		url = url.replace('{lno}', lno);
-		url = url.replace('{version}', initData.commit);
-		url = url.replace('{name}', repoName);
-		url = url.replace('{path}', filePath);
+		url = url.replace("{lno}", lno);
+		url = url.replace("{version}", initData.commit);
+		url = url.replace("{name}", repoName);
+		url = url.replace("{path}", filePath);
 		return url;
 	}
 
 	function updateFragments(range, $anchors) {
 		$anchors.each(function () {
 			var $a = $(this);
-			var href = $a.attr('href').split('#')[0];
+			var href = $a.attr("href").split("#")[0];
 			if (range !== null) {
-				href += '#L' + getLineNumber(range);
+				href += "#L" + getLineNumber(range);
 			}
-			$a.attr('href', href);
+			$a.attr("href", href);
 		});
 	}
 
@@ -223,24 +229,24 @@ export function init(initData) {
 			}
 		} else if (event.which === KeyCodes.ESCAPE) {
 			// Avoid swallowing the important escape key event unless we're sure we want to
-			if (!helpScreen.hasClass('hidden')) {
+			if (!helpScreen.hasClass("hidden")) {
 				event.preventDefault();
 				hideHelp();
 			}
-			$('#query').blur();
-		} else if (String.fromCharCode(event.which) == 'V') {
+			$("#query").blur();
+		} else if (String.fromCharCode(event.which) == "V") {
 			// Visually highlight the external link to indicate what happened
-			$('#external-link').focus();
-			window.location = $('#external-link').attr('href');
-		} else if (String.fromCharCode(event.which) == 'Y') {
-			var $a = $('#permalink');
+			$("#external-link").focus();
+			window.location = $("#external-link").attr("href");
+		} else if (String.fromCharCode(event.which) == "Y") {
+			var $a = $("#permalink");
 			var permalink_is_present = $a.length > 0;
 			if (permalink_is_present) {
 				$a.focus();
-				window.location = $a.attr('href');
+				window.location = $a.attr("href");
 			}
-		} else if (String.fromCharCode(event.which) == 'N' || String.fromCharCode(event.which) == 'P') {
-			var goBackwards = String.fromCharCode(event.which) === 'P';
+		} else if (String.fromCharCode(event.which) == "N" || String.fromCharCode(event.which) == "P") {
+			var goBackwards = String.fromCharCode(event.which) === "P";
 			var selectedText = getSelectedText();
 			if (selectedText) {
 				window.find(selectedText, false /* case sensitive */, goBackwards);
@@ -258,7 +264,9 @@ export function init(initData) {
 		};
 
 		for (var actionName in ACTION_MAP) {
-			root.on('click auxclick', '[data-action-name="' + actionName + '"]',
+			root.on(
+				"click auxclick",
+				'[data-action-name="' + actionName + '"]',
 				// We can't use the action mapped handler directly here since the iterator (`actioName`)
 				// will keep changing in the closure of the inline function.
 				// Generating a click handler on the fly removes the dependency on closure which
@@ -268,50 +276,48 @@ export function init(initData) {
 						event.preventDefault();
 						event.stopImmediatePropagation(); // Prevent immediately closing modals etc.
 						handler.call(this, event);
-					}
-				})(ACTION_MAP[actionName])
-			)
+					};
+				})(ACTION_MAP[actionName]),
+			);
 		}
 	}
 
 	var showSelectionReminder = function () {
-		$('.without-selection').hide();
-		$('.with-selection').show();
-	}
+		$(".without-selection").hide();
+		$(".with-selection").show();
+	};
 
 	var hideSelectionReminder = function () {
-		$('.without-selection').show();
-		$('.with-selection').hide();
-	}
+		$(".without-selection").show();
+		$(".with-selection").hide();
+	};
 
 	function initializePage() {
 		// Initial range detection for when the page is loaded
 		handleHashChange();
 
 		// Allow shift clicking links to expand the highlight range
-		lineNumberContainer.on('click', 'a', function (event) {
+		lineNumberContainer.on("click", "a", function (event) {
 			event.preventDefault();
 			if (event.shiftKey) {
 				expandRangeToElement($(event.target), lineNumberContainer);
 			} else {
-				setHash($(event.target).attr('href'));
+				setHash($(event.target).attr("href"));
 			}
 			handleHashChange(false);
 		});
 
-		$(window).on('hashchange', function (event) {
+		$(window).on("hashchange", function (event) {
 			event.preventDefault();
 			// The url was updated with a new range
 			handleHashChange();
 		});
 
-		$(document).on('keydown', function (event) {
+		$(document).on("keydown", function (event) {
 			// Filter out key events when the user has focused an input field.
-			if ($(event.target).is('input,textarea'))
-				return;
+			if ($(event.target).is("input,textarea")) return;
 			// Filter out key if a modifier is pressed.
-			if (event.altKey || event.ctrlKey || event.metaKey)
-				return;
+			if (event.altKey || event.ctrlKey || event.metaKey) return;
 			processKeyEvent(event);
 		});
 
@@ -324,7 +330,7 @@ export function init(initData) {
 			}
 		});
 
-		initializeActionButtons($('.header .header-actions'));
+		initializeActionButtons($(".header .header-actions"));
 	}
 
 	// The native browser handling of hashes in the location is to scroll
@@ -334,8 +340,7 @@ export function init(initData) {
 	// has loaded. We also need defer our own scroll handling since we can't
 	// access the geometry of the DOM elements until they are visible.
 	setTimeout(function () {
-		lineNumberContainer.css({ display: 'block' });
+		lineNumberContainer.css({ display: "block" });
 		initializePage();
 	}, 1);
 }
-

@@ -32,7 +32,7 @@ export namespace Codesearch {
 		var opts = in_flight;
 
 		var url = "/api/v1/search/";
-		if ('backend' in opts) {
+		if ("backend" in opts) {
 			url = url + opts.backend;
 		}
 		var q = {
@@ -43,7 +43,7 @@ export namespace Codesearch {
 		};
 
 		var xhr = $.ajax({
-			method: 'POST',
+			method: "POST",
 			url: url,
 			data: q,
 			dataType: "json",

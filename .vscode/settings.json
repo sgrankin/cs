@@ -9,8 +9,19 @@
             "xml"
         ],
     },
+    "prettier.printWidth": 120,
+    "prettier.semi": true,
+    "prettier.singleQuote": false,
+    "prettier.trailingComma": "all",
     "prettier.useTabs": true,
+    "javascript.preferences.quoteStyle": "double",
+    "typescript.preferences.quoteStyle": "double",
+    "[javascript]": {
+        "editor.maxTokenizationLineLength": 2500
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
     "[typescript]": {
         "editor.useTabStops": true
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
     }
 }
