@@ -18,7 +18,7 @@ var buildOpts = api.BuildOptions{
 	Bundle:      true,
 	Write:       true,
 
-	Target: api.ES2015,
+	Target: api.ES2022,
 
 	Sourcemap:         api.SourceMapLinked,
 	MinifyWhitespace:  true,
