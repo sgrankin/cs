@@ -5,8 +5,9 @@
 
 // Bootstrap depends on a jquery.
 // Imports are resolved at file load... so set the global jquery in a separate module.
-import "./globals.ts"
+import "./globals.ts";
 
+import jQuery from "jquery";
 import "bootstrap";
 import "bootstrap-select";
 
@@ -18,7 +19,7 @@ const pages = {
 	fileview,
 };
 
-$(function () {
+jQuery(function () {
 	if (window.page) {
 		pages[window.page].init(window.scriptData);
 	}

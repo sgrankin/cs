@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import $ from "jquery";
+import jQuery from "jquery";
 import { HTMLFactory } from "../3rdparty/html.js";
 import { View, Model, Collection } from "backbone";
 import { getJSON, set } from "js-cookie";
@@ -227,6 +227,10 @@ class Match extends Model {
 
 /** A set of Matches at a single path. */
 class FileGroup extends Model {
+	id;
+	path_info;
+	matches;
+
 	initialize(path_info) {
 		// The id attribute is used by collections to fetch models
 		this.id = path_info.id;
@@ -363,6 +367,11 @@ class FileMatchView extends View {
 }
 
 class SearchState extends Model {
+	search_map;
+	search_results;
+	file_search_results;
+	search_id;
+
 	defaults() {
 		return {
 			context: true,
@@ -446,7 +455,7 @@ class SearchState extends Model {
 		} else if (CodesearchUI.input_backend) {
 			base += "/" + CodesearchUI.input_backend.val();
 		}
-		var qs = $.param(q);
+		var qs = jQuery.param(q);
 		return base + (qs ? "?" + qs : "");
 	}
 
@@ -549,7 +558,7 @@ class MatchesView extends View {
 		});
 	}
 	initialize() {
-		this.setElement($("#results"));
+		this.setElement(jQuery("#results"));
 		this.model.search_results.on("search-complete", this.render, this);
 		this.model.search_results.on("rerender", this.render, this);
 	}
@@ -649,11 +658,18 @@ class MatchesView extends View {
 }
 
 class ResultView extends View {
+	matches_view;
+	results;
+	errorbox;
+	time;
+	last_url;
+	last_title;
+
 	initialize() {
-		this.setElement($("#resultarea"));
+		this.setElement(jQuery("#resultarea"));
 		this.matches_view = new MatchesView({ model: this.model });
 		this.results = this.$("#numresults");
-		this.errorbox = $("#regex-error");
+		this.errorbox = jQuery("#regex-error");
 		this.time = this.$("#searchtime");
 		this.last_url = null;
 		this.last_title = null;
@@ -708,14 +724,14 @@ class ResultView extends View {
 
 		if (this.model.search_map[this.model.get("displaying")].q === "" || this.model.get("error")) {
 			this.$el.hide();
-			$("#helparea").show();
+			jQuery("#helparea").show();
 			return this;
 		}
 
-		$("#results").toggleClass("no-context", !this.model.get("context"));
+		jQuery("#results").toggleClass("no-context", !this.model.get("context"));
 
 		this.$el.show();
-		$("#helparea").hide();
+		jQuery("#helparea").hide();
 
 		if (this.model.get("time")) {
 			this.$("#searchtimebox").show();
@@ -754,13 +770,13 @@ namespace CodesearchUI {
 
 		view = new ResultView({ model: state });
 
-		input = $("#searchbox");
-		input_repos = $("#repos");
-		input_backend = $("#backend");
+		input = jQuery("#searchbox");
+		input_repos = jQuery("#repos");
+		input_backend = jQuery("#backend");
 		if (input_backend.length == 0) input_backend = null;
-		inputs_case = $("input[name=fold_case]");
-		input_regex = $("input[name=regex]");
-		input_context = $("input[name=context]");
+		inputs_case = jQuery("input[name=fold_case]");
+		input_regex = jQuery("input[name=regex]");
+		input_context = jQuery("input[name=context]");
 
 		if (inputs_case.filter(":checked").length == 0) {
 			inputs_case.filter("[value=auto]").attr("checked", true);
@@ -794,7 +810,7 @@ namespace CodesearchUI {
 		toggle_context();
 
 		Codesearch.connect(CodesearchUI);
-		$(".query-hint code").click(function (e) {
+		jQuery(".query-hint code").click(function (e) {
 			var ext = e.target.textContent;
 			var q = input.val();
 			if (

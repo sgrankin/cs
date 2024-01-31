@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import $ from "jquery";
+import jQuery from "jquery";
 
 var KeyCodes = {
 	ESCAPE: 27,
@@ -21,7 +21,7 @@ function scrollToRange(range, elementContainer) {
 	// - If we have a range, try and center the range in the viewport
 	// - If the range is to high to fit in the viewport, fallback to the single
 	//   element scenario for the first line
-	var viewport = $(window);
+	var viewport = jQuery(window);
 	var viewportHeight = viewport.height();
 
 	var scrollOffset = Math.floor(viewport.height() / 3.0);
@@ -97,9 +97,9 @@ function expandRangeToElement(element) {
 }
 
 export function init(initData) {
-	var root = $(".file-content");
+	var root = jQuery(".file-content");
 	var lineNumberContainer = root.find(".line-numbers");
-	var helpScreen = $(".help-screen");
+	var helpScreen = jQuery(".help-screen");
 
 	function doSearch(event, query, newTab) {
 		var url;
@@ -125,12 +125,12 @@ export function init(initData) {
 				return true;
 			});
 
-		$(document).on("click", hideHelp);
+		jQuery(document).on("click", hideHelp);
 	}
 
 	function hideHelp() {
 		helpScreen.addClass("hidden").children().off("click");
-		$(document).off("click", hideHelp);
+		jQuery(document).off("click", hideHelp);
 		return true;
 	}
 
@@ -152,8 +152,8 @@ export function init(initData) {
 		}
 
 		// Update the external-browse link
-		$("#external-link").attr("href", getExternalLink(range));
-		updateFragments(range, $("#permalink, #back-to-head"));
+		jQuery("#external-link").attr("href", getExternalLink(range));
+		updateFragments(range, jQuery("#permalink, #back-to-head"));
 	}
 
 	function getLineNumber(range) {
@@ -203,7 +203,7 @@ export function init(initData) {
 
 	function updateFragments(range, $anchors) {
 		$anchors.each(function () {
-			var $a = $(this);
+			var $a = jQuery(this);
 			var href = $a.attr("href").split("#")[0];
 			if (range !== null) {
 				href += "#L" + getLineNumber(range);
@@ -233,13 +233,13 @@ export function init(initData) {
 				event.preventDefault();
 				hideHelp();
 			}
-			$("#query").blur();
+			jQuery("#query").blur();
 		} else if (String.fromCharCode(event.which) == "V") {
 			// Visually highlight the external link to indicate what happened
-			$("#external-link").focus();
-			window.location = $("#external-link").attr("href");
+			jQuery("#external-link").focus();
+			window.location = jQuery("#external-link").attr("href");
 		} else if (String.fromCharCode(event.which) == "Y") {
-			var $a = $("#permalink");
+			var $a = jQuery("#permalink");
 			var permalink_is_present = $a.length > 0;
 			if (permalink_is_present) {
 				$a.focus();
@@ -283,13 +283,13 @@ export function init(initData) {
 	}
 
 	var showSelectionReminder = function () {
-		$(".without-selection").hide();
-		$(".with-selection").show();
+		jQuery(".without-selection").hide();
+		jQuery(".with-selection").show();
 	};
 
 	var hideSelectionReminder = function () {
-		$(".without-selection").show();
-		$(".with-selection").hide();
+		jQuery(".without-selection").show();
+		jQuery(".with-selection").hide();
 	};
 
 	function initializePage() {
@@ -300,28 +300,28 @@ export function init(initData) {
 		lineNumberContainer.on("click", "a", function (event) {
 			event.preventDefault();
 			if (event.shiftKey) {
-				expandRangeToElement($(event.target), lineNumberContainer);
+				expandRangeToElement(jQuery(event.target), lineNumberContainer);
 			} else {
-				setHash($(event.target).attr("href"));
+				setHash(jQuery(event.target).attr("href"));
 			}
 			handleHashChange(false);
 		});
 
-		$(window).on("hashchange", function (event) {
+		jQuery(window).on("hashchange", function (event) {
 			event.preventDefault();
 			// The url was updated with a new range
 			handleHashChange();
 		});
 
-		$(document).on("keydown", function (event) {
+		jQuery(document).on("keydown", function (event) {
 			// Filter out key events when the user has focused an input field.
-			if ($(event.target).is("input,textarea")) return;
+			if (jQuery(event.target).is("input,textarea")) return;
 			// Filter out key if a modifier is pressed.
 			if (event.altKey || event.ctrlKey || event.metaKey) return;
 			processKeyEvent(event);
 		});
 
-		$(document).mouseup(function () {
+		jQuery(document).mouseup(function () {
 			var selectedText = getSelectedText();
 			if (selectedText) {
 				showSelectionReminder(selectedText);
@@ -330,7 +330,7 @@ export function init(initData) {
 			}
 		});
 
-		initializeActionButtons($(".header .header-actions"));
+		initializeActionButtons(jQuery(".header .header-actions"));
 	}
 
 	// The native browser handling of hashes in the location is to scroll

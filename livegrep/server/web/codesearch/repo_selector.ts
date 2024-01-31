@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import $ from "jquery";
+import jQuery from "jquery";
 import { isEqual } from "underscore";
 
 export function init() {
-	$("#repos").selectpicker({
+	jQuery("#repos").selectpicker({
 		actionsBox: true,
 		selectedTextFormat: "count > 4",
 		countSelectedText: "({0} repositories)",
@@ -15,29 +15,29 @@ export function init() {
 		liveSearch: true,
 		width: "20em",
 	});
-	$("#repos").on("refreshed.bs.select", function () {
-		var headers = $(this).parent().find(".dropdown-header");
+	jQuery("#repos").on("refreshed.bs.select", function () {
+		var headers = jQuery(this).parent().find(".dropdown-header");
 		headers.css("cursor", "pointer");
 		headers.on("click", function (event) {
 			event.stopPropagation();
-			var optgroup = $('#repos optgroup[label="' + $(this).text() + '"]');
+			var optgroup = jQuery('#repos optgroup[label="' + jQuery(this).text() + '"]');
 			var allSelected = !optgroup.children("option:not(:selected)").length;
 			optgroup.children().prop("selected", !allSelected);
-			$("#repos").selectpicker("refresh").trigger("change");
+			jQuery("#repos").selectpicker("refresh").trigger("change");
 		});
 	});
-	$(window).on("keyup", ".bootstrap-select .bs-searchbox input", function (event) {
+	jQuery(window).on("keyup", ".bootstrap-select .bs-searchbox input", function (event) {
 		var keycode = event.keyCode ? event.keyCode : event.which;
 		if (keycode == "13") {
-			$(this).val("");
-			$("#repos").selectpicker("refresh");
+			jQuery(this).val("");
+			jQuery("#repos").selectpicker("refresh");
 		}
 	});
-	$(window).keyup(function (keyevent) {
+	jQuery(window).keyup(function (keyevent) {
 		var code = keyevent.keyCode ? keyevent.keyCode : keyevent.which;
-		if (code == 9 && $(".bootstrap-select button:focus").length) {
-			$("#repos").selectpicker("toggle");
-			$(".bootstrap-select .bs-searchbox input").focus();
+		if (code == 9 && jQuery(".bootstrap-select button:focus").length) {
+			jQuery("#repos").selectpicker("toggle");
+			jQuery(".bootstrap-select .bs-searchbox input").focus();
 		}
 	});
 }
@@ -45,20 +45,20 @@ export function init() {
 export function updateOptions(newOptions) {
 	// Skip update if the options are the same, to avoid losing selected state.
 	var currentOptions = [];
-	$("#repos")
+	jQuery("#repos")
 		.find("option")
 		.each(function () {
-			currentOptions.push($(this).attr("value"));
+			currentOptions.push(jQuery(this).attr("value"));
 		});
 	if (isEqual(currentOptions, newOptions)) {
 		return;
 	}
 
-	$("#repos").empty();
+	jQuery("#repos").empty();
 
 	newOptions.sort();
 	var groups = new Map();
-	groups.set("/", $("#repos"));
+	groups.set("/", jQuery("#repos"));
 
 	for (var i = 0; i < newOptions.length; i++) {
 		var path = newOptions[i].split("/");
@@ -66,21 +66,21 @@ export function updateOptions(newOptions) {
 		var option = path[path.length - 1];
 
 		if (!groups.has(group)) {
-			var groupDOM = $("<optgroup>").attr("label", group);
-			$("#repos").append(groupDOM);
+			var groupDOM = jQuery("<optgroup>").attr("label", group);
+			jQuery("#repos").append(groupDOM);
 			groups.set(group, groupDOM);
 		}
 		groups.get(group).append(
-			$("<option>")
+			jQuery("<option>")
 				.attr("value", group + option)
 				.text(option),
 		);
 	}
 
 	groups.clear();
-	$("#repos").selectpicker("refresh");
+	jQuery("#repos").selectpicker("refresh");
 }
 
 export function updateSelected(newSelected) {
-	$("#repos").selectpicker("val", newSelected);
+	jQuery("#repos").selectpicker("val", newSelected);
 }
