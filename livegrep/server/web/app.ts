@@ -12,7 +12,7 @@ import "bootstrap";
 import "bootstrap-select";
 
 import * as fileview from "./fileview/fileview";
-import * as codesearch from "./codesearch/codesearch_ui.ts";
+import * as codesearch from "./codesearch/codesearch_ui.tsx";
 
 const pages = {
 	codesearch,

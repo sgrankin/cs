@@ -4,7 +4,7 @@
  */
 
 import jQuery from "jquery";
-import { HTMLFactory } from "../3rdparty/html.js";
+import h from "hyperscript";
 import { View, Model, Collection } from "backbone";
 import { getJSON, set } from "js-cookie";
 import { isEqual, clone, keys } from "underscore";
@@ -12,7 +12,6 @@ import { isEqual, clone, keys } from "underscore";
 import { Codesearch } from "./codesearch.ts";
 import { init as _init, updateSelected, updateOptions } from "./repo_selector.ts";
 
-var h = new HTMLFactory();
 var last_url_update = 0;
 
 var KeyCodes = {
@@ -95,23 +94,27 @@ function externalUrl(url, tree, version, path, lno) {
 
 function renderLinkConfigs(linkConfigs, tree, version, path, lno) {
 	linkConfigs = linkConfigs.filter(function (linkConfig) {
-		return !linkConfig.whitelist_pattern || linkConfig.whitelist_pattern.test(tree + ":" + version + ":" + path);
+		return (
+			!linkConfig.whitelist_pattern ||
+			linkConfig.whitelist_pattern.test(tree + ":" + version + ":" + path)
+		);
 	});
 
 	var links = linkConfigs.map(function (linkConfig) {
-		var attrs = {
-			cls: "file-action-link",
-			href: externalUrl(linkConfig.url_template, tree, version, path, lno),
-		};
-		if (linkConfig.target) {
-			attrs.target = linkConfig.target;
-		}
-		return h.a(attrs, [linkConfig.label]);
+		return (
+			<a
+				className="file-action-link"
+				href={externalUrl(linkConfig.url_template, tree, version, path, lno)}
+				target={linkConfig.target}
+			>
+				{linkConfig.label}
+			</a>
+		);
 	});
-	var out = [];
+	let out = [];
 	for (var i = 0; i < links.length; i++) {
 		if (i > 0) {
-			out.push(h.span({ cls: "file-action-link-separator" }, ["\u00B7"]));
+			out.push(<span className="file-action-link-separator">\u00B7</span>);
 		}
 		out.push(links[i]);
 	}
@@ -138,7 +141,13 @@ class MatchView extends View {
 		var lnoStr = n.toString() + (isMatch ? ":" : "-");
 		var classes = ["lno-link"];
 		if (isMatch) classes.push("matchlno");
-		return h.a({ cls: classes.join(" "), href: this.model.url(n) }, [h.span({ cls: "lno", "aria-label": lnoStr }, [])]);
+		return (
+			<a className={classes.join(" ")} href={this.model.url(n)}>
+				<span className="lno" aria-label={lnoStr}>
+					{lnoStr}
+				</span>
+			</a>
+		);
 	}
 	_render() {
 		var i;
@@ -154,17 +163,25 @@ class MatchView extends View {
 		for (i = 0; i < lines_to_display_before; i++) {
 			ctx_before.unshift(
 				this._renderLno(lno - i - 1, false),
-				h.span([this.model.get("context_before")[i]]),
-				h.span({}, []),
+				<span> {this.model.get("context_before")[i]} </span>,
+				<span />,
 			);
 		}
 		var lines_to_display_after = Math.max(0, ctxAfter.length - (clip_after || 0));
 		for (i = 0; i < lines_to_display_after; i++) {
-			ctx_after.push(this._renderLno(lno + i + 1, false), h.span([this.model.get("context_after")[i]]), h.span({}, []));
+			ctx_after.push(
+				this._renderLno(lno + i + 1, false),
+				<span> {this.model.get("context_after")[i]} </span>,
+				<span />,
+			);
 		}
 		var line = this.model.get("line");
 		var bounds = this.model.get("bounds");
-		var pieces = [line.substring(0, bounds[0]), line.substring(bounds[0], bounds[1]), line.substring(bounds[1])];
+		var pieces = [
+			line.substring(0, bounds[0]),
+			line.substring(bounds[0], bounds[1]),
+			line.substring(bounds[1]),
+		];
 
 		var classes = ["match"];
 		if (clip_before !== undefined) classes.push("clip-before");
@@ -180,22 +197,21 @@ class MatchView extends View {
 			lno,
 		);
 
-		var matchElement = h.div({ cls: classes.join(" ") }, [
-			h.div(
-				{ cls: "contents" },
-				[].concat(
-					ctx_before,
-					[
-						this._renderLno(lno, true),
-						h.span({ cls: "matchline" }, [pieces[0], h.span({ cls: "matchstr" }, [pieces[1]]), pieces[2]]),
-						h.span({ cls: "matchlinks" }, links),
-					],
-					ctx_after,
-				),
-			),
-		]);
-
-		return matchElement;
+		return (
+			<div className={classes.join(" ")}>
+				<div className="contents">
+					{ctx_before}
+					{this._renderLno(lno, true)}
+					<span className="matchline">
+						{pieces[0]}
+						<span className="matchstr">{pieces[1]}</span>
+						{pieces[2]}
+					</span>
+					<span className="matchlinks">{links}</span>
+					{ctx_after}
+				</div>
+			</div>
+		);
 	}
 }
 
@@ -262,8 +278,10 @@ class FileGroup extends Model {
 		for (var i = 1, len = this.matches.length; i < len; i++) {
 			var previous_match = this.matches[i - 1],
 				this_match = this.matches[i];
-			var last_line_of_prev_context = previous_match.get("lno") + previous_match.get("context_after").length;
-			var first_line_of_this_context = this_match.get("lno") - this_match.get("context_before").length;
+			var last_line_of_prev_context =
+				previous_match.get("lno") + previous_match.get("context_after").length;
+			var first_line_of_this_context =
+				this_match.get("lno") - this_match.get("context_before").length;
 			var num_intersecting_lines = last_line_of_prev_context - first_line_of_this_context + 1;
 			if (num_intersecting_lines >= 0) {
 				// The matches are intersecting or share a boundary.
@@ -271,7 +289,10 @@ class FileGroup extends Model {
 				// Uneven splits should leave the latter element with the larger piece.
 
 				// split_at will be the first line number grouped with the latter element.
-				var split_at = parseInt(Math.ceil((previous_match.get("lno") + this_match.get("lno")) / 2.0), 10);
+				var split_at = parseInt(
+					Math.ceil((previous_match.get("lno") + this_match.get("lno")) / 2.0),
+					10,
+				);
 				if (split_at < first_line_of_this_context) {
 					split_at = first_line_of_this_context;
 				} else if (last_line_of_prev_context + 1 < split_at) {
@@ -350,18 +371,19 @@ class FileMatchView extends View {
 			path_info.path.substring(path_info.bounds[0], path_info.bounds[1]),
 			path_info.path.substring(path_info.bounds[1]),
 		];
-		var repoLabel = [
-			h.span({ cls: "repo" }, [path_info.tree, ":"]),
-			h.span({ cls: "version" }, [shorten(path_info.version), ":"]),
-			pieces[0],
-			h.span({ cls: "matchstr" }, [pieces[1]]),
-			pieces[2],
-		];
 
 		var el = this.$el;
 		el.empty();
 		el.addClass("filename-match");
-		el.append(h.a({ cls: "label header result-path", href: this.model.url() }, repoLabel));
+		el.append(
+			<a className="label header result-path" href={this.model.url()}>
+				<span className="repo">{path_info.tree}:</span>
+				<span className="version">{shorten(path_info.version)}:</span>
+				{pieces[0]}
+				<span className="matchstr">{pieces[1]}</span>
+				{pieces[2]}
+			</a>,
+		);
 		return this;
 	}
 }
@@ -515,29 +537,40 @@ class FileGroupView extends View {
 		}
 
 		var first_match = this.model.matches[0];
-
-		var headerChildren = [
-			h.span({ cls: "header-path" }, [
-				h.a({ cls: "result-path", href: first_match.url() }, [
-					h.span({ cls: "repo" }, [tree, ":"]),
-					h.span({ cls: "version" }, [shorten(version), ":"]),
-					dirname,
-					h.span({ cls: "filename" }, [basename]),
-				]),
-			]),
-			h.div(
-				{ cls: "header-links" },
-				renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path, first_match.get("lno")),
-			),
-		];
-		return h.div({ cls: "header" }, headerChildren);
+		return (
+			<div className="header">
+				<span className="header-path">
+					<a className="result-path" href={first_match.url()}>
+						<span className="repo">{tree}:</span>
+						<span className="version">{shorten(version)}:</span>
+						{dirname}
+						<span className="filename">{basename}</span>
+					</a>
+					<div className="header-links">
+						{renderLinkConfigs(
+							CodesearchUI.linkConfigs,
+							tree,
+							version,
+							path,
+							first_match.get("lno"),
+						)}
+					</div>
+				</span>
+			</div>
+		);
 	}
 
 	render() {
 		var matches = this.model.matches;
 		var el = this.$el;
 		el.empty();
-		el.append(this.render_header(this.model.path_info.tree, this.model.path_info.version, this.model.path_info.path));
+		el.append(
+			this.render_header(
+				this.model.path_info.tree,
+				this.model.path_info.version,
+				this.model.path_info.path,
+			),
+		);
 		matches.forEach(function (match) {
 			el.append(new MatchView({ model: match }).render().el);
 		});
@@ -577,17 +610,17 @@ class MatchesView extends View {
 			}
 		};
 
-		var pathResults = h.div({ cls: "path-results" });
 		var count = 0;
+		let pathResults = [];
 		this.model.file_search_results.each(function (file) {
 			if (this.model.get("search_type") == "filename_only" || count < 10) {
 				var view = new FileMatchView({ model: file });
-				pathResults.append(view.render().el);
+				pathResults.push(view.render().el);
 			}
 			countExtension(file.attributes.path);
 			count += 1;
 		}, this);
-		this.$el.append(pathResults);
+		this.$el.append(<div className="path-results">{pathResults}</div>);
 
 		this.model.search_results.each(function (file_group) {
 			file_group.process_context_overlaps();
@@ -622,12 +655,16 @@ class MatchesView extends View {
 		popular_extensions.sort();
 
 		var help = "Narrow to:";
-		var fileExtensions = h.div({ cls: "file-extensions" }, [help]);
+		let fileExtensions = [];
 		for (var i = 0; i < popular_extensions.length; i++) {
-			var ext = popular_extensions[i];
-			fileExtensions.append(h.button({ cls: "file-extension" }, [ext]));
+			fileExtensions.push(<button className="file-extension">{popular_extensions[i]}</button>);
 		}
-		this.$el.prepend(fileExtensions);
+		this.$el.prepend(
+			<div className="file-extensions">
+				{help}
+				{fileExtensions}
+			</div>,
+		);
 	}
 	_limitExtension(e) {
 		var ext = e.target.textContent;
