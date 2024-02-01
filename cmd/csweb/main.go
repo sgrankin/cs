@@ -19,7 +19,6 @@ import (
 
 var (
 	serveAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
-	backendAddr = flag.String("connect", "localhost:9999", "The address to connect to")
 	indexConfig = flag.String("index-config", "", "Codesearch index config file; provide to enable repo browsing")
 )
 
