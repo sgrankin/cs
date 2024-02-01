@@ -7,25 +7,38 @@ import $ from "jquery";
 
 // TODO: this should be an instance of a singleton... probably?
 export namespace Codesearch {
-	let delegate;
-	let next_search;
-	let in_flight;
-
-	export function connect(del) {
-		if (del !== undefined)
-			delegate = del;
-		if (delegate.on_connect)
-			setTimeout(delegate.on_connect, 0)
+	interface Delegate {
+		on_connect: () => void;
+		match: (arg0: any, arg1: any) => void;
+		file_match: (arg0: any, arg1: any) => void;
+		search_done: (arg0: any, arg1: number, arg2: any, arg3: any) => void;
+		error: (arg0: any, arg1: string) => void;
 	}
 
-	export function new_search(opts) {
+	let delegate: Delegate;
+	let next_search: SearchOpts | null;
+	let in_flight: SearchOpts | null;
+
+	export function connect(del: Delegate | undefined) {
+		if (del !== undefined) delegate = del;
+		if (delegate.on_connect) setTimeout(delegate.on_connect, 0);
+	}
+
+	type SearchOpts = {
+		id: number;
+		q: string;
+		fold_case: boolean;
+		regex: boolean;
+		repo: string;
+		backend?: string;
+	};
+
+	export function new_search(opts: SearchOpts) {
 		next_search = opts;
-		if (in_flight == null)
-			dispatch()
+		if (in_flight == null) dispatch();
 	}
-	function dispatch() {
-		if (!next_search)
-			return;
+	async function dispatch() {
+		if (!next_search) return;
 		in_flight = next_search;
 		next_search = null;
 
@@ -35,48 +48,43 @@ export namespace Codesearch {
 		if ("backend" in opts) {
 			url = url + opts.backend;
 		}
-		var q = {
+		let request = new URLSearchParams({
 			q: opts.q,
 			fold_case: opts.fold_case,
 			regex: opts.regex,
-			repo: opts.repo
-		};
+			repo: opts.repo,
+		});
 
-		var xhr = $.ajax({
-			method: "POST",
-			url: url,
-			data: q,
-			dataType: "json",
-		});
-		var start = new Date();
-		xhr.done(function (data) {
-			var elapsed = new Date() - start;
-			data.results.forEach(function (r) {
-				delegate.match(opts.id, r);
+		const start = Date.now();
+		try {
+			let response = await fetch(url, {
+				method: "POST",
+				body: request,
 			});
-			data.file_results.forEach(function (r) {
-				delegate.file_match(opts.id, r);
-			});
-			delegate.search_done(opts.id, elapsed, data.search_type, data.info.why);
-		});
-		xhr.fail(function (data) {
-			window._err = data;
-			if (data.status >= 400 && data.status < 500) {
-				var err = JSON.parse(data.responseText);
+			if (response.ok) {
+				let data = JSON.parse(await response.text());
+				const elapsed = Date.now() - start;
+				data.results.forEach((r) => {
+					delegate.match(opts.id, r);
+				});
+				data.file_results.forEach((r) => {
+					delegate.file_match(opts.id, r);
+				});
+				delegate.search_done(opts.id, elapsed, data.search_type, data.info.why);
+			} else if (response.status >= 400 && response.status < 500) {
+				var err = JSON.parse(await response.text());
 				delegate.error(opts.id, err.error.message);
 			} else {
 				var message = "Cannot connect to server";
-				if (data.status) {
-					message = "Bad response " + data.status + " from server";
+				if (response.status) {
+					message = "Bad response " + response.status + " from server";
 				}
 				delegate.error(opts.id, message);
-				console.log("server error", data.status, data.responseText);
+				console.log("server error", response.status, response.text());
 			}
-		});
-		xhr.always(function () {
+		} finally {
 			in_flight = null;
-			setTimeout(dispatch, 0);
-		});
+			dispatch();
+		}
 	}
 }
-

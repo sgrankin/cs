@@ -19,7 +19,7 @@ func buildOpts(debug bool) api.BuildOptions {
 		Bundle:      true,
 		Write:       true,
 
-		Target: api.ES2020,
+		Target: api.ES2022,
 
 		Sourcemap:         api.SourceMapLinked,
 		MinifyWhitespace:  !debug,

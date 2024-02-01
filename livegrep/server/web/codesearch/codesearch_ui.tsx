@@ -127,11 +127,9 @@ class MatchView extends View {
 			...options,
 			tagName: "div",
 		});
-	}
-
-	initialize() {
 		this.model.on("change", this.render, this);
 	}
+
 	render() {
 		var div = this._render();
 		this.setElement(div);
@@ -163,7 +161,7 @@ class MatchView extends View {
 		for (i = 0; i < lines_to_display_before; i++) {
 			ctx_before.unshift(
 				this._renderLno(lno - i - 1, false),
-				<span> {this.model.get("context_before")[i]} </span>,
+				<span>{this.model.get("context_before")[i]}</span>,
 				<span />,
 			);
 		}
@@ -171,7 +169,7 @@ class MatchView extends View {
 		for (i = 0; i < lines_to_display_after; i++) {
 			ctx_after.push(
 				this._renderLno(lno + i + 1, false),
-				<span> {this.model.get("context_after")[i]} </span>,
+				<span>{this.model.get("context_after")[i]}</span>,
 				<span />,
 			);
 		}
@@ -245,16 +243,16 @@ class Match extends Model {
 class FileGroup extends Model {
 	id;
 	path_info;
-	matches;
+	matches: Match[] = [];
 
-	initialize(path_info) {
+	constructor(path_info) {
+		super();
 		// The id attribute is used by collections to fetch models
 		this.id = path_info.id;
 		this.path_info = path_info;
-		this.matches = [];
 	}
 
-	add_match(match) {
+	add_match(match: Match) {
 		this.matches.push(match);
 	}
 
@@ -271,9 +269,7 @@ class FileGroup extends Model {
 		}
 
 		// NOTE: The logic below requires matches to be sorted by line number.
-		this.matches.sort(function (a, b) {
-			return a.get("lno") - b.get("lno");
-		});
+		this.matches.sort((a, b) => a.get("lno") - b.get("lno"));
 
 		for (var i = 1, len = this.matches.length; i < len; i++) {
 			var previous_match = this.matches[i - 1],
@@ -313,7 +309,7 @@ class FileGroup extends Model {
 
 /** A set of matches that are automatically grouped by path. */
 class SearchResultSet extends Collection {
-	add_match(match) {
+	add_match(match: Match) {
 		var path_info = match.path_info();
 		var file_group = this.get(path_info.id);
 		if (!file_group) {
@@ -389,10 +385,10 @@ class FileMatchView extends View {
 }
 
 class SearchState extends Model {
-	search_map;
-	search_results;
-	file_search_results;
-	search_id;
+	search_map = {};
+	search_results = new SearchResultSet();
+	file_search_results = new Collection();
+	search_id = 0;
 
 	defaults() {
 		return {
@@ -405,11 +401,8 @@ class SearchState extends Model {
 		};
 	}
 
-	initialize() {
-		this.search_map = {};
-		this.search_results = new SearchResultSet();
-		this.file_search_results = new Collection();
-		this.search_id = 0;
+	constructor(opts) {
+		super(opts);
 		this.on("change:displaying", this.new_search, this);
 	}
 
@@ -589,8 +582,6 @@ class MatchesView extends View {
 				keydown: "_handleKey",
 			},
 		});
-	}
-	initialize() {
 		this.setElement(jQuery("#results"));
 		this.model.search_results.on("search-complete", this.render, this);
 		this.model.search_results.on("rerender", this.render, this);
@@ -702,7 +693,8 @@ class ResultView extends View {
 	last_url;
 	last_title;
 
-	initialize() {
+	constructor(opts) {
+		super(opts);
 		this.setElement(jQuery("#resultarea"));
 		this.matches_view = new MatchesView({ model: this.model });
 		this.results = this.$("#numresults");
@@ -773,7 +765,7 @@ class ResultView extends View {
 		if (this.model.get("time")) {
 			this.$("#searchtimebox").show();
 			var time = this.model.get("time");
-			this.time.text(time + " µs");
+			this.time.text(time + " ms");
 		} else {
 			this.$("#searchtimebox").hide();
 		}
@@ -868,11 +860,11 @@ namespace CodesearchUI {
 			newsearch();
 		};
 	}
-	export function toggle_context() {
+	function toggle_context() {
 		state.set("context", input_context.prop("checked"));
 	}
 	// Initialize query from URL or user"s saved preferences
-	export function init_query() {
+	function init_query() {
 		var parms = parse_query_params();
 
 		var hasParms = false;
@@ -889,7 +881,7 @@ namespace CodesearchUI {
 
 		setTimeout(keypress, 0);
 	}
-	export function init_query_from_parms(parms) {
+	function init_query_from_parms(parms) {
 		var q = [];
 		if (parms.q) q.push(parms.q[0]);
 		if (parms.file) q.push("file:" + parms.file[0]);
@@ -932,7 +924,7 @@ namespace CodesearchUI {
 		if (parms["repo[]"]) repos = repos.concat(parms["repo[]"]);
 		updateSelected(repos);
 	}
-	export function init_controls_from_prefs() {
+	function init_controls_from_prefs() {
 		var prefs = getJSON("prefs");
 		if (!prefs) {
 			prefs = {};
@@ -949,7 +941,7 @@ namespace CodesearchUI {
 			input_context.prop("checked", prefs["context"]);
 		}
 	}
-	export function set_pref(key, value) {
+	function set_pref(key: string, value: any) {
 		// Load from the cookie again every time in case some other pref has been
 		// changed out from under us.
 		var prefs = getJSON("prefs");
@@ -959,7 +951,7 @@ namespace CodesearchUI {
 		prefs[key] = value;
 		set("prefs", prefs, { expires: 36500 });
 	}
-	export function parse_query_params() {
+	function parse_query_params() {
 		var urlParams = {};
 		var e,
 			a = /\+/g,
@@ -981,17 +973,17 @@ namespace CodesearchUI {
 	export function on_connect() {
 		newsearch();
 	}
-	export function select_backend() {
+	function select_backend() {
 		if (!input_backend) return;
 		update_repo_options();
 		keypress();
 	}
-	export function update_repo_options() {
+	function update_repo_options() {
 		if (!input_backend) return;
 		var backend = input_backend.val();
 		updateOptions(keys(repo_urls[backend]));
 	}
-	export function keypress() {
+	function keypress() {
 		clear_timer();
 		timer = setTimeout(newsearch, 125);
 	}
@@ -1006,7 +998,7 @@ namespace CodesearchUI {
 		if (input_backend) search.backend = input_backend.val();
 		if (state.dispatch(search)) Codesearch.new_search(search);
 	}
-	export function clear_timer() {
+	function clear_timer() {
 		if (timer) {
 			clearTimeout(timer);
 			timer = null;
