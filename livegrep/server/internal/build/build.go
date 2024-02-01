@@ -27,8 +27,6 @@ func buildOpts(debug bool) api.BuildOptions {
 		MinifySyntax:      !debug,
 		LegalComments:     api.LegalCommentsLinked,
 
-		LineLimit: 100,
-
 		Color:    api.ColorAlways,
 		LogLevel: api.LogLevelInfo,
 		Metafile: true,
