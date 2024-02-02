@@ -132,6 +132,8 @@ func (ix *IndexWriter) Add(name string, f io.Reader) {
 	fLen := int64(0)
 	linelen := 0
 
+	// TODO: consider storing skipped files so that the browser works correctly still.
+
 	off := ix.blobData.offset()
 	for {
 		char, err := ix.inbuf.ReadByte()

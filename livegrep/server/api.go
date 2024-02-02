@@ -149,9 +149,9 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *csapi.Query)
 
 	for _, r := range search.Results {
 		reply.Results = append(reply.Results, &api.Result{
-			Tree:          r.Tree,
-			Version:       r.Version,
-			Path:          r.Path,
+			Tree:          r.File.Tree,
+			Version:       r.File.Version,
+			Path:          r.File.Path,
 			LineNumber:    int(r.LineNumber),
 			ContextBefore: stringSlice(r.ContextBefore),
 			ContextAfter:  stringSlice(r.ContextAfter),
@@ -162,9 +162,9 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *csapi.Query)
 
 	for _, r := range search.FileResults {
 		reply.FileResults = append(reply.FileResults, &api.FileResult{
-			Tree:    r.Tree,
-			Version: r.Version,
-			Path:    r.Path,
+			Tree:    r.File.Tree,
+			Version: r.File.Version,
+			Path:    r.File.Path,
 			Bounds:  [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
 		})
 	}

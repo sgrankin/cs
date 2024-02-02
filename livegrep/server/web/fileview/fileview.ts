@@ -35,7 +35,8 @@ function scrollToRange(range, elementContainer) {
 		// We have a range, try and center the entire range. If it's to high
 		// for the viewport, fallback to revealing the first element.
 		var lastLineElement = elementContainer.find("#L" + range.end);
-		var rangeHeight = lastLineElement.offset().top + lastLineElement.height() - firstLineElement.offset().top;
+		var rangeHeight =
+			lastLineElement.offset().top + lastLineElement.height() - firstLineElement.offset().top;
 		if (rangeHeight <= viewportHeight) {
 			// Range fits in viewport, center it
 			scrollOffset = 0.5 * (viewportHeight - rangeHeight);
@@ -104,7 +105,11 @@ export function init(initData) {
 	function doSearch(event, query, newTab) {
 		var url;
 		if (query !== undefined) {
-			url = "/search?q=" + encodeURIComponent(query) + "&repo=" + encodeURIComponent(initData.repo_info.name);
+			url =
+				"/search?q=" +
+				encodeURIComponent(query) +
+				"&repo=" +
+				encodeURIComponent(initData.repo_info.name);
 		} else {
 			url = "/search";
 		}
@@ -153,7 +158,6 @@ export function init(initData) {
 
 		// Update the external-browse link
 		jQuery("#external-link").attr("href", getExternalLink(range));
-		updateFragments(range, jQuery("#permalink, #back-to-head"));
 	}
 
 	function getLineNumber(range) {
@@ -238,13 +242,6 @@ export function init(initData) {
 			// Visually highlight the external link to indicate what happened
 			jQuery("#external-link").focus();
 			window.location = jQuery("#external-link").attr("href");
-		} else if (String.fromCharCode(event.which) == "Y") {
-			var $a = jQuery("#permalink");
-			var permalink_is_present = $a.length > 0;
-			if (permalink_is_present) {
-				$a.focus();
-				window.location = $a.attr("href");
-			}
 		} else if (String.fromCharCode(event.which) == "N" || String.fromCharCode(event.which) == "P") {
 			var goBackwards = String.fromCharCode(event.which) === "P";
 			var selectedText = getSelectedText();

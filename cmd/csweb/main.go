@@ -29,6 +29,15 @@ func main() {
 	cfg := &config.Config{
 		Listen:            *serveAddr,
 		DefaultMaxMatches: 500,
+		IndexConfig: config.IndexConfig{
+			Repositories: []config.RepoConfig{{
+				Name:      "torvalds/linux",
+				Revisions: []string{"HEAD"},
+				Metadata: map[string]string{
+					"url_pattern": "https://github.com/{name}/blob/{version}/{path}#L{lno}", // This is the only one that seems to matter for file browsing.
+				},
+			}},
+		},
 	}
 
 	if *indexConfig != "" {

@@ -3,14 +3,12 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import $ from "jquery";
-
 // TODO: this should be an instance of a singleton... probably?
 export namespace Codesearch {
 	interface Delegate {
 		on_connect: () => void;
-		match: (arg0: any, arg1: any) => void;
-		file_match: (arg0: any, arg1: any) => void;
+		match: (id: number, result: any) => void;
+		file_match: (id: number, result: any) => void;
 		search_done: (arg0: any, arg1: number, arg2: any, arg3: any) => void;
 		error: (arg0: any, arg1: string) => void;
 	}

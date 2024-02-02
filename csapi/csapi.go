@@ -7,6 +7,8 @@ import (
 type CodeSearch interface {
 	Info(context.Context) (*ServerInfo, error)
 	Search(context.Context, Query) (*CodeSearchResult, error)
+	Data(tree, version, path string) string
+	Paths(tree, version, pathPrefix string) []File
 }
 
 type Query struct {
@@ -38,8 +40,12 @@ type Bounds struct {
 	Left, Right int
 }
 
+type File struct {
+	Tree, Version, Path string
+}
+
 type SearchResult struct {
-	Tree, Version, Path         string
+	File                        File
 	LineNumber                  int
 	ContextBefore, ContextAfter []string
 	Bounds                      Bounds
@@ -47,8 +53,8 @@ type SearchResult struct {
 }
 
 type FileResult struct {
-	Tree, Version, Path string
-	Bounds              Bounds
+	File   File
+	Bounds Bounds
 }
 
 type ExitReason string

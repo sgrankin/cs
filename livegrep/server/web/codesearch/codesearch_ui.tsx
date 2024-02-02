@@ -63,9 +63,11 @@ function shorten(ref) {
 	return ref;
 }
 
-function url(tree, version, path, lno) {
+function url(backend, tree, version, path, lno) {
 	path = path.replace(/^\/+/, ""); // Trim any leading slashes
-	var url = "/view/" + tree + ":" + version + ":" + path;
+	// Tree/version/path separation is via : as tree may have slashes in it...
+	// TODO: should we just URL encode it?
+	var url = "/view/" + backend + "/" + encodeURIComponent(tree) + "/" + version + "/" + path;
 	if (lno !== undefined) {
 		url += "#L" + lno;
 	}
@@ -96,7 +98,7 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno) {
 	linkConfigs = linkConfigs.filter(function (linkConfig) {
 		return (
 			!linkConfig.whitelist_pattern ||
-			linkConfig.whitelist_pattern.test(tree + ":" + version + ":" + path)
+			linkConfig.whitelist_pattern.test(encodeURIComponent(tree) + "/" + version + "/" + path)
 		);
 	});
 
@@ -223,7 +225,9 @@ class Match extends Model {
 		var tree = this.get("tree");
 		var version = this.get("version");
 		var path = this.get("path");
+		var backend = this.get("backend");
 		return {
+			backend: backend,
 			id: tree + ":" + version + ":" + path,
 			tree: tree,
 			version: version,
@@ -235,7 +239,7 @@ class Match extends Model {
 		if (lno === undefined) {
 			lno = this.get("lno");
 		}
-		return url(this.get("tree"), this.get("version"), this.get("path"), lno);
+		return url(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"), lno);
 	}
 }
 
@@ -338,7 +342,9 @@ class FileMatch extends Model {
 		var tree = this.get("tree");
 		var version = this.get("version");
 		var path = this.get("path");
+		let backend = this.get("backend");
 		return {
+			backend: backend,
 			id: tree + ":" + version + ":" + path,
 			tree: tree,
 			version: version,
@@ -348,7 +354,7 @@ class FileMatch extends Model {
 	}
 
 	url() {
-		return url(this.get("tree"), this.get("version"), this.get("path"));
+		return url(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"));
 	}
 }
 

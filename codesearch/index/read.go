@@ -265,12 +265,65 @@ func (ix *Index) Data(fileid uint32) []byte {
 	return ix.blobData[offset : offset+size]
 }
 
+// TODO: better name...
+func (ix *Index) DataAtName(name string) []byte {
+	i, found := sort.Find(ix.numName, func(i int) int {
+		return bytes.Compare([]byte(name), ix.NameBytes(uint32(i)))
+	})
+	if !found {
+		return nil
+	}
+	return ix.Data(uint32(i))
+}
+
+func (ix *Index) Names(prefix []byte) [][]byte {
+	if len(prefix) == 0 {
+		// TODO Return all names
+		return nil
+	}
+
+	start := sort.Search(ix.numName, func(i int) bool {
+		return bytes.Compare(ix.NameBytes(uint32(i)), prefix) >= 0
+	})
+	if start == ix.numName {
+		return nil
+	}
+
+	// Increment the prefix and find its place in the listing.
+	end := -1
+	prefix = bytes.Clone(prefix)
+	for i := len(prefix) - 1; i >= 0; i-- {
+		if prefix[i] < 0xff {
+			prefix[i]++
+			break
+		} else if i == 0 {
+			// We won't be able to increment this prefix, but we know the tail of the list is included in the result set.
+			end = ix.numName
+		}
+	}
+	if end < 0 {
+		// We still have to look for the boundary.
+		end = start + sort.Search(ix.numName-start, func(i int) bool {
+			return bytes.Compare(ix.NameBytes(uint32(i+start)), prefix) >= 0
+		})
+	}
+
+	if start == end {
+		return nil
+	}
+	result := make([][]byte, 0, end-start)
+	for i := start; i < end; i++ {
+		result = append(result, ix.NameBytes(uint32(i)))
+	}
+	return result
+}
+
 // Metadata returns the metadata keys and values that start with the given prefix.
 // The prefix may be "" to get all metadata.
 func (ix *Index) Metadata(prefix string) []KeyVal {
 	prefix = "·" + prefix
 	start := sort.Search(ix.numName, func(i int) bool { return ix.NameBytes(uint32(i))[0] >= '·' })
-	end := sort.Search(ix.numName, func(i int) bool { return ix.NameBytes(uint32(i))[0] > '·' })
+	end := start + sort.Search(ix.numName-start, func(i int) bool { return ix.NameBytes(uint32(i + start))[0] > '·' })
 	if start == end {
 		return nil
 	}

@@ -69,8 +69,10 @@ func main() {
 	flag.Parse()
 
 	cfg := []config.RepoConfig{{
-		Name:      "torvalds/linux",
-		Revisions: []string{"HEAD"},
+		Name: "torvalds/linux",
+		Metadata: map[string]string{
+			"url_pattern": "https://github.com/{name}/blob/{version}/{path}#L{lno}", // This is the only one that seems to matter for file browsing.
+		},
 	}}
 
 	repo, err := git.PlainOpen(*gitPath)
@@ -109,17 +111,16 @@ func main() {
 			log.Fatal(err)
 		}
 		if err := tree.Files().ForEach(func(f *object.File) error {
-			{
-				r, err := f.Blob.Reader()
-				if err != nil {
-					log.Fatal(err)
-				}
-				// Encode the repo & revision into the file name.
-				// The repo is used for search filtering, etc.
-				path := repoRev + ":" + f.Name
-				ix.Add(path, r)
-				r.Close()
+			// TODO: should symlinks be special?
+			r, err := f.Blob.Reader()
+			if err != nil {
+				log.Fatal(err)
 			}
+			// Encode the repo & revision into the file name.
+			// The repo is used for search filtering, etc.
+			path := repoRev + ":" + f.Name
+			ix.Add(path, r)
+			r.Close()
 
 			return nil
 		}); err != nil {

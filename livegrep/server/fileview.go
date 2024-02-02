@@ -6,6 +6,7 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/url"
 	"os/exec"
 	"path"
@@ -105,13 +106,14 @@ type directoryListEntry struct {
 }
 
 type fileViewerContext struct {
+	Backend        string
 	PathSegments   []breadCrumbEntry
 	Repo           config.RepoConfig
+	RepoURL        string
 	Commit         string
 	DirContent     *directoryContent
 	FileContent    *sourceFileContent
 	ExternalDomain string
-	Permalink      string
 	Headlink       string
 }
 
@@ -202,12 +204,12 @@ func gitListDir(obj string, repoPath string) ([]gitTreeEntry, error) {
 	return result, nil
 }
 
-func viewUrl(repo string, path string) string {
-	return "/view/" + repo + "/" + path
+func viewUrl(backend, repo, commit, name string) string {
+	return path.Join("/view/", backend, url.PathEscape(repo), commit, name)
 }
 
-func getFileUrl(repo string, pathFromRoot string, name string, isDir bool) string {
-	fileUrl := viewUrl(repo, filepath.Join(pathFromRoot, path.Clean(name)))
+func getFileUrl(backend, repo, commit, pathFromRoot, name string, isDir bool) string {
+	fileUrl := viewUrl(backend, repo, commit, filepath.Join(pathFromRoot, path.Clean(name)))
 	if isDir {
 		fileUrl += "/"
 	}
@@ -234,25 +236,6 @@ func buildReadmeRegex(supportedReadmeExtensions []string) *regexp.Regexp {
 	return repoFileRegex
 }
 
-func buildDirectoryListEntry(treeEntry gitTreeEntry, pathFromRoot string, repo config.RepoConfig) directoryListEntry {
-	var fileUrl string
-	var symlinkTarget string
-	if treeEntry.Mode == "120000" {
-		resolvedPath, err := gitCatBlob(treeEntry.ObjectId, repo.Path)
-		if err == nil {
-			symlinkTarget = resolvedPath
-		}
-	} else {
-		fileUrl = getFileUrl(repo.Name, pathFromRoot, treeEntry.ObjectName, treeEntry.ObjectType == "tree")
-	}
-	return directoryListEntry{
-		Name:          treeEntry.ObjectName,
-		Path:          fileUrl,
-		IsDir:         treeEntry.ObjectType == "tree",
-		SymlinkTarget: symlinkTarget,
-	}
-}
-
 func languageFromFirstLine(line string) string {
 	for regex, lang := range fileFirstLineToLangMap {
 		if regex.MatchString(line) {
@@ -262,74 +245,21 @@ func languageFromFirstLine(line string) string {
 	return ""
 }
 
-func buildFileData(relativePath string, repo config.RepoConfig, commit string) (*fileViewerContext, error) {
-	commitHash := commit
-	out, err := gitCommitHash(commit, repo.Path)
-	if err == nil {
-		commitHash = out[:strings.Index(out, "\n")]
+func buildFileData(backend *Backend, repo config.RepoConfig, commit, backendPrefix string) (*fileViewerContext, error) {
+	log.Printf("finding paths with %q %q %q", repo.Name, commit, backendPrefix)
+	paths := backend.Codesearch.Paths(repo.Name, commit, backendPrefix)
+	log.Printf("found %d", len(paths))
+	if len(paths) == 0 {
+		return nil, fmt.Errorf("not found: %q", backendPrefix)
 	}
-	cleanPath := path.Clean(relativePath)
-	if cleanPath == "." {
-		cleanPath = ""
-	}
-	obj := commitHash + ":" + cleanPath
-	pathSplits := strings.Split(cleanPath, "/")
-
 	var fileContent *sourceFileContent
 	var dirContent *directoryContent
-
-	objectType, err := gitObjectType(obj, repo.Path)
-	if err != nil {
-		return nil, err
-	}
-	if objectType == "tree" {
-		treeEntries, err := gitListDir(obj, repo.Path)
-		if err != nil {
-			return nil, err
-		}
-
-		dirEntries := make([]directoryListEntry, len(treeEntries))
-		var readmePath, readmeLang string
-		for i, treeEntry := range treeEntries {
-			dirEntries[i] = buildDirectoryListEntry(treeEntry, cleanPath, repo)
-			// Git supports case sensitive files, so README.md & readme.md in the same tree is possible
-			// so in this case we just grab the first matching file
-			if readmePath != "" {
-				continue
-			}
-
-			parts := supportedReadmeRegex.FindStringSubmatch(dirEntries[i].Name)
-			if len(parts) != 3 {
-				continue
-			}
-			readmePath = obj + parts[0]
-			readmeLang = parts[2]
-		}
-
-		var readmeContent *sourceFileContent
-		if readmePath != "" {
-			if content, err := gitCatBlob(readmePath, repo.Path); err == nil {
-				readmeContent = &sourceFileContent{
-					Content:   content,
-					LineCount: strings.Count(content, "\n"),
-					Language:  extToLangMap["."+readmeLang],
-				}
-			}
-		}
-
-		sort.Sort(DirListingSort(dirEntries))
-		dirContent = &directoryContent{
-			Entries:       dirEntries,
-			ReadmeContent: readmeContent,
-		}
-	} else if objectType == "blob" {
-		content, err := gitCatBlob(obj, repo.Path)
-		if err != nil {
-			return nil, err
-		}
-		language := filenameToLangMap[filepath.Base(cleanPath)]
+	if len(paths) == 1 && paths[0].Path == backendPrefix {
+		// This is a blob.
+		content := backend.Codesearch.Data(paths[0].Tree, paths[0].Version, paths[0].Path)
+		language := filenameToLangMap[filepath.Base(backendPrefix)]
 		if language == "" {
-			language = extToLangMap[filepath.Ext(cleanPath)]
+			language = extToLangMap[filepath.Ext(backendPrefix)]
 		}
 		if language == "" {
 			firstLine, _, found := strings.Cut(string(content), "\n")
@@ -342,14 +272,77 @@ func buildFileData(relativePath string, repo config.RepoConfig, commit string) (
 			LineCount: strings.Count(string(content), "\n"),
 			Language:  language,
 		}
+	} else {
+		// This is a directory listing.
+		if backendPrefix != "" && !strings.HasSuffix(backendPrefix, "/") {
+			backendPrefix += "/"
+		}
+		dirEntries := make([]directoryListEntry, 0, len(paths))
+		var readmePath, readmeLang string
+		for _, p := range paths {
+			relPath, found := strings.CutPrefix(p.Path, backendPrefix)
+			if !found {
+				continue
+			}
+			base, _, isdir := strings.Cut(relPath, "/")
+			if len(dirEntries) > 0 && dirEntries[len(dirEntries)-1].Name == base {
+				// Subdirectory, and already handled.
+				continue
+			}
+			viewURL := path.Join("/view", backend.Id, url.PathEscape(repo.Name), commit, backendPrefix, base)
+			if isdir {
+				viewURL += "/"
+			}
+
+			de := directoryListEntry{
+				Name:  base,
+				Path:  viewURL,
+				IsDir: isdir,
+			}
+			dirEntries = append(dirEntries, de)
+
+			// Git supports case sensitive files, so README.md & readme.md in the same tree is possible
+			// so in this case we just grab the first matching file
+			if readmePath != "" {
+				continue
+			}
+
+			parts := supportedReadmeRegex.FindStringSubmatch(de.Name)
+			if len(parts) != 3 {
+				continue
+			}
+			readmePath = p.Path + parts[0]
+			readmeLang = parts[2]
+		}
+
+		sort.Sort(DirListingSort(dirEntries))
+
+		var readmeContent *sourceFileContent
+		if readmePath != "" {
+			content := backend.Codesearch.Data(repo.Name, commit, readmePath)
+			readmeContent = &sourceFileContent{
+				Content:   content,
+				LineCount: strings.Count(content, "\n"),
+				Language:  extToLangMap["."+readmeLang],
+			}
+		}
+		dirContent = &directoryContent{
+			Entries:       dirEntries,
+			ReadmeContent: readmeContent,
+		}
 	}
 
+	pathSplits := strings.Split(backendPrefix, "/")
 	segments := make([]breadCrumbEntry, len(pathSplits))
 	for i, name := range pathSplits {
 		parentPath := path.Clean(strings.Join(pathSplits[0:i], "/"))
+		slash := "/"
+		if i == len(pathSplits)-1 {
+			slash = ""
+		}
 		segments[i] = breadCrumbEntry{
 			Name: name,
-			Path: getFileUrl(repo.Name, parentPath, name, true),
+			Path: path.Join("/view", backend.Id, url.PathEscape(repo.Name), commit, parentPath, name) + slash,
 		}
 	}
 
@@ -358,26 +351,14 @@ func buildFileData(relativePath string, repo config.RepoConfig, commit string) (
 		externalDomain = url.Hostname()
 	}
 
-	permalink := ""
-	headlink := ""
-	if !strings.HasPrefix(commitHash, commit) {
-		permalink = "?commit=" + commitHash[:16]
-	} else {
-		if dirContent != nil {
-			headlink = "."
-		} else {
-			headlink = segments[len(segments)-1].Name
-		}
-	}
-
 	return &fileViewerContext{
+		Backend:        backend.Id,
 		PathSegments:   segments,
 		Repo:           repo,
+		RepoURL:        path.Join("/view", backend.Id, url.PathEscape(repo.Name), commit),
 		Commit:         commit,
 		DirContent:     dirContent,
 		FileContent:    fileContent,
 		ExternalDomain: externalDomain,
-		Permalink:      permalink,
-		Headlink:       headlink,
 	}, nil
 }

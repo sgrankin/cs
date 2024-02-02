@@ -13,6 +13,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"regexp"
 	"sort"
 	texttemplate "text/template"
@@ -145,29 +146,25 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 }
 
 func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	repoName, path, err := getRepoPathFromURL(s.serveFilePathRegex, r.PathValue("path"))
-	if err != nil {
-		http.Error(w, err.Error(), 400)
-		return
-	}
-
-	commit := r.URL.Query().Get("commit")
-	if commit == "" {
-		commit = "HEAD"
-	}
-
 	if len(s.repos) == 0 {
 		http.Error(w, "File browsing not enabled", 404)
 		return
 	}
 
+	backend := r.PathValue("backend")
+	repoName, _ := url.PathUnescape(r.PathValue("repo"))
+	commit := r.PathValue("commit")
+	path := r.PathValue("path")
+
 	repo, ok := s.repos[repoName]
 	if !ok {
-		http.Error(w, "No such repo", 404)
+		http.Error(w, fmt.Sprintf("No such repo %q", repoName), http.StatusNotFound)
 		return
 	}
 
-	data, err := buildFileData(path, repo, commit)
+	// XXX -- now fetch things from the index backend...
+	// but wait, which backend!
+	fileData, err := buildFileData(s.bk[backend], repo, commit, path)
 	if err != nil {
 		http.Error(w, "Error reading file: "+err.Error(), 500)
 		return
@@ -180,11 +177,11 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 	}{repo, path, commit}
 
 	s.renderPage(ctx, w, r, "fileview.html", &page{
-		Title:         data.PathSegments[len(data.PathSegments)-1].Name,
+		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
 		ScriptName:    "fileview",
 		ScriptData:    script_data,
 		IncludeHeader: false,
-		Data:          data,
+		Data:          fileData,
 	})
 }
 
@@ -356,12 +353,13 @@ func New(cfg *config.Config) (http.Handler, error) {
 	mux.Handle("GET /debug/stats", srv.Handler(srv.ServeStats))
 	mux.Handle("GET /help", srv.Handler(srv.ServeHelp))
 	mux.Handle("GET /opensearch.xml", srv.Handler(srv.ServeOpensearch))
-	mux.Handle("GET /search/{backend...}", srv.Handler(srv.ServeSearch))
-	mux.Handle("GET /view/{path...}", srv.Handler(srv.ServeFile))
+	mux.Handle("GET /search", srv.Handler(srv.ServeSearch))
+	mux.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
+	mux.Handle("GET /view/{backend}/{repo}/{commit}/{path...}", srv.Handler(srv.ServeFile))
 
 	// GET (with query parameters) is for backward compatibility; the UI now
 	// uses POST (with form parameters).
-	mux.Handle("POST /api/v1/search/{backend...}", srv.Handler(srv.ServeAPISearch))
+	mux.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
 	mux.Handle("GET /api/v1/repos", srv.Handler(srv.ServeRepoInfo))
 
 	mux.Handle("GET /static/", http.FileServerFS(staticFS))
