@@ -10,13 +10,13 @@
 	<head>
 		<title>{{.Title}}</title>
 		{{linkTag .Nonce "shortcut icon" "/static/favicon.ico" .AssetHashes}}
-		{{linkTag .Nonce "stylesheet" "/static/app.css" .AssetHashes}}
 		{{if .ScriptData}}
 		<script{{.Nonce}}>
 			window.scriptData = {{.ScriptData}};
 		</script>
 		{{end}}
 		{{ scriptTag .Nonce (print "/static/" .ScriptName ".js") .AssetHashes}}
+		{{linkTag .Nonce "stylesheet" (print "/static/" .ScriptName ".css") .AssetHashes}}
 		<link{{.Nonce}} rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Stripe Code Search" />
 	</head>
 	<body>

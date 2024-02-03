@@ -4,7 +4,10 @@
  */
 
 import jQuery from "jquery";
-import "!prismjs";
+import hljs from "highlight.js";
+
+import "../codesearch/codesearch.css";
+import "./fileview.css";
 
 var KeyCodes = {
 	ESCAPE: 27,
@@ -345,4 +348,5 @@ function init(initData) {
 
 jQuery(() => {
 	init(window.scriptData);
+	hljs.highlightAll();
 });

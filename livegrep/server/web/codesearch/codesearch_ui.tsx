@@ -8,6 +8,10 @@
 import "../globals.ts";
 import "bootstrap";
 import "bootstrap-select";
+import "../3rdparty/bootstrap.min.css";
+import "bootstrap-select/dist/css/bootstrap-select.css";
+
+import "../codesearch/codesearch.css";
 
 import h from "hyperscript";
 import { View, Model, Collection } from "backbone";

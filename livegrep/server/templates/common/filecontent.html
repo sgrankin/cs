@@ -5,7 +5,7 @@
 
 {{define "filecontent"}}
 <div class="file-content">
-	<code id="source-code" class="code-pane language-{{.Language}}">{{.Content}}</code>
+	<pre><code id="source-code" class="code-pane language-{{.Language}}">{{.Content}}</code></pre>
 	<!--
 	NOTE: The reason the line number links are after the code block above is because
 	they take a significant amount of time to render for large files. If we keep
