@@ -20,6 +20,16 @@ bootstrap-select/dist/js/bootstrap-select.js:
    * Licensed under MIT (https://github.com/silviomoreto/bootstrap-select/blob/master/LICENSE)
    */
 
+prismjs/components/prism-core.js:
+  /**
+   * Prism: Lightweight, robust, elegant syntax highlighting
+   *
+   * @license MIT <https://opensource.org/licenses/MIT>
+   * @author Lea Verou <https://lea.verou.me>
+   * @namespace
+   * @public
+   */
+
 browser-split/index.js:
   /*!
    * Cross-Browser Split 1.1.1

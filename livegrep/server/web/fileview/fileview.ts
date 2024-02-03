@@ -4,6 +4,7 @@
  */
 
 import jQuery from "jquery";
+import "!prismjs";
 
 var KeyCodes = {
 	ESCAPE: 27,

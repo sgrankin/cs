@@ -11,7 +11,7 @@ import jQuery from "jquery";
 import "bootstrap";
 import "bootstrap-select";
 
-import * as fileview from "./fileview/fileview";
+import * as fileview from "./fileview/fileview.ts";
 import * as codesearch from "./codesearch/codesearch_ui.tsx";
 
 const pages = {
