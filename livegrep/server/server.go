@@ -132,7 +132,7 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 
 	s.renderPage(ctx, w, r, "index.html", &page{
 		Title:         "code search",
-		ScriptName:    "codesearch",
+		ScriptName:    "codesearch/codesearch_ui",
 		ScriptData:    script_data,
 		IncludeHeader: true,
 		Data: struct {
@@ -178,7 +178,7 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 
 	s.renderPage(ctx, w, r, "fileview.html", &page{
 		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
-		ScriptName:    "fileview",
+		ScriptName:    "fileview/fileview",
 		ScriptData:    script_data,
 		IncludeHeader: false,
 		Data:          fileData,

@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import jQuery from "jquery";
+// Bootstrap depends on a global jQuery existing.
+// Imports are resolved at file load... so set the global jquery in a separate module.
+import "../globals.ts";
+import "bootstrap";
+import "bootstrap-select";
+
 import h from "hyperscript";
 import { View, Model, Collection } from "backbone";
 import { getJSON, set } from "js-cookie";
@@ -1024,7 +1029,7 @@ namespace CodesearchUI {
 	}
 }
 
-export function init(initData) {
+function init(initData) {
 	CodesearchUI.repo_urls = initData.repo_urls;
 	CodesearchUI.defaultSearchRepos = initData.default_search_repos;
 	CodesearchUI.linkConfigs = (initData.link_configs || []).map(function (link_config) {
@@ -1035,3 +1040,7 @@ export function init(initData) {
 	});
 	CodesearchUI.onload();
 }
+
+jQuery(() => {
+	init(window.scriptData);
+});

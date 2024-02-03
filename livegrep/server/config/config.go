@@ -13,7 +13,6 @@ type Config struct {
 		MailTo string `json:"mailto"`
 	} `json:"feedback"`
 
-	GoogleAnalyticsId string `json:"google_analytics_id"`
 	// Should we respect X-Real-Ip, X-Real-Proto, and X-Forwarded-Host?
 	ReverseProxy bool `json:"reverse_proxy"`
 
@@ -27,10 +26,6 @@ type Config struct {
 	// HTML injected into layout template
 	// just before </body> for site-specific customization
 	FooterHTML template.HTML `json:"footer_html"`
-
-	Sentry struct {
-		URI string `json:"uri"`
-	} `json:"sentry"`
 
 	DefaultMaxMatches int `json:"default_max_matches"`
 

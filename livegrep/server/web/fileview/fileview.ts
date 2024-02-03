@@ -98,7 +98,7 @@ function expandRangeToElement(element) {
 	}
 }
 
-export function init(initData) {
+function init(initData) {
 	var root = jQuery(".file-content");
 	var lineNumberContainer = root.find(".line-numbers");
 	var helpScreen = jQuery(".help-screen");
@@ -342,3 +342,7 @@ export function init(initData) {
 		initializePage();
 	}, 1);
 }
+
+jQuery(() => {
+	init(window.scriptData);
+});

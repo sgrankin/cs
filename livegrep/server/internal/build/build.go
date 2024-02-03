@@ -17,10 +17,14 @@ import (
 
 func buildOpts(debug bool) api.BuildOptions {
 	opts := api.BuildOptions{
-		EntryPoints: []string{"web/app.ts", "web/app.css"},
-		Outdir:      "static",
-		Bundle:      true,
-		Write:       true,
+		EntryPoints: []string{
+			"web/app.css",
+			"web/codesearch/codesearch_ui.tsx",
+			"web/fileview/fileview.ts",
+		},
+		Outdir: "static",
+		Bundle: true,
+		Write:  true,
 
 		Target: api.ES2022,
 
