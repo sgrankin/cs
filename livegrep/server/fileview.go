@@ -6,7 +6,6 @@ package server
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/url"
 	"os/exec"
 	"path"
@@ -246,9 +245,7 @@ func languageFromFirstLine(line string) string {
 }
 
 func buildFileData(backend *Backend, repo config.RepoConfig, commit, backendPrefix string) (*fileViewerContext, error) {
-	log.Printf("finding paths with %q %q %q", repo.Name, commit, backendPrefix)
 	paths := backend.Codesearch.Paths(repo.Name, commit, backendPrefix)
-	log.Printf("found %d", len(paths))
 	if len(paths) == 0 {
 		return nil, fmt.Errorf("not found: %q", backendPrefix)
 	}
