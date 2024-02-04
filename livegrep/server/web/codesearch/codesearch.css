@@ -105,24 +105,24 @@
     }
 }
 
-.bootstrap-select.btn-group .dropdown-menu .notify,
-.bootstrap-select.btn-group .no-results {
+.bootstrap-select.dropdown .dropdown-menu .notify,
+.bootstrap-select.dropdown .no-results {
     background: var(--color-bootstrap-select-background);
 }
 
-.bootstrap-select.btn-group .btn {
+.bootstrap-select.dropdown .btn {
     background: var(--color-bootstrap-select-background);
     border-color: var(--color-border-default);
     color: var(--color-foreground-muted);
 }
 
-.bootstrap-select.btn-group .btn:hover {
+.bootstrap-select.dropdown .btn:hover {
     background: var(--color-bootstrap-select-background-hover);
     border-color: var(--color-border-default);
     color: var(--color-foreground) !important;
 }
 
-.bootstrap-select.btn-group .no-results {
+.bootstrap-select.dropdown .no-results {
     background-color: inherit !important;
 }
 
