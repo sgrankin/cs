@@ -4,7 +4,7 @@
  */
 
 import jQuery from "jquery";
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/common";
 
 import "../codesearch/codesearch.css";
 import "./fileview.css";
