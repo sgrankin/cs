@@ -21,6 +21,13 @@ func buildOpts(debug bool) api.BuildOptions {
 		Outdir: "static",
 		Bundle: true,
 		Write:  true,
+		Loader: map[string]api.Loader{
+			".eot":   api.LoaderDataURL,
+			".svg":   api.LoaderDataURL,
+			".ttf":   api.LoaderDataURL,
+			".woff":  api.LoaderDataURL,
+			".woff2": api.LoaderDataURL,
+		},
 
 		Target: api.ES2022,
 

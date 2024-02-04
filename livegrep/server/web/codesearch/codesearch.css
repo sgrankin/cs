@@ -126,6 +126,11 @@
     background-color: inherit !important;
 }
 
+.bootstrap-select input[type=search] {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
 .dropdown-menu>.active>a,
 .dropdown-menu>.active>a:hover,
 .dropdown-menu>.active>a:focus {

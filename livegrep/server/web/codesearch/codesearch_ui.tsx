@@ -6,9 +6,12 @@
 // Bootstrap depends on a global jQuery existing.
 // Imports are resolved at file load... so set the global jquery in a separate module.
 import "../globals.ts";
-import "bootstrap";
-import "bootstrap-select";
+import "bootstrap/js/button";
+import "bootstrap/js/dropdown";
+// Importing the full bootstarp CSS unfortunately results in a huge css and broken colors.
+// import "bootstrap/dist/css/bootstrap.css";
 import "../3rdparty/bootstrap.min.css";
+import "bootstrap-select";
 import "bootstrap-select/dist/css/bootstrap-select.css";
 
 import "../codesearch/codesearch.css";
