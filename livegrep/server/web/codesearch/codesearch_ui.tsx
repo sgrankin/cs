@@ -257,14 +257,12 @@ class Match extends Model {
 
 /** A set of Matches at a single path. */
 class FileGroup extends Model {
-	id;
 	path_info;
 	matches: Match[] = [];
 
 	constructor(path_info) {
 		super();
-		// The id attribute is used by collections to fetch models
-		this.id = path_info.id;
+		this.set("id", path_info.id); // The id attribute is used by collections to fetch models
 		this.path_info = path_info;
 	}
 

@@ -31,7 +31,7 @@ type Config struct {
 
 	// Same json config structure that the backend uses when building indexes;
 	// used here for repository browsing.
-	IndexConfig IndexConfig `json:"index_config"`
+	IndexConfig []IndexConfig `json:"index_config"`
 
 	DefaultSearchRepos []string `json:"default_search_repos"`
 
@@ -47,16 +47,7 @@ type Config struct {
 }
 
 type IndexConfig struct {
-	Name         string       `json:"name"`
-	Repositories []RepoConfig `json:"repositories"`
-}
-
-type RepoConfig struct {
-	Path           string            `json:"path"`
-	Name           string            `json:"name"`
-	Revisions      []string          `json:"revisions"`
-	Metadata       map[string]string `json:"metadata"`
-	WalkSubmodules bool              `json:"walk_submodules"`
+	Path string `json:"path"`
 }
 
 type LinkConfig struct {

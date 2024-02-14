@@ -3,7 +3,6 @@ package csbackend
 import (
 	"bytes"
 	"context"
-	"flag"
 	"regexp/syntax"
 	"runtime"
 	"strings"
@@ -15,23 +14,27 @@ import (
 	"sgrankin.dev/cs/csapi"
 )
 
-// TODO: the flags should be constructor params.
-var indexPath = flag.String("index", "data/csindex", "The path to the index file")
-
 type CSBackend struct {
 	ix *index.Index
 }
 
 var _ csapi.CodeSearch = (*CSBackend)(nil)
 
-func New() *CSBackend {
-	ix := index.Open(*indexPath)
+func New(indexPath string) *CSBackend {
+	ix := index.Open(indexPath)
 	return &CSBackend{ix}
 }
 
 // Info implements csapi.CodeSearch.
-func (*CSBackend) Info(context.Context) (*csapi.ServerInfo, error) {
-	return &csapi.ServerInfo{}, nil
+func (b *CSBackend) Info() csapi.CodeSearchInfo {
+	res := csapi.CodeSearchInfo{
+		IndexTime: b.ix.FileInfo.ModTime(),
+	}
+	for _, p := range b.ix.Paths() {
+		repo, _, _ := strings.Cut(p, ":")
+		res.Trees = append(res.Trees, csapi.Tree{Name: repo})
+	}
+	return res
 }
 
 // Data implements csapi.CodeSearch.

@@ -5,7 +5,9 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os/exec"
 	"path"
@@ -13,8 +15,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
-	"sgrankin.dev/cs/livegrep/server/config"
 )
 
 // Mapping from known file extensions to filetype hinting.
@@ -92,6 +92,53 @@ var supportedReadmeExtensions = []string{
 
 var supportedReadmeRegex = buildReadmeRegex(supportedReadmeExtensions)
 
+func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	if len(s.repos) == 0 {
+		http.Error(w, "File browsing not enabled", 404)
+		return
+	}
+
+	backend := r.PathValue("backend")
+	repoName, _ := url.PathUnescape(r.PathValue("repo"))
+	commit := r.PathValue("commit")
+	path := r.PathValue("path")
+
+	fileData, err := buildFileData(s.bk[backend], repoName, commit, path)
+	if err != nil {
+		http.Error(w, "Error reading file: "+err.Error(), 500)
+		return
+	}
+	// TODO: assuming github for now.
+	// TODO: make this conditional? Hard code the rpo name & such since this is a known file? Move to frontend?
+	url := "https://github.com/{name}/blob/{version}/{path}#L{lno}"
+	fileData.ExternalDomain = "github.com"
+	// url := "https://github.com/" + repoName + "/tree/" + commit + "/" + path + "#L{lno}"
+	script_data := &struct {
+		RepoName string `json:"repo_name"`
+		// URLPattern is expected to have these replaceable tags:
+		// - {name}: repo name
+		// - {version}: the commit
+		// - {path}: file path in repo
+		// - {lno}: the line number
+		URLPattern string `json:"url_pattern"`
+		FilePath   string `json:"file_path"`
+		Commit     string `json:"commit"`
+	}{
+		RepoName:   repoName,
+		URLPattern: url,
+		FilePath:   path,
+		Commit:     commit,
+	}
+
+	s.renderPage(ctx, w, r, "fileview.html", &page{
+		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
+		ScriptName:    "fileview/fileview",
+		ScriptData:    script_data,
+		IncludeHeader: false,
+		Data:          fileData,
+	})
+}
+
 type breadCrumbEntry struct {
 	Name string
 	Path string
@@ -107,7 +154,7 @@ type directoryListEntry struct {
 type fileViewerContext struct {
 	Backend        string
 	PathSegments   []breadCrumbEntry
-	Repo           config.RepoConfig
+	RepoName       string
 	RepoURL        string
 	Commit         string
 	DirContent     *directoryContent
@@ -244,8 +291,8 @@ func languageFromFirstLine(line string) string {
 	return ""
 }
 
-func buildFileData(backend *Backend, repo config.RepoConfig, commit, backendPrefix string) (*fileViewerContext, error) {
-	paths := backend.Codesearch.Paths(repo.Name, commit, backendPrefix)
+func buildFileData(backend *Backend, repoName, commit, backendPrefix string) (*fileViewerContext, error) {
+	paths := backend.Paths(repoName, commit, backendPrefix)
 	if len(paths) == 0 {
 		return nil, fmt.Errorf("not found: %q", backendPrefix)
 	}
@@ -253,7 +300,7 @@ func buildFileData(backend *Backend, repo config.RepoConfig, commit, backendPref
 	var dirContent *directoryContent
 	if len(paths) == 1 && paths[0].Path == backendPrefix {
 		// This is a blob.
-		content := backend.Codesearch.Data(paths[0].Tree, paths[0].Version, paths[0].Path)
+		content := backend.Data(paths[0].Tree, paths[0].Version, paths[0].Path)
 		language := filenameToLangMap[filepath.Base(backendPrefix)]
 		if language == "" {
 			language = extToLangMap[filepath.Ext(backendPrefix)]
@@ -286,7 +333,7 @@ func buildFileData(backend *Backend, repo config.RepoConfig, commit, backendPref
 				// Subdirectory, and already handled.
 				continue
 			}
-			viewURL := path.Join("/view", backend.Id, url.PathEscape(repo.Name), commit, backendPrefix, base)
+			viewURL := path.Join("/view", backend.ID, url.PathEscape(repoName), commit, backendPrefix, base)
 			if isdir {
 				viewURL += "/"
 			}
@@ -316,7 +363,7 @@ func buildFileData(backend *Backend, repo config.RepoConfig, commit, backendPref
 
 		var readmeContent *sourceFileContent
 		if readmePath != "" {
-			content := backend.Codesearch.Data(repo.Name, commit, readmePath)
+			content := backend.Data(repoName, commit, readmePath)
 			readmeContent = &sourceFileContent{
 				Content:   content,
 				LineCount: strings.Count(content, "\n"),
@@ -339,23 +386,17 @@ func buildFileData(backend *Backend, repo config.RepoConfig, commit, backendPref
 		}
 		segments[i] = breadCrumbEntry{
 			Name: name,
-			Path: path.Join("/view", backend.Id, url.PathEscape(repo.Name), commit, parentPath, name) + slash,
+			Path: path.Join("/view", backend.ID, url.PathEscape(repoName), commit, parentPath, name) + slash,
 		}
 	}
 
-	externalDomain := "external viewer"
-	if url, err := url.Parse(repo.Metadata["url_pattern"]); err == nil {
-		externalDomain = url.Hostname()
-	}
-
 	return &fileViewerContext{
-		Backend:        backend.Id,
-		PathSegments:   segments,
-		Repo:           repo,
-		RepoURL:        path.Join("/view", backend.Id, url.PathEscape(repo.Name), commit),
-		Commit:         commit,
-		DirContent:     dirContent,
-		FileContent:    fileContent,
-		ExternalDomain: externalDomain,
+		Backend:      backend.ID,
+		PathSegments: segments,
+		RepoName:     repoName,
+		RepoURL:      path.Join("/view", backend.ID, url.PathEscape(repoName), commit),
+		Commit:       commit,
+		DirContent:   dirContent,
+		FileContent:  fileContent,
 	}, nil
 }

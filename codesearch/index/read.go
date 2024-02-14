@@ -130,17 +130,17 @@ const (
 
 // An Index implements read-only access to a trigram index.
 type Index struct {
-	Verbose   bool
-	data      mmapData
-	pathData  []byte
-	nameData  []byte
-	postData  []byte
-	blobData  []byte
-	nameIndex []byte
-	postIndex []byte
-	blobIndex []byte
-	numName   int
-	numPost   int
+	Verbose  bool
+	FileInfo os.FileInfo
+
+	data mmapData
+
+	pathData            []byte
+	nameData, nameIndex []byte
+	postData, postIndex []byte
+	blobData, blobIndex []byte
+
+	numName, numPost int
 }
 
 type segment struct {
@@ -156,12 +156,16 @@ func Open(file string) *Index {
 		corrupt()
 	}
 
-	ix := &Index{data: mm}
+	info, err := os.Stat(file)
+	if err != nil {
+		log.Panic(err)
+	}
+	ix := &Index{data: mm, FileInfo: info}
 
 	segsOffset := ix.uint32(uint32(len(mm.d) - len(trailerMagic) - 4*2))
 	segsLength := ix.uint32(uint32(len(mm.d) - len(trailerMagic) - 4*1))
 	if segsLength != 7*8 {
-		log.Panicf("Corrupt file format: unexpected segment index length %d", segsLength)
+		log.Panicf("corrupt file format: unexpected segment index length %d", segsLength)
 	}
 
 	// TODO: make use of binary marshalling or something....
@@ -578,7 +582,7 @@ func mergeOr(l1, l2 []uint32) []uint32 {
 }
 
 func corrupt() {
-	log.Fatal("corrupt index: remove " + File())
+	log.Panic("corrupt index: remove " + File())
 }
 
 // An mmapData is mmap'ed read-only data from a file.
@@ -591,7 +595,7 @@ type mmapData struct {
 func mmap(file string) mmapData {
 	f, err := os.Open(file)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	return mmapFile(f)
 }

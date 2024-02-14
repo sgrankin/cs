@@ -9,8 +9,7 @@
 <section class="file-viewer">
 	<header class="header">
 		<nav class="header-title">
-			{{$repo := .Repo.Name}}
-			<a href="{{.RepoURL}}/" class="path-segment repo" title="Repository: {{$repo}}">{{$repo}}</a>:
+			<a href="{{.RepoURL}}/" class="path-segment repo" title="Repository: {{.RepoName}}">{{.RepoName}}</a>:
 			{{range $i, $e := .PathSegments}}{{if gt $i 0}}/{{end}}<a href="{{$e.Path}}" class="path-segment">{{$e.Name}}</a>{{end}}
 		</nav>
 		<ul class="header-actions without-selection">

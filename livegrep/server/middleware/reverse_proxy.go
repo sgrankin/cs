@@ -14,7 +14,7 @@ type reverseProxyHandler struct {
 
 func (h *reverseProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if ip := r.Header.Get("X-Forwarded-For"); len(ip) > 0 {
-		r.RemoteAddr = strings.SplitN(ip, ",", 2)[0]
+		r.RemoteAddr, _, _ = strings.Cut(ip, ",")
 	}
 	if proto := r.Header.Get("X-Forwarded-Proto"); proto == "http" {
 		u := *r.URL

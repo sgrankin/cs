@@ -11,6 +11,8 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"path"
+	"strings"
 
 	"sgrankin.dev/cs/livegrep/server"
 	"sgrankin.dev/cs/livegrep/server/config"
@@ -18,8 +20,8 @@ import (
 )
 
 var (
-	serveAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
-	indexConfig = flag.String("index-config", "", "Codesearch index config file; provide to enable repo browsing")
+	listenAddr = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
+	indexPath  = flagVar[pathList]("index", pathList{}, "The path to the index file")
 )
 
 func main() {
@@ -27,28 +29,15 @@ func main() {
 	flag.Parse()
 
 	cfg := &config.Config{
-		Listen:            *serveAddr,
+		Listen:            *listenAddr,
 		DefaultMaxMatches: 500,
-		IndexConfig: config.IndexConfig{
-			Repositories: []config.RepoConfig{{
-				Name:      "torvalds/linux",
-				Revisions: []string{"HEAD"},
-				Metadata: map[string]string{
-					"url_pattern": "https://github.com/{name}/blob/{version}/{path}#L{lno}", // This is the only one that seems to matter for file browsing.
-				},
-			}},
-		},
+	}
+	if len(*indexPath) == 0 {
+		log.Fatal("At least one -index is required")
 	}
 
-	if *indexConfig != "" {
-		data, err := os.ReadFile(*indexConfig)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-
-		if err = json.Unmarshal(data, &cfg.IndexConfig); err != nil {
-			log.Fatalf("reading %s: %s", flag.Arg(0), err.Error())
-		}
+	for path := range *indexPath {
+		cfg.IndexConfig = append(cfg.IndexConfig, config.IndexConfig{Path: path})
 	}
 
 	if len(flag.Args()) != 0 {
@@ -75,4 +64,29 @@ func main() {
 
 	log.Printf("Listening on %s.", cfg.Listen)
 	log.Fatal(http.ListenAndServe(cfg.Listen, nil))
+}
+
+type pathList map[string]bool
+
+func (s *pathList) Set(val string) error {
+	val = path.Clean(val)
+	(*s)[val] = true
+	return nil
+}
+func (s *pathList) String() string {
+	var paths []string
+	for p := range *s {
+		paths = append(paths, p)
+	}
+	return strings.Join(paths, ",")
+}
+
+func flagVar[T any, PT interface {
+	flag.Value
+	*T
+}](name string, value T, usage string) PT {
+	v := value
+	pv := (PT)(&v)
+	flag.Var(pv, name, usage)
+	return pv
 }

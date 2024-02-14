@@ -13,9 +13,8 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"net/url"
+	"path/filepath"
 	"regexp"
-	"sort"
 	texttemplate "text/template"
 	"time"
 
@@ -43,18 +42,16 @@ type server struct {
 	config      *config.Config
 	bk          map[string]*Backend
 	bkOrder     []string
-	repos       map[string]config.RepoConfig
+	repos       []string
 	inner       http.Handler
 	Templates   map[string]*template.Template
 	OpenSearch  *texttemplate.Template
 	AssetHashes map[string]string
 	Layout      *template.Template
-
-	serveFilePathRegex *regexp.Regexp
 }
 
 func (s *server) loadTemplates() {
-	s.Templates = make(map[string]*template.Template)
+	s.Templates = map[string]*template.Template{}
 	err := LoadTemplates(s.Templates)
 	if err != nil {
 		panic(fmt.Sprintf("loading templates: %v", err))
@@ -63,7 +60,7 @@ func (s *server) loadTemplates() {
 	p := "templates/opensearch.xml"
 	s.OpenSearch = texttemplate.Must(texttemplate.ParseFS(templatesFS, p))
 
-	s.AssetHashes = make(map[string]string)
+	s.AssetHashes = map[string]string{}
 	fs.WalkDir(staticFS, "static", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			panic(err) // TODO: log.fatal or something
@@ -91,40 +88,34 @@ func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.R
 
 type searchScriptData struct {
 	RepoUrls           map[string]map[string]string `json:"repo_urls"`
-	InternalViewRepos  map[string]config.RepoConfig `json:"internal_view_repos"`
 	DefaultSearchRepos []string                     `json:"default_search_repos"`
 	LinkConfigs        []config.LinkConfig          `json:"link_configs"`
 }
 
 func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []*Backend, sampleRepo string) {
-	urls := make(map[string]map[string]string, len(s.bk))
-	backends = make([]*Backend, 0, len(s.bk))
+	urls := map[string]map[string]string{}
+	backends = []*Backend{}
 	sampleRepo = ""
 	for _, bkId := range s.bkOrder {
 		bk := s.bk[bkId]
 		backends = append(backends, bk)
-		bk.I.Lock()
-		m := make(map[string]string, len(bk.I.Trees))
-		urls[bk.Id] = m
-		for _, r := range bk.I.Trees {
+		info := bk.Info()
+		m := map[string]string{}
+		urls[bk.ID] = m
+		for _, tree := range info.Trees {
 			if sampleRepo == "" {
-				sampleRepo = r.Name
+				sampleRepo = tree.Name
 			}
-			m[r.Name] = r.Url
+			// TODO: make this conditional? What is this even used for?
+			// XXX ARGH! Only the *keys* are used to get the repo names... See codesearch_ui.tsx
+			url := "https://github.com/{name}/blob/{version}/{path}#L{lno}"
+			m[tree.Name] = url
 		}
-		bk.I.Unlock()
 	}
 
-	script_data = &searchScriptData{urls, s.repos, s.config.DefaultSearchRepos, s.config.LinkConfigs}
+	script_data = &searchScriptData{urls, s.repos, s.config.LinkConfigs}
 
 	return script_data, backends, sampleRepo
-}
-
-// Serve the page initialization data that is usually injected into the index.html go text template.
-// This is useful in a custom frontend to initialize a repo list, links to GitHub, etc.
-func (s *server) ServeRepoInfo(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	script_data, _, _ := s.makeSearchScriptData()
-	replyJSON(ctx, w, 200, script_data)
 }
 
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -145,56 +136,11 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 	})
 }
 
-func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	if len(s.repos) == 0 {
-		http.Error(w, "File browsing not enabled", 404)
-		return
-	}
-
-	backend := r.PathValue("backend")
-	repoName, _ := url.PathUnescape(r.PathValue("repo"))
-	commit := r.PathValue("commit")
-	path := r.PathValue("path")
-
-	repo, ok := s.repos[repoName]
-	if !ok {
-		http.Error(w, fmt.Sprintf("No such repo %q", repoName), http.StatusNotFound)
-		return
-	}
-
-	// XXX -- now fetch things from the index backend...
-	// but wait, which backend!
-	fileData, err := buildFileData(s.bk[backend], repo, commit, path)
-	if err != nil {
-		http.Error(w, "Error reading file: "+err.Error(), 500)
-		return
-	}
-
-	script_data := &struct {
-		RepoInfo config.RepoConfig `json:"repo_info"`
-		FilePath string            `json:"file_path"`
-		Commit   string            `json:"commit"`
-	}{repo, path, commit}
-
-	s.renderPage(ctx, w, r, "fileview.html", &page{
-		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
-		ScriptName:    "fileview/fileview",
-		ScriptData:    script_data,
-		IncludeHeader: false,
-		Data:          fileData,
-	})
-}
-
 func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	s.renderPage(ctx, w, r, "about.html", &page{
 		Title:         "about",
 		IncludeHeader: true,
 	})
-}
-
-func (s *server) ServeHelp(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	// Help is now shown in the main search page when no search has been entered.
-	http.Redirect(w, r, "/search", 303)
 }
 
 func (s *server) ServeHealthcheck(w http.ResponseWriter, r *http.Request) {
@@ -214,11 +160,12 @@ func (s *server) ServeStats(ctx context.Context, w http.ResponseWriter, r *http.
 	now := time.Now()
 	maxBkAge := time.Duration(-1) * time.Second
 	for _, bk := range s.bk {
-		if bk.I.IndexTime.IsZero() {
+		info := bk.Info()
+		if info.IndexTime.IsZero() {
 			// backend didn't report index time
 			continue
 		}
-		bkAge := now.Sub(bk.I.IndexTime)
+		bkAge := now.Sub(info.IndexTime)
 		if bkAge > maxBkAge {
 			maxBkAge = bkAge
 		}
@@ -248,19 +195,19 @@ func (s *server) ServeOpensearch(ctx context.Context, w http.ResponseWriter, r *
 	}
 
 	for _, bk := range s.bk {
-		if bk.I.Name != "" {
-			data.BackendName = bk.I.Name
-			break
-		}
+		data.BackendName = bk.ID
+		break
 	}
 
 	templateName := "opensearch.xml"
-	w.Header().Set("Content-Type", "application/xml")
-	err := s.OpenSearch.ExecuteTemplate(w, templateName, data)
+	buf := bytes.Buffer{}
+	err := s.OpenSearch.ExecuteTemplate(&buf, templateName, data)
 	if err != nil {
-		log.Printf(ctx, "Error rendering %s: %s", templateName, err)
+		http.Error(w, fmt.Sprintf("error rendering %s: %s", templateName, err), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/xml")
+	buf.WriteTo(w)
 }
 
 func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.Request, templateName string, pageData *page) {
@@ -280,12 +227,14 @@ func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.
 		pageData.Nonce = template.HTMLAttr(fmt.Sprintf(` nonce="%s"`, nonce))
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := t.ExecuteTemplate(w, templateName, pageData)
+	buf := bytes.Buffer{}
+	err := t.ExecuteTemplate(&buf, templateName, pageData)
 	if err != nil {
-		log.Printf(ctx, "Error rendering %v: %s", templateName, err)
+		http.Error(w, fmt.Sprintf("error rendering %s: %s", templateName, err), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	buf.WriteTo(w)
 }
 
 type handler func(c context.Context, w http.ResponseWriter, r *http.Request)
@@ -309,23 +258,21 @@ func (s *server) Handler(f func(c context.Context, w http.ResponseWriter, r *htt
 func New(cfg *config.Config) (http.Handler, error) {
 	srv := &server{
 		config: cfg,
-		bk:     make(map[string]*Backend),
-		repos:  make(map[string]config.RepoConfig),
+		bk:     map[string]*Backend{},
 	}
 	srv.loadTemplates()
 
-	be, err := NewBackend("-")
-	if err != nil {
-		return nil, err
-	}
-	be.Start()
-	srv.bk[be.Id] = be
-	srv.bkOrder = append(srv.bkOrder, be.Id)
-
-	var repoNames []string
-	for _, r := range srv.config.IndexConfig.Repositories {
-		srv.repos[r.Name] = r
-		repoNames = append(repoNames, r.Name)
+	for _, icfg := range cfg.IndexConfig {
+		be, err := NewBackend(filepath.Base(icfg.Path), icfg.Path)
+		if err != nil {
+			return nil, err
+		}
+		srv.bk[be.ID] = be
+		srv.bkOrder = append(srv.bkOrder, be.ID)
+		info := be.Info()
+		for _, t := range info.Trees {
+			srv.repos = append(srv.repos, t.Name)
+		}
 	}
 
 	for ext, lang := range srv.config.FileExtToLang {
@@ -340,62 +287,18 @@ func New(cfg *config.Config) (http.Handler, error) {
 		fileFirstLineToLangMap[regex] = lang
 	}
 
-	serveFilePathRegex, err := buildRepoRegex(repoNames)
-	if err != nil {
-		return nil, err
-	}
-	srv.serveFilePathRegex = serveFilePathRegex
-
 	mux := http.NewServeMux()
 	mux.Handle("GET /", srv.Handler(srv.ServeRoot))
 	mux.Handle("GET /about", srv.Handler(srv.ServeAbout))
 	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
 	mux.Handle("GET /debug/stats", srv.Handler(srv.ServeStats))
-	mux.Handle("GET /help", srv.Handler(srv.ServeHelp))
 	mux.Handle("GET /opensearch.xml", srv.Handler(srv.ServeOpensearch))
 	mux.Handle("GET /search", srv.Handler(srv.ServeSearch))
 	mux.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
-	mux.Handle("GET /view/{backend}/{repo}/{commit}/{path...}", srv.Handler(srv.ServeFile))
-
-	// GET (with query parameters) is for backward compatibility; the UI now
-	// uses POST (with form parameters).
-	mux.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch))
-	mux.Handle("GET /api/v1/repos", srv.Handler(srv.ServeRepoInfo))
-
 	mux.Handle("GET /static/", http.FileServerFS(staticFS))
+	mux.Handle("GET /view/{backend}/{repo}/{commit}/{path...}", srv.Handler(srv.ServeFile))
+	mux.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch)) // Parameters are in form format.
 
 	srv.inner = handlers.CompressHandler(mux)
 	return srv, nil
-}
-
-func buildRepoRegex(repoNames []string) (*regexp.Regexp, error) {
-	// Sort in descending order of length so most specific match is selected by regex engine
-	sort.Slice(repoNames, func(i, j int) bool {
-		return len(repoNames[i]) >= len(repoNames[j])
-	})
-
-	// Build regex of form "(repo1|repo2)/(path)"
-	var buf bytes.Buffer
-	for i, repoName := range repoNames {
-		buf.WriteString(regexp.QuoteMeta(repoName))
-		if i < len(repoNames)-1 {
-			buf.WriteString("|")
-		}
-	}
-	repoRegexAlt := buf.String()
-	repoFileRegex, err := regexp.Compile(fmt.Sprintf("(%s)/(.*)", repoRegexAlt))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create regular expression for URL parsing")
-	}
-
-	return repoFileRegex, nil
-}
-
-func getRepoPathFromURL(repoRegex *regexp.Regexp, urlPath string) (repo string, path string, err error) {
-	matches := repoRegex.FindStringSubmatch(urlPath)
-	if len(matches) == 0 {
-		return "", "", serveUrlParseError
-	}
-
-	return matches[1], matches[2], nil
 }

@@ -29,6 +29,9 @@ func NewContext(ctx context.Context, reqID RequestID) context.Context {
 }
 
 func FromContext(ctx context.Context) (RequestID, bool) {
+	if ctx == nil {
+		return "", false
+	}
 	reqID, ok := ctx.Value(reqIDKey).(RequestID)
 	return reqID, ok
 }

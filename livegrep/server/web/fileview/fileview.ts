@@ -113,7 +113,7 @@ function init(initData) {
 				"/search?q=" +
 				encodeURIComponent(query) +
 				"&repo=" +
-				encodeURIComponent(initData.repo_info.name);
+				encodeURIComponent(initData.repo_name);
 		} else {
 			url = "/search";
 		}
@@ -181,10 +181,9 @@ function init(initData) {
 	function getExternalLink(range) {
 		var lno = getLineNumber(range);
 
-		var repoName = initData.repo_info.name;
+		var repoName = initData.repo_name;
 		var filePath = initData.file_path;
-
-		let url = initData.repo_info.metadata["url_pattern"];
+		let url = initData.url_pattern;
 
 		// If url not found, warn user and fail gracefully
 		if (!url) {

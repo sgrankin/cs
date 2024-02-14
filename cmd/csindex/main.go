@@ -18,7 +18,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 
 	"sgrankin.dev/cs/codesearch/index"
-	"sgrankin.dev/cs/livegrep/server/config"
 )
 
 var usageMessage = `usage: cindex [-list] [-reset] [path...]
@@ -63,16 +62,20 @@ var (
 	indexPath = flag.String("index", "data/csindex", "The path to the index file")
 )
 
+type repoConfig struct {
+	Path      string   `json:"path"`
+	Name      string   `json:"name"`
+	Revisions []string `json:"revisions"`
+}
+
 func main() {
 	log.SetFlags(log.Lshortfile)
 	flag.Usage = usage
 	flag.Parse()
 
-	cfg := []config.RepoConfig{{
-		Name: "torvalds/linux",
-		Metadata: map[string]string{
-			"url_pattern": "https://github.com/{name}/blob/{version}/{path}#L{lno}", // This is the only one that seems to matter for file browsing.
-		},
+	cfg := []repoConfig{{
+		Name:      "torvalds/linux",
+		Revisions: []string{"HEAD"},
 	}}
 
 	repo, err := git.PlainOpen(*gitPath)

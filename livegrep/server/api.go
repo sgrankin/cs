@@ -19,6 +19,7 @@ import (
 )
 
 func replyJSON(ctx context.Context, w http.ResponseWriter, status int, obj interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(obj); err != nil {
@@ -131,7 +132,7 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *csapi.Query)
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	search, err = backend.Codesearch.Search(ctx, *q)
+	search, err = backend.Search(ctx, *q)
 	if err != nil {
 		log.Printf(ctx, "error talking to backend err=%s", err)
 		return nil, err
