@@ -221,30 +221,51 @@ func (ix *IndexWriter) Flush() {
 	}
 	ix.main.writeString("\x00")
 	segments[0] = segment{off, ix.main.offset() - off}
+	if ix.Verbose {
+		log.Printf("paths: %d bytes", ix.main.offset()-off)
+	}
 
 	off = ix.main.offset()
 	copyFile(ix.main, ix.nameData)
 	segments[1] = segment{off, ix.main.offset() - off}
+	if ix.Verbose {
+		log.Printf("names: %d bytes", ix.main.offset()-off)
+	}
 
 	off = ix.main.offset()
 	ix.mergePost(ix.main)
 	segments[2] = segment{off, ix.main.offset() - off}
+	if ix.Verbose {
+		log.Printf("posts: %d bytes", ix.main.offset()-off)
+	}
 
 	off = ix.main.offset()
 	copyFile(ix.main, ix.blobData)
 	segments[3] = segment{off, ix.main.offset() - off}
+	if ix.Verbose {
+		log.Printf("blobs: %d bytes", ix.main.offset()-off)
+	}
 
 	off = ix.main.offset()
 	copyFile(ix.main, ix.nameIndex)
 	segments[4] = segment{off, ix.main.offset() - off}
+	if ix.Verbose {
+		log.Printf("names index: %d bytes", ix.main.offset()-off)
+	}
 
 	off = ix.main.offset()
 	copyFile(ix.main, ix.postIndex)
 	segments[5] = segment{off, ix.main.offset() - off}
+	if ix.Verbose {
+		log.Printf("posts index: %d bytes", ix.main.offset()-off)
+	}
 
 	off = ix.main.offset()
 	copyFile(ix.main, ix.blobIndex)
 	segments[6] = segment{off, ix.main.offset() - off}
+	if ix.Verbose {
+		log.Printf("blobs index: %d bytes", ix.main.offset()-off)
+	}
 
 	off = ix.main.offset()
 	for _, segment := range segments {
