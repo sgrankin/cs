@@ -16,7 +16,7 @@ var KeyCodes = {
 };
 
 function getSelectedText() {
-	return window.getSelection ? window.getSelection().toString() : null;
+	return window.getSelection ? window.getSelection()?.toString() : null;
 }
 
 function scrollToRange(range, elementContainer) {

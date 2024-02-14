@@ -5,7 +5,7 @@
 
 // Bootstrap depends on a global jQuery existing.
 // Imports are resolved at file load... so set the global jquery in a separate module.
-import "../globals.ts";
+import "../globals";
 import "bootstrap/js/button";
 import "bootstrap/js/dropdown";
 // Importing the full bootstarp CSS unfortunately results in a huge css and broken colors.
@@ -17,12 +17,12 @@ import "bootstrap-select/dist/css/bootstrap-select.css";
 import "../codesearch/codesearch.css";
 
 import h from "hyperscript";
-import { View, Model, Collection } from "backbone";
+import { View, Model, Collection, ViewOptions } from "backbone";
 import { getJSON, set } from "js-cookie";
 import { isEqual, clone, keys } from "underscore";
 
-import { Codesearch } from "./codesearch.ts";
-import { init as _init, updateSelected, updateOptions } from "./repo_selector.ts";
+import { Codesearch } from "./codesearch";
+import { init as _init, updateSelected, updateOptions } from "./repo_selector";
 
 var last_url_update = 0;
 
@@ -48,7 +48,7 @@ function shorten(ref) {
 	return ref;
 }
 
-function viewUrl(backend, tree, version, path, lno) {
+function viewUrl(backend, tree, version, path, lno?) {
 	path = path.replace(/^\/+/, ""); // Trim any leading slashes
 	// Tree/version/path separation is via : as tree may have slashes in it...
 	// TODO: should we just URL encode it?
@@ -108,7 +108,7 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno): Element[] {
 	return out;
 }
 
-class MatchView extends View {
+class MatchView extends View<Match> {
 	constructor(options) {
 		super({
 			...options,
@@ -220,7 +220,7 @@ class Match extends Model {
 		};
 	}
 
-	viewUrl(lno) {
+	viewUrl(lno?) {
 		if (lno === undefined) {
 			lno = this.get("lno");
 		}
@@ -295,7 +295,7 @@ class FileGroup extends Model {
 }
 
 /** A set of matches that are automatically grouped by path. */
-class SearchResultSet extends Collection {
+class SearchResultSet extends Collection<FileGroup> {
 	add_match(match: Match) {
 		var path_info = match.path_info();
 		var file_group = this.get(path_info.id);
@@ -320,29 +320,29 @@ class SearchResultSet extends Collection {
  *
  * XXX almost identical to Match
  */
-class FileMatch extends Model {
+class FileMatch extends Model<Record<"tree" | "version" | "path" | "backend" | "bounds", any>> {
 	path_info() {
-		var tree = this.get("tree");
-		var version = this.get("version");
-		var path = this.get("path");
-		let backend = this.get("backend");
+		var tree = super.get("tree");
+		var version = super.get("version");
+		var path = super.get("path");
+		let backend = super.get("backend");
 		return {
 			backend: backend,
 			id: tree + ":" + version + ":" + path,
 			tree: tree,
 			version: version,
 			path: path,
-			bounds: this.get("bounds"),
+			bounds: super.get("bounds"),
 		};
 	}
 
 	viewUrl() {
-		return viewUrl(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"));
+		return viewUrl(super.get("backend"), super.get("tree"), super.get("version"), super.get("path"));
 	}
 }
 
-class FileMatchView extends View {
-	constructor(options) {
+class FileMatchView extends View<FileMatch> {
+	constructor(options?) {
 		super({
 			...options,
 			tagName: "div",
@@ -390,7 +390,7 @@ class SearchState extends Model {
 		};
 	}
 
-	constructor(opts) {
+	constructor(opts?) {
 		super(opts);
 		this.on("change:displaying", this.new_search, this);
 	}
@@ -498,7 +498,7 @@ class SearchState extends Model {
 	}
 }
 
-class FileGroupView extends View {
+class FileGroupView extends View<FileGroup> {
 	constructor(options) {
 		super({
 			...options,
@@ -561,7 +561,7 @@ class FileGroupView extends View {
 	}
 }
 
-class MatchesView extends View {
+class MatchesView extends View<SearchState> {
 	constructor(options) {
 		super({
 			...options,
@@ -591,7 +591,7 @@ class MatchesView extends View {
 		};
 
 		var count = 0;
-		let pathResults = [];
+		let pathResults: Element[] = [];
 		this.model.file_search_results.each(function (file) {
 			if (this.model.get("search_type") == "filename_only" || count < 10) {
 				var view = new FileMatchView({ model: file });
@@ -635,7 +635,7 @@ class MatchesView extends View {
 		popular_extensions.sort();
 
 		var help = "Narrow to:";
-		let fileExtensions = [];
+		let fileExtensions: Element[] = [];
 		for (var i = 0; i < popular_extensions.length; i++) {
 			fileExtensions.push(<button className="file-extension">{popular_extensions[i]}</button>);
 		}
@@ -674,7 +674,7 @@ class MatchesView extends View {
 	}
 }
 
-class ResultView extends View {
+class ResultView extends View<SearchState> {
 	matches_view;
 	results;
 	errorbox;
@@ -871,7 +871,7 @@ namespace CodesearchUI {
 		setTimeout(keypress, 0);
 	}
 	function init_query_from_parms(parms) {
-		var q = [];
+		var q: string[] = [];
 		if (parms.q) q.push(parms.q[0]);
 		if (parms.file) q.push("file:" + parms.file[0]);
 		input.val(q.join(" "));
