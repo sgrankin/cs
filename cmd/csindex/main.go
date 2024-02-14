@@ -9,9 +9,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
-	"sort"
-	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -52,14 +49,13 @@ delete the existing index before indexing the new paths.
 With no path arguments, cindex -reset removes the index.
 `
 
-func usage() {
-	fmt.Fprintf(os.Stderr, usageMessage)
-	os.Exit(2)
-}
-
 var (
 	gitPath   = flag.String("git", "data", "The path to the git repo")
 	indexPath = flag.String("index", "data/csindex", "The path to the index file")
+	repoName  = flag.String("repo-name", "github.com/torvalds/linux", "The name of the repo encoded in the index,  for disambiguation and remote URLs.")
+	refName   = flag.String("refname", "torvalds/linux/HEAD", "The git ref to index")
+
+	verbose = flag.Bool("verbose", false, "Verbose indexing")
 )
 
 type repoConfig struct {
@@ -68,75 +64,62 @@ type repoConfig struct {
 	Revisions []string `json:"revisions"`
 }
 
+func usage() {
+	fmt.Fprintf(os.Stderr, usageMessage)
+	os.Exit(2)
+}
+
 func main() {
 	log.SetFlags(log.Lshortfile)
 	flag.Usage = usage
 	flag.Parse()
-
-	cfg := []repoConfig{{
-		Name:      "torvalds/linux",
-		Revisions: []string{"HEAD"},
-	}}
 
 	repo, err := git.PlainOpen(*gitPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	master := *indexPath
+	temp := master + "~"
+	ix := index.Create(temp)
+	ix.Verbose = *verbose
+
 	// Translate paths to absolute paths so that we can generate the file list in sorted order.
-	paths := []string{}
-	for _, repoc := range cfg {
-		for _, rev := range repoc.Revisions {
-			rref, err := repo.Reference(plumbing.NewBranchReferenceName(path.Join(repoc.Name, rev)), true)
-			if err != nil {
-				log.Fatal(repoc, rev, err)
-			}
-			paths = append(paths, repoc.Name+":"+rref.Hash().String())
-		}
+	rref, err := repo.Reference(plumbing.NewBranchReferenceName(*refName), true)
+	if err != nil {
+		log.Fatal(*refName, err)
 	}
-	sort.Strings(paths)
+	prefix := *repoName + "@" + rref.Hash().String()
+	ix.AddPaths([]string{prefix})
 
-	master := *indexPath // index.File()
-	file := master + "~"
-
-	ix := index.Create(file)
-	// ix.Verbose = true
-	ix.AddPaths(paths)
-
-	for _, repoRev := range paths {
-		repoRevSplit := strings.SplitN(repoRev, ":", 2)
-		commit, err := repo.CommitObject(plumbing.NewHash(repoRevSplit[1]))
+	commit, err := repo.CommitObject(rref.Hash())
+	if err != nil {
+		log.Fatal(err)
+	}
+	tree, err := commit.Tree()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := tree.Files().ForEach(func(f *object.File) error {
+		// TODO: should symlinks be special?
+		r, err := f.Blob.Reader()
 		if err != nil {
 			log.Fatal(err)
 		}
-		tree, err := commit.Tree()
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := tree.Files().ForEach(func(f *object.File) error {
-			// TODO: should symlinks be special?
-			r, err := f.Blob.Reader()
-			if err != nil {
-				log.Fatal(err)
-			}
-			// Encode the repo & revision into the file name.
-			// The repo is used for search filtering, etc.
-			path := repoRev + ":" + f.Name
-			ix.Add(path, r)
-			r.Close()
+		// Encode the repo & revision into the file name.
+		// The repo is used for search filtering, etc.
+		ix.Add(prefix+"/+/"+f.Name, r)
+		r.Close()
 
-			return nil
-		}); err != nil {
-			log.Fatal(err)
-		}
+		return nil
+	}); err != nil {
+		log.Fatal(err)
 	}
-	log.Printf("flush index")
 	ix.Flush()
 
 	// log.Printf("merge %s %s", master, file)
 	// index.Merge(file+"~", master, file)
 	// os.Remove(file)
-	os.Rename(file, master)
-	log.Printf("done")
+	os.Rename(temp, master)
 	return
 }

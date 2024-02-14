@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -99,27 +98,19 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	backend := r.PathValue("backend")
-	repoName, _ := url.PathUnescape(r.PathValue("repo"))
-	commit := r.PathValue("commit")
 	path := r.PathValue("path")
+	repoName, path, _ := strings.Cut(path, "@")
+	commit, path, _ := strings.Cut(path, "/+/")
 
 	fileData, err := buildFileData(s.bk[backend], repoName, commit, path)
 	if err != nil {
 		http.Error(w, "Error reading file: "+err.Error(), 500)
 		return
 	}
-	// TODO: assuming github for now.
-	// TODO: make this conditional? Hard code the rpo name & such since this is a known file? Move to frontend?
-	url := "https://github.com/{name}/blob/{version}/{path}#L{lno}"
-	fileData.ExternalDomain = "github.com"
-	// url := "https://github.com/" + repoName + "/tree/" + commit + "/" + path + "#L{lno}"
+	url, domain := externalURL(repoName, commit, path)
+	fileData.ExternalDomain = domain
 	script_data := &struct {
-		RepoName string `json:"repo_name"`
-		// URLPattern is expected to have these replaceable tags:
-		// - {name}: repo name
-		// - {version}: the commit
-		// - {path}: file path in repo
-		// - {lno}: the line number
+		RepoName   string `json:"repo_name"`
 		URLPattern string `json:"url_pattern"`
 		FilePath   string `json:"file_path"`
 		Commit     string `json:"commit"`
@@ -137,6 +128,18 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 		IncludeHeader: false,
 		Data:          fileData,
 	})
+}
+
+func externalURL(repo, commit, path string) (url, name string) {
+	// URLPattern may have these replaceable tags:
+	// - {name}: repo name
+	// - {version}: the commit
+	// - {path}: file path in repo
+	// - {lno}: the line number
+	if repo, found := strings.CutPrefix(repo, "github.com/"); found {
+		return "https://github.com/" + repo + "/blob/" + commit + "/" + path + "#L{lno}", "GitHub"
+	}
+	return "", ""
 }
 
 type breadCrumbEntry struct {
@@ -250,16 +253,8 @@ func gitListDir(obj string, repoPath string) ([]gitTreeEntry, error) {
 	return result, nil
 }
 
-func viewUrl(backend, repo, commit, name string) string {
-	return path.Join("/view/", backend, url.PathEscape(repo), commit, name)
-}
-
-func getFileUrl(backend, repo, commit, pathFromRoot, name string, isDir bool) string {
-	fileUrl := viewUrl(backend, repo, commit, filepath.Join(pathFromRoot, path.Clean(name)))
-	if isDir {
-		fileUrl += "/"
-	}
-	return fileUrl
+func viewPath(backend, repo, commit string, name ...string) string {
+	return path.Join("/view/", backend, repo+"@"+commit+"/+/"+path.Join(name...))
 }
 
 func buildReadmeRegex(supportedReadmeExtensions []string) *regexp.Regexp {
@@ -333,7 +328,7 @@ func buildFileData(backend *Backend, repoName, commit, backendPrefix string) (*f
 				// Subdirectory, and already handled.
 				continue
 			}
-			viewURL := path.Join("/view", backend.ID, url.PathEscape(repoName), commit, backendPrefix, base)
+			viewURL := viewPath(backend.ID, repoName, commit, backendPrefix, base)
 			if isdir {
 				viewURL += "/"
 			}
@@ -386,7 +381,7 @@ func buildFileData(backend *Backend, repoName, commit, backendPrefix string) (*f
 		}
 		segments[i] = breadCrumbEntry{
 			Name: name,
-			Path: path.Join("/view", backend.ID, url.PathEscape(repoName), commit, parentPath, name) + slash,
+			Path: viewPath(backend.ID, repoName, commit, parentPath, name) + slash,
 		}
 	}
 
@@ -394,7 +389,7 @@ func buildFileData(backend *Backend, repoName, commit, backendPrefix string) (*f
 		Backend:      backend.ID,
 		PathSegments: segments,
 		RepoName:     repoName,
-		RepoURL:      path.Join("/view", backend.ID, url.PathEscape(repoName), commit),
+		RepoURL:      viewPath(backend.ID, repoName, commit),
 		Commit:       commit,
 		DirContent:   dirContent,
 		FileContent:  fileContent,

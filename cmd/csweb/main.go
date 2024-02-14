@@ -21,7 +21,7 @@ import (
 
 var (
 	listenAddr = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
-	indexPath  = flagVar[pathList]("index", pathList{}, "The path to the index file")
+	indexPath  = flagVar[stringSet]("index", stringSet{}, "The path to the index file")
 )
 
 func main() {
@@ -66,14 +66,14 @@ func main() {
 	log.Fatal(http.ListenAndServe(cfg.Listen, nil))
 }
 
-type pathList map[string]bool
+type stringSet map[string]bool
 
-func (s *pathList) Set(val string) error {
+func (s *stringSet) Set(val string) error {
 	val = path.Clean(val)
 	(*s)[val] = true
 	return nil
 }
-func (s *pathList) String() string {
+func (s *stringSet) String() string {
 	var paths []string
 	for p := range *s {
 		paths = append(paths, p)

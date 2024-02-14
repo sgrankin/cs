@@ -52,7 +52,7 @@ function viewUrl(backend, tree, version, path, lno?) {
 	path = path.replace(/^\/+/, ""); // Trim any leading slashes
 	// Tree/version/path separation is via : as tree may have slashes in it...
 	// TODO: should we just URL encode it?
-	var url = "/view/" + backend + "/" + encodeURIComponent(tree) + "/" + version + "/" + path;
+	var url = "/view/" + backend + "/" + tree + "@" + version + "/+/" + path;
 	if (lno !== undefined) {
 		url += "#L" + lno;
 	}
@@ -83,7 +83,7 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno): Element[] {
 	linkConfigs = linkConfigs.filter(function (linkConfig) {
 		return (
 			!linkConfig.whitelist_pattern ||
-			linkConfig.whitelist_pattern.test(encodeURIComponent(tree) + "/" + version + "/" + path)
+			linkConfig.whitelist_pattern.test(tree + "@" + version + "/+/" + path)
 		);
 	});
 
@@ -213,7 +213,7 @@ class Match extends Model {
 		var backend = this.get("backend");
 		return {
 			backend: backend,
-			id: tree + ":" + version + ":" + path,
+			id: tree + "@" + version + "/+/" + path,
 			tree: tree,
 			version: version,
 			path: path,
@@ -328,7 +328,7 @@ class FileMatch extends Model<Record<"tree" | "version" | "path" | "backend" | "
 		let backend = super.get("backend");
 		return {
 			backend: backend,
-			id: tree + ":" + version + ":" + path,
+			id: tree + "@" + version + "/+/" + path,
 			tree: tree,
 			version: version,
 			path: path,
@@ -774,7 +774,7 @@ class ResultView extends View<SearchState> {
 
 // TODO: this should be an instance of a singleton... maybe?
 namespace CodesearchUI {
-	export let repo_urls = {};
+	export let backend_repos = {};
 	export let defaultSearchRepos;
 	export let linkConfigs;
 	let state = new SearchState();
@@ -970,7 +970,7 @@ namespace CodesearchUI {
 	function update_repo_options() {
 		if (!input_backend) return;
 		var backend = input_backend.val();
-		updateOptions(keys(repo_urls[backend]));
+		updateOptions(backend_repos[backend]);
 	}
 	function keypress() {
 		clear_timer();
@@ -1008,7 +1008,7 @@ namespace CodesearchUI {
 }
 
 function init(initData) {
-	CodesearchUI.repo_urls = initData.repo_urls;
+	CodesearchUI.backend_repos = initData.backend_repos;
 	CodesearchUI.defaultSearchRepos = initData.default_search_repos;
 	CodesearchUI.linkConfigs = (initData.link_configs || []).map(function (link_config) {
 		if (link_config.whitelist_pattern) {

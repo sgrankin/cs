@@ -87,34 +87,30 @@ func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.R
 }
 
 type searchScriptData struct {
-	RepoUrls           map[string]map[string]string `json:"repo_urls"`
-	DefaultSearchRepos []string                     `json:"default_search_repos"`
-	LinkConfigs        []config.LinkConfig          `json:"link_configs"`
+	BackendRepos       map[string][]string `json:"backend_repos"`
+	DefaultSearchRepos []string            `json:"default_search_repos"`
+	LinkConfigs        []config.LinkConfig `json:"link_configs"`
 }
 
 func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []*Backend, sampleRepo string) {
-	urls := map[string]map[string]string{}
 	backends = []*Backend{}
+	repos := map[string][]string{}
 	sampleRepo = ""
 	for _, bkId := range s.bkOrder {
 		bk := s.bk[bkId]
 		backends = append(backends, bk)
 		info := bk.Info()
-		m := map[string]string{}
-		urls[bk.ID] = m
+		trees := []string{}
 		for _, tree := range info.Trees {
 			if sampleRepo == "" {
 				sampleRepo = tree.Name
 			}
-			// TODO: make this conditional? What is this even used for?
-			// XXX ARGH! Only the *keys* are used to get the repo names... See codesearch_ui.tsx
-			url := "https://github.com/{name}/blob/{version}/{path}#L{lno}"
-			m[tree.Name] = url
+			trees = append(trees, tree.Name)
 		}
+		repos[bk.ID] = trees
 	}
 
-	script_data = &searchScriptData{urls, s.repos, s.config.LinkConfigs}
-
+	script_data = &searchScriptData{repos, s.repos, s.config.LinkConfigs}
 	return script_data, backends, sampleRepo
 }
 
@@ -296,7 +292,7 @@ func New(cfg *config.Config) (http.Handler, error) {
 	mux.Handle("GET /search", srv.Handler(srv.ServeSearch))
 	mux.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
 	mux.Handle("GET /static/", http.FileServerFS(staticFS))
-	mux.Handle("GET /view/{backend}/{repo}/{commit}/{path...}", srv.Handler(srv.ServeFile))
+	mux.Handle("GET /view/{backend}/{path...}", srv.Handler(srv.ServeFile))
 	mux.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch)) // Parameters are in form format.
 
 	srv.inner = handlers.CompressHandler(mux)

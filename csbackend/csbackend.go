@@ -31,21 +31,21 @@ func (b *CSBackend) Info() csapi.CodeSearchInfo {
 		IndexTime: b.ix.FileInfo.ModTime(),
 	}
 	for _, p := range b.ix.Paths() {
-		repo, _, _ := strings.Cut(p, ":")
-		res.Trees = append(res.Trees, csapi.Tree{Name: repo})
+		repo, version, _ := strings.Cut(p, "@")
+		res.Trees = append(res.Trees, csapi.Tree{Name: repo, Version: version})
 	}
 	return res
 }
 
 // Data implements csapi.CodeSearch.
 func (b *CSBackend) Data(tree, version, path string) string {
-	return string(b.ix.DataAtName(tree + ":" + version + ":" + path))
+	return string(b.ix.DataAtName(tree + "@" + version + "/+/" + path))
 }
 
 // Paths implements csapi.CodeSearch.
 func (b *CSBackend) Paths(tree, version, prefix string) []csapi.File {
 	var result []csapi.File
-	for _, name := range b.ix.Names([]byte(tree + ":" + version + ":" + prefix)) {
+	for _, name := range b.ix.Names([]byte(tree + "@" + version + "/+/" + prefix)) {
 		tree, version, path := splitname(name)
 		result = append(result,
 			csapi.File{
@@ -244,18 +244,9 @@ func searchFile(re *regexp.Regexp, blob, tree, version, name []byte, contextLine
 	return results
 }
 
-func cut(b []byte, c byte) (prefix, rest []byte) {
-	i := bytes.IndexByte(b, c)
-	if i < 0 {
-		return b, nil
-	}
-	return b[:i], b[i+1:]
-}
-
 func splitname(b []byte) (tree, version, name []byte) {
-	tree, b = cut(b, ':')
-	version, b = cut(b, ':')
-	name, b = cut(b, ':')
+	tree, b, _ = bytes.Cut(b, []byte("@"))
+	version, name, _ = bytes.Cut(b, []byte("/+/"))
 	return
 }
 
