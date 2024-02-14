@@ -31,34 +31,7 @@ var KeyCodes = {
 };
 
 function getSelectedText() {
-	return window.getSelection ? window.getSelection().toString() : null;
-}
-
-function vercmp(a, b) {
-	var re = /^([0-9]*)([^0-9]*)(.*)$/;
-	var abits, bbits;
-	var anum, bnum;
-	while (a.length && b.length) {
-		abits = re.exec(a);
-		bbits = re.exec(b);
-		if ((abits[1] === "") != (bbits[1] === "")) {
-			return abits[1] ? -1 : 1;
-		}
-		if (abits[1] !== "") {
-			anum = parseInt(abits[1]);
-			bnum = parseInt(bbits[1]);
-			if (anum !== bnum) return anum - bnum;
-		}
-
-		if (abits[2] !== bbits[2]) {
-			return abits[2] < bbits[2] ? -1 : 1;
-		}
-
-		a = abits[3];
-		b = bbits[3];
-	}
-
-	return a.length - b.length;
+	return window.getSelection ? window.getSelection()?.toString() : null;
 }
 
 function shorten(ref) {
@@ -75,7 +48,7 @@ function shorten(ref) {
 	return ref;
 }
 
-function url(backend, tree, version, path, lno) {
+function viewUrl(backend, tree, version, path, lno) {
 	path = path.replace(/^\/+/, ""); // Trim any leading slashes
 	// Tree/version/path separation is via : as tree may have slashes in it...
 	// TODO: should we just URL encode it?
@@ -106,7 +79,7 @@ function externalUrl(url, tree, version, path, lno) {
 	return url;
 }
 
-function renderLinkConfigs(linkConfigs, tree, version, path, lno) {
+function renderLinkConfigs(linkConfigs, tree, version, path, lno): Element[] {
 	linkConfigs = linkConfigs.filter(function (linkConfig) {
 		return (
 			!linkConfig.whitelist_pattern ||
@@ -125,7 +98,7 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno) {
 			</a>
 		);
 	});
-	let out = [];
+	let out: Element[] = [];
 	for (var i = 0; i < links.length; i++) {
 		if (i > 0) {
 			out.push(<span className="file-action-link-separator">\u00B7</span>);
@@ -149,12 +122,12 @@ class MatchView extends View {
 		this.setElement(div);
 		return this;
 	}
-	_renderLno(n: number, isMatch: boolean) {
+	_renderLno(n: number, isMatch: boolean): Element {
 		var lnoStr = n.toString() + (isMatch ? ":" : "-");
 		var classes = ["lno-link"];
 		if (isMatch) classes.push("matchlno");
 		return (
-			<a className={classes.join(" ")} href={this.model.url(n)}>
+			<a className={classes.join(" ")} href={this.model.viewUrl(n)}>
 				<span className="lno" aria-label={lnoStr}>
 					{lnoStr}
 				</span>
@@ -163,8 +136,8 @@ class MatchView extends View {
 	}
 	_render() {
 		var i;
-		var ctx_before = [],
-			ctx_after = [];
+		var ctx_before: Element[] = [],
+			ctx_after: Element[] = [];
 		var lno = this.model.get("lno");
 		var ctxBefore = this.model.get("context_before"),
 			clip_before = this.model.get("clip_before");
@@ -247,18 +220,18 @@ class Match extends Model {
 		};
 	}
 
-	url(lno) {
+	viewUrl(lno) {
 		if (lno === undefined) {
 			lno = this.get("lno");
 		}
-		return url(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"), lno);
+		return viewUrl(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"), lno);
 	}
 }
 
 /** A set of Matches at a single path. */
 class FileGroup extends Model {
 	path_info;
-	matches: Match[] = [];
+	matched: Match[] = [];
 
 	constructor(path_info) {
 		super();
@@ -267,7 +240,7 @@ class FileGroup extends Model {
 	}
 
 	add_match(match: Match) {
-		this.matches.push(match);
+		this.matched.push(match);
 	}
 
 	/** Prepare the matches for rendering by clipping the context of matches to avoid duplicate
@@ -278,16 +251,16 @@ class FileGroup extends Model {
 	 * - Two matches cannot have the same line number
 	 */
 	process_context_overlaps() {
-		if (!this.matches || this.matches.length < 2) {
+		if (!this.matched || this.matched.length < 2) {
 			return; // We don"t have overlaps unless we have at least two things
 		}
 
 		// NOTE: The logic below requires matches to be sorted by line number.
-		this.matches.sort((a, b) => a.get("lno") - b.get("lno"));
+		this.matched.sort((a, b) => a.get("lno") - b.get("lno"));
 
-		for (var i = 1, len = this.matches.length; i < len; i++) {
-			var previous_match = this.matches[i - 1],
-				this_match = this.matches[i];
+		for (var i = 1, len = this.matched.length; i < len; i++) {
+			var previous_match = this.matched[i - 1],
+				this_match = this.matched[i];
 			var last_line_of_prev_context =
 				previous_match.get("lno") + previous_match.get("context_after").length;
 			var first_line_of_this_context =
@@ -335,7 +308,7 @@ class SearchResultSet extends Collection {
 
 	num_matches() {
 		return this.reduce(function (memo, file_group) {
-			return memo + file_group.matches.length;
+			return memo + file_group.matched.length;
 		}, 0);
 	}
 }
@@ -363,8 +336,8 @@ class FileMatch extends Model {
 		};
 	}
 
-	url() {
-		return url(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"));
+	viewUrl() {
+		return viewUrl(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"));
 	}
 }
 
@@ -388,7 +361,7 @@ class FileMatchView extends View {
 		el.empty();
 		el.addClass("filename-match");
 		el.append(
-			<a className="label header result-path" href={this.model.url()}>
+			<a className="label header result-path" href={this.model.viewUrl()}>
 				<span className="repo">{path_info.tree}:</span>
 				<span className="version">{shorten(path_info.version)}:</span>
 				{pieces[0]}
@@ -467,7 +440,7 @@ class SearchState extends Model {
 		return true;
 	}
 
-	url() {
+	viewUrl() {
 		var q = {};
 		var current = this.search_map[this.get("displaying")];
 		if (!current) return "/search";
@@ -545,11 +518,11 @@ class FileGroupView extends View {
 			dirname = "";
 		}
 
-		var first_match = this.model.matches[0];
+		var first_match = this.model.matched[0];
 		return (
 			<div className="header">
 				<span className="header-path">
-					<a className="result-path" href={first_match.url()}>
+					<a className="result-path" href={first_match.viewUrl()}>
 						<span className="repo">{tree}:</span>
 						<span className="version">{shorten(version)}:</span>
 						{dirname}
@@ -570,7 +543,7 @@ class FileGroupView extends View {
 	}
 
 	render() {
-		var matches = this.model.matches;
+		var matches = this.model.matched;
 		var el = this.$el;
 		el.empty();
 		el.append(
@@ -734,7 +707,7 @@ class ResultView extends View {
 			this.errorbox.hide();
 		}
 
-		var url = this.model.url();
+		var url = this.model.viewUrl();
 		if (this.last_url !== url) {
 			if (history.pushState) {
 				var browser_url = window.location.pathname + window.location.search;
