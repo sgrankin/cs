@@ -11,9 +11,8 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"path"
-	"strings"
 
+	"sgrankin.dev/cs/internal/flagutil"
 	"sgrankin.dev/cs/livegrep/server"
 	"sgrankin.dev/cs/livegrep/server/config"
 	"sgrankin.dev/cs/livegrep/server/middleware"
@@ -21,7 +20,7 @@ import (
 
 var (
 	listenAddr = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
-	indexPath  = flagVar[stringSet]("index", stringSet{}, "The path to the index file")
+	indexPath  = flagutil.Var[flagutil.StringSet]("index", flagutil.StringSet{}, "The path to the index file")
 )
 
 func main() {
@@ -64,29 +63,4 @@ func main() {
 
 	log.Printf("Listening on %s.", cfg.Listen)
 	log.Fatal(http.ListenAndServe(cfg.Listen, nil))
-}
-
-type stringSet map[string]bool
-
-func (s *stringSet) Set(val string) error {
-	val = path.Clean(val)
-	(*s)[val] = true
-	return nil
-}
-func (s *stringSet) String() string {
-	var paths []string
-	for p := range *s {
-		paths = append(paths, p)
-	}
-	return strings.Join(paths, ",")
-}
-
-func flagVar[T any, PT interface {
-	flag.Value
-	*T
-}](name string, value T, usage string) PT {
-	v := value
-	pv := (PT)(&v)
-	flag.Var(pv, name, usage)
-	return pv
 }

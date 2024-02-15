@@ -62,35 +62,6 @@ func extractQuery(ctx context.Context, r *http.Request) (csapi.Query, bool, erro
 		log.Printf(ctx, "parsing query q=%q out=%s", q[0], asJSON{query})
 	}
 
-	// Support old-style query arguments
-	if line, ok := params["line"]; ok {
-		query.Line = line[0]
-		if !regex {
-			query.Line = regexp.QuoteMeta(query.Line)
-		}
-	}
-	if file, ok := params["file"]; ok {
-		query.File = []string{file[0]}
-		if !regex {
-			query.File = []string{regexp.QuoteMeta(file[0])}
-		}
-	}
-	if files, ok := params["file"]; ok {
-		query.File = files
-		if !regex {
-			query.File = make([]string, len(files))
-			for _, f := range files {
-				query.File = append(query.File, regexp.QuoteMeta(f))
-			}
-		}
-	}
-	if repo, ok := params["repo"]; ok {
-		query.Repo = repo[0]
-		if !regex {
-			query.Repo = regexp.QuoteMeta(query.Repo)
-		}
-	}
-
 	// New-style repo multiselect, only if "repo:" is not in the query.
 	if len(query.Repo) == 0 {
 		if newRepos, ok := params["repo[]"]; ok {

@@ -46,39 +46,39 @@ export namespace Codesearch {
 		if ("backend" in opts) {
 			url = url + opts.backend;
 		}
-		let request = new URLSearchParams({
-			q: opts.q,
-			fold_case: opts.fold_case,
-			regex: opts.regex,
-			repo: opts.repo,
-		});
-
 		const start = Date.now();
 		try {
-			let response = await fetch(url, {
+			let data = await jQuery.ajax({
 				method: "POST",
-				body: request,
+				url: url,
+				data: {
+					q: opts.q,
+					fold_case: opts.fold_case,
+					regex: opts.regex,
+					repo: opts.repo,
+				},
+				dataType: "json",
 			});
-			if (response.ok) {
-				let data = JSON.parse(await response.text());
-				const elapsed = Date.now() - start;
-				data.results.forEach((r) => {
-					delegate.match(opts.id, r);
-				});
-				data.file_results.forEach((r) => {
-					delegate.file_match(opts.id, r);
-				});
-				delegate.search_done(opts.id, elapsed, data.search_type, data.info.why);
-			} else if (response.status >= 400 && response.status < 500) {
-				var err = JSON.parse(await response.text());
-				delegate.error(opts.id, err.error.message);
+			const elapsed = Date.now() - start;
+			data.results.forEach((r) => {
+				delegate.match(opts.id, r);
+			});
+			data.file_results.forEach((r) => {
+				delegate.file_match(opts.id, r);
+			});
+			delegate.search_done(opts.id, elapsed, data.search_type, data.info.why);
+		} catch (err) {
+			let xhr = err as JQuery.jqXHR;
+			console.log(xhr);
+			if (xhr.status >= 400 && xhr.status < 500) {
+				delegate.error(opts.id, xhr.responseJSON.error.message);
 			} else {
 				var message = "Cannot connect to server";
-				if (response.status) {
-					message = "Bad response " + response.status + " from server";
+				if (xhr.status) {
+					message = "Bad response " + xhr.status + " from server";
 				}
 				delegate.error(opts.id, message);
-				console.log("server error", response.status, response.text());
+				console.log("server error", xhr.status, xhr.responseText);
 			}
 		} finally {
 			in_flight = null;
