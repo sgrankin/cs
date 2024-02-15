@@ -20,34 +20,64 @@ import (
 
 	"github.com/gorilla/handlers"
 
+	"sgrankin.dev/cs/csapi"
+	"sgrankin.dev/cs/csbackend"
 	"sgrankin.dev/cs/livegrep/server/config"
 	"sgrankin.dev/cs/livegrep/server/log"
-	"sgrankin.dev/cs/livegrep/server/reqid"
 )
 
 var serveUrlParseError = fmt.Errorf("failed to parse repo and path from URL")
 
-type page struct {
-	Title         string
-	ScriptName    string
-	ScriptData    interface{}
-	IncludeHeader bool
-	Data          interface{}
-	Config        *config.Config
-	AssetHashes   map[string]string
-	Nonce         template.HTMLAttr // either `` or ` nonce="..."`
-}
-
 type server struct {
-	config      *config.Config
-	bk          map[string]*Backend
-	bkOrder     []string
-	repos       []string
-	inner       http.Handler
+	http.Handler
+
+	config  *config.Config
+	bk      map[string]*Backend
+	bkOrder []string
+	repos   []string
+
 	Templates   map[string]*template.Template
 	OpenSearch  *texttemplate.Template
 	AssetHashes map[string]string
 	Layout      *template.Template
+}
+
+func New(cfg *config.Config) *server {
+	srv := &server{
+		config: cfg,
+		bk:     map[string]*Backend{},
+	}
+	srv.loadTemplates()
+
+	for _, icfg := range cfg.IndexConfig {
+		be := &Backend{CodeSearch: csbackend.New(icfg.Path), ID: filepath.Base(icfg.Path)}
+		srv.bk[be.ID] = be
+		srv.bkOrder = append(srv.bkOrder, be.ID)
+		info := be.Info()
+		for _, t := range info.Trees {
+			srv.repos = append(srv.repos, t.Name)
+		}
+	}
+
+	for ext, lang := range srv.config.FileExtToLang {
+		extToLangMap[ext] = lang
+	}
+
+	for regexStr, lang := range srv.config.FileFirstLineRegexToLang {
+		regex := regexp.MustCompile(regexStr)
+		fileFirstLineToLangMap[regex] = lang
+	}
+
+	mux := http.NewServeMux()
+	addRoutes(mux, srv)
+
+	var h http.Handler = mux
+	h = handlers.CompressHandler(h)
+	h = withTimeout(h)
+	h = withRequestID(h)
+
+	srv.Handler = h
+	return srv
 }
 
 func (s *server) loadTemplates() {
@@ -78,58 +108,8 @@ func (s *server) loadTemplates() {
 	})
 }
 
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.inner.ServeHTTP(w, r)
-}
-
 func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/search", 303)
-}
-
-type searchScriptData struct {
-	BackendRepos       map[string][]string `json:"backend_repos"`
-	DefaultSearchRepos []string            `json:"default_search_repos"`
-	LinkConfigs        []config.LinkConfig `json:"link_configs"`
-}
-
-func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []*Backend, sampleRepo string) {
-	backends = []*Backend{}
-	repos := map[string][]string{}
-	sampleRepo = ""
-	for _, bkId := range s.bkOrder {
-		bk := s.bk[bkId]
-		backends = append(backends, bk)
-		info := bk.Info()
-		trees := []string{}
-		for _, tree := range info.Trees {
-			if sampleRepo == "" {
-				sampleRepo = tree.Name
-			}
-			trees = append(trees, tree.Name)
-		}
-		repos[bk.ID] = trees
-	}
-
-	script_data = &searchScriptData{repos, s.repos, s.config.LinkConfigs}
-	return script_data, backends, sampleRepo
-}
-
-func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	script_data, backends, sampleRepo := s.makeSearchScriptData()
-
-	s.renderPage(ctx, w, r, "index.html", &page{
-		Title:         "code search",
-		ScriptName:    "codesearch/codesearch_ui",
-		ScriptData:    script_data,
-		IncludeHeader: true,
-		Data: struct {
-			Backends   []*Backend
-			SampleRepo string
-		}{
-			Backends:   backends,
-			SampleRepo: sampleRepo,
-		},
-	})
 }
 
 func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -233,68 +213,18 @@ func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.
 	buf.WriteTo(w)
 }
 
-type handler func(c context.Context, w http.ResponseWriter, r *http.Request)
-
-const RequestTimeout = 30 * time.Second
-
-func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, RequestTimeout)
-	defer cancel()
-	ctx = reqid.NewContext(ctx, reqid.New())
-	log.Printf(ctx, "http request: remote=%q method=%q url=%q",
-		r.RemoteAddr, r.Method, r.URL)
-	h(ctx, w, r)
+type Backend struct {
+	csapi.CodeSearch
+	ID string
 }
 
-func (s *server) Handler(f func(c context.Context, w http.ResponseWriter, r *http.Request)) http.Handler {
-	return handler(f)
-}
-
-func New(cfg *config.Config) (http.Handler, error) {
-	srv := &server{
-		config: cfg,
-		bk:     map[string]*Backend{},
-	}
-	srv.loadTemplates()
-
-	for _, icfg := range cfg.IndexConfig {
-		be, err := NewBackend(filepath.Base(icfg.Path), icfg.Path)
-		if err != nil {
-			return nil, err
-		}
-		srv.bk[be.ID] = be
-		srv.bkOrder = append(srv.bkOrder, be.ID)
-		info := be.Info()
-		for _, t := range info.Trees {
-			srv.repos = append(srv.repos, t.Name)
-		}
-	}
-
-	for ext, lang := range srv.config.FileExtToLang {
-		extToLangMap[ext] = lang
-	}
-
-	for regexStr, lang := range srv.config.FileFirstLineRegexToLang {
-		regex, err := regexp.Compile(regexStr)
-		if err != nil {
-			return nil, err
-		}
-		fileFirstLineToLangMap[regex] = lang
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle("GET /", srv.Handler(srv.ServeRoot))
-	mux.Handle("GET /about", srv.Handler(srv.ServeAbout))
-	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
-	mux.Handle("GET /debug/stats", srv.Handler(srv.ServeStats))
-	mux.Handle("GET /opensearch.xml", srv.Handler(srv.ServeOpensearch))
-	mux.Handle("GET /search", srv.Handler(srv.ServeSearch))
-	mux.Handle("GET /search/{backend}", srv.Handler(srv.ServeSearch))
-	mux.Handle("GET /static/", http.FileServerFS(staticFS))
-	mux.Handle("GET /view/{backend}/{path...}", srv.Handler(srv.ServeFile))
-	mux.Handle("POST /api/v1/search/{backend}", srv.Handler(srv.ServeAPISearch)) // Parameters are in form format.
-
-	srv.inner = handlers.CompressHandler(mux)
-	return srv, nil
+type page struct {
+	Title         string
+	ScriptName    string
+	ScriptData    interface{}
+	IncludeHeader bool
+	Data          interface{}
+	Config        *config.Config
+	AssetHashes   map[string]string
+	Nonce         template.HTMLAttr // either `` or ` nonce="..."`
 }

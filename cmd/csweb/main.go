@@ -50,11 +50,7 @@ func main() {
 		}
 	}
 
-	handler, err := server.New(cfg)
-	if err != nil {
-		panic(err.Error())
-	}
-
+	var handler http.Handler = server.New(cfg)
 	if cfg.ReverseProxy {
 		handler = middleware.UnwrapProxyHeaders(handler)
 	}
