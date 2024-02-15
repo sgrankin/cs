@@ -974,7 +974,7 @@ namespace CodesearchUI {
 	}
 	function keypress() {
 		clear_timer();
-		timer = setTimeout(newsearch, 125);
+		timer = setTimeout(newsearch, 100);
 	}
 	export function newsearch() {
 		clear_timer();
