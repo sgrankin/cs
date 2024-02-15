@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	gitconf "github.com/go-git/go-git/v5/config"
+	gitplumbing "github.com/go-git/go-git/v5/plumbing"
 	gittransport "github.com/go-git/go-git/v5/plumbing/transport"
 	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/google/go-github/v57/github"
@@ -40,12 +41,12 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 	flag.Parse()
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
-	if err := run(*configPath, *gitPath, gitHubToken); err != nil {
+	if err := run(*configPath, *gitPath, gitHubToken, *prune); err != nil {
 		log.Fatal(err)
 	}
 
 }
-func run(configPath, gitPath, gitHubToken string) error {
+func run(configPath, gitPath, gitHubToken string, prune bool) error {
 	ctx := context.Background()
 
 	cfg, err := os.ReadFile(configPath)
@@ -57,44 +58,94 @@ func run(configPath, gitPath, gitHubToken string) error {
 		return err
 	}
 
-	// TODO: create localRepo if it's not there...
-	localRepo, err := git.PlainOpen(gitPath)
+	repo, err := git.PlainOpen(gitPath)
+	if err != nil && errors.Is(err, git.ErrRepositoryNotExists) {
+		repo, err = git.PlainInit(gitPath, true)
+	}
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
+	toFetch, err := resolveSpecs(ctx, config, gitHubToken)
+	if err != nil {
+		return err
+	}
+	for _, spec := range toFetch {
+		if err := fetchRepo(ctx, repo, spec); err != nil {
+			return err
+		}
+	}
+
+	if prune {
+		log.Println("pruning refs")
+		want := map[string]bool{}
+		for _, spec := range toFetch {
+			want[spec.Dst] = true
+		}
+		refs, err := repo.References()
+		if err != nil {
+			return err
+		}
+		var toRemove []gitplumbing.ReferenceName
+		if err := refs.ForEach(func(r *gitplumbing.Reference) error {
+			if r.Type() != gitplumbing.HashReference {
+				return nil
+			}
+			if !want[r.Name().String()] {
+				toRemove = append(toRemove, r.Name())
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+		refs.Close()
+		for _, r := range toRemove {
+			log.Printf("removing ref %s", r.Short())
+			if err := repo.Storer.RemoveReference(r); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func resolveSpecs(ctx context.Context, config Config, gitHubToken string) ([]fetchSpec, error) {
 	var auth gittransport.AuthMethod
 	client := github.NewClient(nil)
 	if gitHubToken != "" {
 		client = client.WithAuthToken(gitHubToken)
 		auth = &githttp.BasicAuth{Username: "git", Password: gitHubToken}
 	}
-
+	var toFetch []fetchSpec
 	for _, spec := range config.Specs {
 		if spec.GitHub != nil {
 			gh := spec.GitHub
+			ref := "HEAD"
+			if gh.Ref != "" {
+				ref = gh.Ref
+			}
 			switch {
 			case gh.Org != "":
 				for page := 1; ; page++ {
-					repos, response, err := client.Repositories.ListByOrg(ctx, gh.Org, &github.RepositoryListByOrgOptions{
-						ListOptions: github.ListOptions{PerPage: 100, Page: page}})
+					repos, response, err := client.
+						Repositories.
+						ListByOrg(ctx, gh.Org, &github.RepositoryListByOrgOptions{
+							ListOptions: github.ListOptions{PerPage: 100, Page: page}})
 					if err != nil {
-						return err
+						return nil, err
 					}
-					log.Printf("%s page %d next page %d", gh.Org, page, response.NextPage)
 					for _, repo := range repos {
 						if (repo.Archived != nil && *repo.Archived && !gh.Archived) ||
 							(repo.Fork != nil && *repo.Fork && !gh.Forks) {
 							continue
 						}
-						ref := gh.Ref
-						if ref == "" {
-							ref = "HEAD"
-						}
-						log.Printf("fetching %q:%q", *repo.FullName, ref)
-						if err := fetchRepo(localRepo, *repo.CloneURL, auth, ref, "refs/github.com/"+*repo.FullName); err != nil {
-							return err
-						}
+						toFetch = append(toFetch, fetchSpec{
+							URL:  *repo.CloneURL,
+							Auth: auth,
+							Src:  ref,
+							Dst:  "refs/" + *repo.FullName,
+						})
 					}
 					if response.NextPage == 0 {
 						break
@@ -102,25 +153,24 @@ func run(configPath, gitPath, gitHubToken string) error {
 				}
 			case gh.User != "":
 				for page := 1; ; page++ {
-					repos, response, err := client.Repositories.ListByUser(ctx, gh.User, &github.RepositoryListByUserOptions{
-						ListOptions: github.ListOptions{PerPage: 100, Page: page}})
+					repos, response, err := client.
+						Repositories.
+						ListByUser(ctx, gh.User, &github.RepositoryListByUserOptions{
+							ListOptions: github.ListOptions{PerPage: 100, Page: page}})
 					if err != nil {
-						return err
+						return nil, err
 					}
-					log.Printf("%s page %d next page %d", gh.User, page, response.NextPage)
 					for _, repo := range repos {
 						if (repo.Archived != nil && *repo.Archived && !gh.Archived) ||
 							(repo.Fork != nil && *repo.Fork && !gh.Forks) {
 							continue
 						}
-						ref := gh.Ref
-						if ref == "" {
-							ref = "HEAD"
-						}
-						log.Printf("fetching %q:%q", *repo.FullName, ref)
-						if err := fetchRepo(localRepo, *repo.CloneURL, auth, ref, "refs/github.com/"+*repo.FullName); err != nil {
-							return err
-						}
+						toFetch = append(toFetch, fetchSpec{
+							URL:  *repo.CloneURL,
+							Auth: auth,
+							Src:  ref,
+							Dst:  "refs/" + *repo.FullName,
+						})
 					}
 					if response.NextPage == 0 {
 						break
@@ -129,42 +179,46 @@ func run(configPath, gitPath, gitHubToken string) error {
 			case gh.Repo != "":
 				owner, repoName, found := strings.Cut(gh.Repo, "/")
 				if !found {
-					return fmt.Errorf("expected owner/repo in %q", gh.Repo)
+					return nil, fmt.Errorf("expected owner/repo in %q", gh.Repo)
 				}
 				repo, _, err := client.Repositories.Get(ctx, owner, repoName)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				if (repo.Archived != nil && *repo.Archived && !gh.Archived) ||
 					(repo.Fork != nil && *repo.Fork && !gh.Forks) {
 					continue
 				}
-				ref := gh.Ref
-				if ref == "" {
-					ref = "HEAD"
-				}
-				log.Printf("fetching %q:%q", *repo.FullName, ref)
-				if err := fetchRepo(localRepo, *repo.CloneURL, auth, ref, "refs/github.com/"+*repo.FullName); err != nil {
-					return err
-				}
+				toFetch = append(toFetch, fetchSpec{
+					URL:  *repo.CloneURL,
+					Auth: auth,
+					Src:  ref,
+					Dst:  "refs/" + *repo.FullName,
+				})
 			}
-
 		}
 	}
-
-	return nil
+	return toFetch, nil
 }
 
-func fetchRepo(localRepo *git.Repository, cloneURL string, auth gittransport.AuthMethod, fromRef, toRef string) error {
-	spec := "+" + fromRef + ":" + toRef
-	err := git.NewRemote(localRepo.Storer, &gitconf.RemoteConfig{
-		URLs: []string{cloneURL},
-	}).Fetch(&git.FetchOptions{
-		Auth:     auth,
-		RefSpecs: []gitconf.RefSpec{gitconf.RefSpec(spec)},
-		Depth:    1,
-		Progress: os.Stdout,
-	})
+type fetchSpec struct {
+	URL      string
+	Auth     gittransport.AuthMethod
+	Src, Dst string
+}
+
+func fetchRepo(ctx context.Context, localRepo *git.Repository, spec fetchSpec) error {
+	refSpec := "+" + spec.Src + ":" + spec.Dst
+	log.Printf("fetching %s %s", spec.URL, refSpec)
+	err := git.
+		NewRemote(localRepo.Storer, &gitconf.RemoteConfig{
+			URLs: []string{spec.URL}}).
+		FetchContext(ctx, &git.FetchOptions{
+			Auth:     spec.Auth,
+			RefSpecs: []gitconf.RefSpec{gitconf.RefSpec(refSpec)},
+			Depth:    1,
+			Progress: os.Stdout,
+		})
 	switch {
 	case err == nil:
 	case errors.Is(err, git.NoErrAlreadyUpToDate):

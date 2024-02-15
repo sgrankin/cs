@@ -96,7 +96,6 @@ func main() {
 			if r.Type() != plumbing.HashReference {
 				return nil
 			}
-			fmt.Println(r.Name())
 			refs = append(refs, r.Name().Short())
 			return nil
 		})
