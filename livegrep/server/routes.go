@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"sgrankin.dev/cs/internal/httputil"
 	"sgrankin.dev/cs/livegrep/server/log"
 	"sgrankin.dev/cs/livegrep/server/reqid"
 )
@@ -18,7 +19,7 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	mux.Handle("GET /opensearch.xml", ctxHandlerFunc(srv.ServeOpensearch))
 	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSearch))
 	mux.Handle("GET /search/{backend}", ctxHandlerFunc(srv.ServeSearch))
-	mux.Handle("GET /static/", http.FileServerFS(staticFS))
+	mux.Handle("GET /static/", httputil.EmbedFileServer(staticFS))
 	mux.Handle("GET /view/{backend}/{path...}", ctxHandlerFunc(srv.ServeFile))
 	mux.Handle("POST /api/v1/search/{backend}", ctxHandlerFunc(srv.ServeAPISearch)) // Parameters are in form format.
 }
