@@ -14,6 +14,7 @@ import "bootstrap-select/dist/css/bootstrap-select.css";
 
 import "../codesearch/codesearch.css";
 
+import { Idiomorph } from "idiomorph/dist/idiomorph.esm";
 import h from "hyperscript";
 import { View, Model, Collection, ViewOptions } from "backbone";
 import { getJSON, set } from "js-cookie";
@@ -117,7 +118,7 @@ class MatchView extends View<Match> {
 
 	render() {
 		var div = this._render();
-		this.setElement(div);
+		this.setElement(Idiomorph.morph(this.$el[0], div));
 		return this;
 	}
 	_renderLno(n: number, isMatch: boolean): Element {
