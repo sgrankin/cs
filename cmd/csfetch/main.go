@@ -144,7 +144,7 @@ func resolveSpecs(ctx context.Context, config Config, gitHubToken string) ([]fet
 							URL:  *repo.CloneURL,
 							Auth: auth,
 							Src:  ref,
-							Dst:  "refs/" + *repo.FullName,
+							Dst:  "refs/github.com/" + *repo.FullName,
 						})
 					}
 					if response.NextPage == 0 {
@@ -169,7 +169,7 @@ func resolveSpecs(ctx context.Context, config Config, gitHubToken string) ([]fet
 							URL:  *repo.CloneURL,
 							Auth: auth,
 							Src:  ref,
-							Dst:  "refs/" + *repo.FullName,
+							Dst:  "refs/github.com/" + *repo.FullName,
 						})
 					}
 					if response.NextPage == 0 {
@@ -193,7 +193,7 @@ func resolveSpecs(ctx context.Context, config Config, gitHubToken string) ([]fet
 					URL:  *repo.CloneURL,
 					Auth: auth,
 					Src:  ref,
-					Dst:  "refs/" + *repo.FullName,
+					Dst:  "refs/github.com/" + *repo.FullName,
 				})
 			}
 		}
