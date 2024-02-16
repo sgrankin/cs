@@ -68,18 +68,18 @@ func (b *CSBackend) Info() csapi.CodeSearchInfo {
 }
 
 // Data implements csapi.CodeSearch.
-func (b *CSBackend) Data(tree, version, path string) string {
-	return string(b.index().DataAtName(tree + "@" + version + "/+/" + path))
+func (b *CSBackend) Data(repo, version, path string) string {
+	return string(b.index().DataAtName(repo + "@" + version + "/+/" + path))
 }
 
 // Paths implements csapi.CodeSearch.
-func (b *CSBackend) Paths(tree, version, prefix string) []csapi.File {
+func (b *CSBackend) Paths(repo, version, prefix string) []csapi.File {
 	var result []csapi.File
-	for _, name := range b.index().Names([]byte(tree + "@" + version + "/+/" + prefix)) {
-		tree, version, path := splitname(name)
+	for _, name := range b.index().Names([]byte(repo + "@" + version + "/+/" + prefix)) {
+		repo, version, path := splitname(name)
 		result = append(result,
 			csapi.File{
-				Tree:    string(tree),
+				Tree:    string(repo),
 				Version: string(version),
 				Path:    string(path),
 			})
@@ -101,9 +101,13 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		return nil, err
 	}
 
-	treeFilter, err := newRegexpFilter(req.Repo, req.NotRepo)
+	repoFilter, err := newRegexpFilter(req.Repo, req.NotRepo)
 	if err != nil {
 		return nil, err
+	}
+	var fixedRepoFilter *setFilter
+	if req.RepoFilter != nil {
+		fixedRepoFilter = newSetFilter(req.RepoFilter)
 	}
 	fileFilter, err := newRegexpFilter(strings.Join(req.File, "|"), strings.Join(req.NotFile, "|"))
 	if err != nil {
@@ -118,12 +122,12 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	// Find filename matches.
 	fresults := make(chan []csapi.FileResult, 1)
 	defer close(fresults)
-	go func(re *regexp.Regexp, treeFilter, fileFilter *regexpFilter) {
+	go func(re *regexp.Regexp, repoFilter, fileFilter *regexpFilter) {
 		res := []csapi.FileResult{}
 		for _, fileid := range ix.PostingQuery(&index.Query{Op: index.QAll}) {
 			postName := ix.NameBytes(fileid)
-			tree, version, path := splitname(postName)
-			if !treeFilter.Accept(tree) || !fileFilter.Accept(path) {
+			repo, version, path := splitname(postName)
+			if !fixedRepoFilter.Accept(repo) || !repoFilter.Accept(repo) || !fileFilter.Accept(path) {
 				continue
 			}
 			m := regexp.Match(re, path)
@@ -132,7 +136,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 			}
 			res = append(res, csapi.FileResult{
 				File: csapi.File{
-					Tree:    string(tree),
+					Tree:    string(repo),
 					Version: string(version),
 					Path:    string(path),
 				},
@@ -143,7 +147,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 			}
 		}
 		fresults <- res
-	}(re.Clone(), treeFilter.Clone(), fileFilter.Clone())
+	}(re.Clone(), repoFilter.Clone(), fileFilter.Clone())
 
 	csResult := csapi.CodeSearchResult{
 		Stats: csapi.SearchStats{
@@ -167,7 +171,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		var wg sync.WaitGroup
 		for range numWorkers {
 			wg.Add(1)
-			go func(re *regexp.Regexp, treeFilter, fileFilter *regexpFilter) {
+			go func(re *regexp.Regexp, repoFilter *regexpFilter, fileFilter *regexpFilter) {
 				defer wg.Done()
 				for ctx.Err() == nil { // Cancelled?
 					i := idx.Add(1)
@@ -175,12 +179,12 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 						return // No more work.
 					}
 					postName := ix.NameBytes(post[i])
-					tree, version, name := splitname(postName)
-					if !treeFilter.Accept(tree) || !fileFilter.Accept(name) {
+					repo, version, name := splitname(postName)
+					if !fixedRepoFilter.Accept(repo) || !repoFilter.Accept(repo) || !fileFilter.Accept(name) {
 						continue
 					}
 					blob := ix.Data(post[i])
-					results := searchFile(re, blob, tree, version, name, req.ContextLines, req.MaxMatches)
+					results := searchFile(re, blob, repo, version, name, req.ContextLines, req.MaxMatches)
 					if len(results) == 0 {
 						continue
 					}
@@ -190,7 +194,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 						return // Cancelled
 					}
 				}
-			}(re.Clone(), treeFilter.Clone(), fileFilter.Clone())
+			}(re.Clone(), repoFilter.Clone(), fileFilter.Clone())
 		}
 		go func() {
 			// When all workers are done (either due to running out of files or cancellation) we're done searching.
@@ -221,7 +225,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	return &csResult, nil
 }
 
-func searchFile(re *regexp.Regexp, blob, tree, version, name []byte, contextLines, maxMatches int) []csapi.SearchResult {
+func searchFile(re *regexp.Regexp, blob, repo, version, name []byte, contextLines, maxMatches int) []csapi.SearchResult {
 	var results []csapi.SearchResult
 	m := regexp.Match(re, blob)
 	if m == nil {
@@ -252,7 +256,7 @@ func searchFile(re *regexp.Regexp, blob, tree, version, name []byte, contextLine
 		lineNumUntil = lineEnd
 		results = append(results, csapi.SearchResult{
 			File: csapi.File{
-				Tree:    string(tree),
+				Tree:    string(repo),
 				Version: string(version),
 				Path:    string(name),
 			},
@@ -275,8 +279,8 @@ func searchFile(re *regexp.Regexp, blob, tree, version, name []byte, contextLine
 	return results
 }
 
-func splitname(b []byte) (tree, version, name []byte) {
-	tree, b, _ = bytes.Cut(b, []byte("@"))
+func splitname(b []byte) (repo, version, name []byte) {
+	repo, b, _ = bytes.Cut(b, []byte("@"))
 	version, name, _ = bytes.Cut(b, []byte("/+/"))
 	return
 }
@@ -345,6 +349,9 @@ type regexpFilter struct {
 }
 
 func newRegexpFilter(accept, reject string) (*regexpFilter, error) {
+	if accept == "" && reject == "" {
+		return nil, nil
+	}
 	var acceptRe *regexp.Regexp
 	var err error
 	if accept != "" {
@@ -364,13 +371,38 @@ func newRegexpFilter(accept, reject string) (*regexpFilter, error) {
 }
 
 func (f *regexpFilter) Accept(s []byte) bool {
+	if f == nil {
+		return true
+	}
 	return (f.acceptRe == nil || regexp.Match(f.acceptRe, s) != nil) &&
 		(f.rejectRe == nil || regexp.Match(f.rejectRe, s) == nil)
 }
 
 func (f *regexpFilter) Clone() *regexpFilter {
+	if f == nil {
+		return nil
+	}
 	return &regexpFilter{
 		f.acceptRe.Clone(),
 		f.rejectRe.Clone(),
 	}
+}
+
+type setFilter struct {
+	accept map[string]bool
+}
+
+func newSetFilter(options []string) *setFilter {
+	accepted := map[string]bool{}
+	for _, v := range options {
+		accepted[v] = true
+	}
+	return &setFilter{accepted}
+}
+
+func (f *setFilter) Accept(s []byte) bool {
+	if f == nil {
+		return true
+	}
+	return f.accept[string(s)]
 }

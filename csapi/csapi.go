@@ -24,14 +24,18 @@ type CodeSearch interface {
 }
 
 type Query struct {
-	Line                         string
+	Line string // Freeform regexp
+
+	// File & Repo inclusion/exclusion regexps:
 	File, NotFile                []string
 	Repo, NotRepo, Tags, NotTags string
 
-	FoldCase     bool
-	MaxMatches   int
-	FilenameOnly bool
-	ContextLines int
+	RepoFilter []string // Additional exact-match repository filter
+
+	FoldCase     bool // Ignore case when searching.
+	MaxMatches   int  // Max matches to return.  Must be set.
+	FilenameOnly bool // Search for `Line` only in file names.
+	ContextLines int  // Results have the N lines before and after matched line.
 }
 
 type CodeSearchInfo struct {

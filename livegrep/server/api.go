@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -62,13 +61,10 @@ func extractQuery(ctx context.Context, r *http.Request) (csapi.Query, bool, erro
 		log.Printf(ctx, "parsing query q=%q out=%s", q[0], asJSON{query})
 	}
 
-	// New-style repo multiselect, only if "repo:" is not in the query.
+	// Repo multiselect, but only if "repo:" is not in the query.
 	if len(query.Repo) == 0 {
-		if newRepos, ok := params["repo[]"]; ok {
-			for i := range newRepos {
-				newRepos[i] = "^" + regexp.QuoteMeta(newRepos[i]) + "$"
-			}
-			query.Repo = strings.Join(newRepos, "|")
+		if repos, ok := params["repo[]"]; ok {
+			query.RepoFilter = repos
 		}
 	}
 
