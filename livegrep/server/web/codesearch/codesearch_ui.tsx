@@ -143,11 +143,16 @@ class MatchView extends View<Match> {
 		var ctxAfter = this.model.get("context_after"),
 			clip_after = this.model.get("clip_after");
 
+		let idForLine = (lno: number) =>
+			`L:${this.model.get("backend")}:${this.model.get("tree")}:${this.model.get(
+				"version",
+			)}:${this.model.get("path")}:${lno}`;
+
 		var lines_to_display_before = Math.max(0, ctxBefore.length - (clip_before || 0));
 		for (i = 0; i < lines_to_display_before; i++) {
 			ctx_before.unshift(
 				this._renderLno(lno - i - 1, false),
-				<span>{this.model.get("context_before")[i]}</span>,
+				<span id={idForLine(lno)}>{this.model.get("context_before")[i]}</span>,
 				<span />,
 			);
 		}
@@ -155,7 +160,7 @@ class MatchView extends View<Match> {
 		for (i = 0; i < lines_to_display_after; i++) {
 			ctx_after.push(
 				this._renderLno(lno + i + 1, false),
-				<span>{this.model.get("context_after")[i]}</span>,
+				<span id={idForLine(lno)}>{this.model.get("context_after")[i]}</span>,
 				<span />,
 			);
 		}
@@ -186,7 +191,7 @@ class MatchView extends View<Match> {
 				<div className="contents">
 					{ctx_before}
 					{this._renderLno(lno, true)}
-					<span className="matchline">
+					<span id={idForLine(lno)} className="matchline">
 						{pieces[0]}
 						<span className="matchstr">{pieces[1]}</span>
 						{pieces[2]}
@@ -356,8 +361,7 @@ class FileMatchView extends View<FileMatch> {
 			path_info.path.substring(path_info.bounds[1]),
 		];
 
-		var el = this.$el;
-		el.empty();
+		var el = jQuery(this.$el[0].cloneNode());
 		el.addClass("filename-match");
 		el.append(
 			<a className="label header result-path" href={this.model.viewUrl()}>
@@ -368,6 +372,7 @@ class FileMatchView extends View<FileMatch> {
 				{pieces[2]}
 			</a>,
 		);
+		this.setElement(Idiomorph.morph(this.$el[0], el));
 		return this;
 	}
 }
@@ -543,8 +548,7 @@ class FileGroupView extends View<FileGroup> {
 
 	render() {
 		var matches = this.model.matched;
-		var el = this.$el;
-		el.empty();
+		var el = jQuery(this.$el[0].cloneNode());
 		el.append(
 			this.render_header(
 				this.model.path_info.tree,
@@ -556,6 +560,10 @@ class FileGroupView extends View<FileGroup> {
 			el.append(new MatchView({ model: match }).render().el);
 		});
 		el.addClass("file-group");
+		let m = matches[0];
+		let id = `F:${m.get("backend")}:${m.get("tree")}:${m.get("version")}:${m.get("path")}`;
+		el.attr("id", id);
+		this.setElement(Idiomorph.morph(this.$el[0], el));
 		return this;
 	}
 }
@@ -575,7 +583,7 @@ class MatchesView extends View<SearchState> {
 		this.model.search_results.on("rerender", this.render, this);
 	}
 	render() {
-		this.$el.empty();
+		let el = jQuery(this.$el[0].cloneNode());
 
 		// Collate which file extensions (.py, .go, etc) are most common.
 		// countExtension() is called for file_search_results and search_results
@@ -599,15 +607,16 @@ class MatchesView extends View<SearchState> {
 			countExtension(file.attributes.path);
 			count += 1;
 		}, this);
-		this.$el.append(<div className="path-results">{pathResults}</div>);
+		el.append(<div className="path-results">{pathResults}</div>);
 
 		this.model.search_results.each(function (file_group) {
 			file_group.process_context_overlaps();
 			var view = new FileGroupView({ model: file_group });
-			this.$el.append(view.render().el);
+			el.append(view.render().el);
 			countExtension(file_group.path_info.path);
 		}, this);
 
+		this.setElement(Idiomorph.morph(this.$el[0], el));
 		var i = this.model.search_id;
 		var query = this.model.search_map[i].q;
 		var already_file_limited = /\bfile:/.test(query);
