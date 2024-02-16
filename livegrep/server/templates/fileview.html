@@ -16,9 +16,11 @@
 			<li class="header-action">
 				<a data-action-name="search" title="Perform a new search. Keyboard shortcut: /" href="#">new search [<span class='shortcut'>/</span>]</a>
 			</li>,
+			{{ with .ExternalDomain}}
 			<li class="header-action">
-				<a id="external-link" data-action-name="" title="View at {{.ExternalDomain}}. Keyboard shortcut: v" href="#">view at {{.ExternalDomain}} [<span class='shortcut'>v</span>]</a>
+				<a id="external-link" data-action-name="" title="View at {{.}}. Keyboard shortcut: v" href="#">view at {{.}} [<span class='shortcut'>v</span>]</a>
 			</li>,
+			{{end}}
 			<li class="header-action">
 				<a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#">help [<span class='shortcut'>?</span>]</a>
 			</li>
