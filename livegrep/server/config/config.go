@@ -5,6 +5,7 @@ package config
 
 import (
 	"html/template"
+	"time"
 )
 
 type Config struct {
@@ -29,8 +30,6 @@ type Config struct {
 
 	DefaultMaxMatches int `json:"default_max_matches"`
 
-	// Same json config structure that the backend uses when building indexes;
-	// used here for repository browsing.
 	IndexConfig []IndexConfig `json:"index_config"`
 
 	DefaultSearchRepos []string `json:"default_search_repos"`
@@ -44,6 +43,9 @@ type Config struct {
 	// language.  This is used to override the language detection for files that
 	// don't have a recognized extension.
 	FileFirstLineRegexToLang map[string]string `json:"file_first_line_regex_to_lang"`
+
+	// How often to check index files for updates.
+	IndexReloadPollPeriod time.Duration
 }
 
 type IndexConfig struct {

@@ -50,7 +50,9 @@ func New(cfg *config.Config) *server {
 	srv.loadTemplates()
 
 	for _, icfg := range cfg.IndexConfig {
-		be := &Backend{CodeSearch: csbackend.New(icfg.Path), ID: filepath.Base(icfg.Path)}
+		cs := csbackend.New(icfg.Path)
+		cs.WatchForUpdates(cfg.IndexReloadPollPeriod)
+		be := &Backend{CodeSearch: cs, ID: filepath.Base(icfg.Path)}
 		srv.bk[be.ID] = be
 		srv.bkOrder = append(srv.bkOrder, be.ID)
 		info := be.Info()

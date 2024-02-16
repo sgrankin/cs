@@ -11,6 +11,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"time"
 
 	"sgrankin.dev/cs/internal/flagutil"
 	"sgrankin.dev/cs/livegrep/server"
@@ -19,8 +20,9 @@ import (
 )
 
 var (
-	listenAddr = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
-	indexPath  = flagutil.Var[flagutil.StringSet]("index", flagutil.StringSet{}, "The path to the index file")
+	listenAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
+	indexPath    = flagutil.Var[flagutil.StringSet]("index", flagutil.StringSet{}, "The path to the index file")
+	reloadPeriod = flag.Duration("reload-interval", 30*time.Second, "How often to poll the index files to reload on update.")
 )
 
 func main() {
@@ -28,8 +30,10 @@ func main() {
 	flag.Parse()
 
 	cfg := &config.Config{
-		Listen:            *listenAddr,
-		DefaultMaxMatches: 500,
+		Listen: *listenAddr,
+
+		DefaultMaxMatches:     500,
+		IndexReloadPollPeriod: *reloadPeriod,
 	}
 	if len(*indexPath) == 0 {
 		log.Fatal("At least one -index is required")

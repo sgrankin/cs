@@ -3,11 +3,14 @@ package csbackend
 import (
 	"bytes"
 	"context"
+	"log"
+	"os"
 	"regexp/syntax"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/codesearch/regexp"
@@ -15,22 +18,49 @@ import (
 )
 
 type CSBackend struct {
-	ix *index.Index
+	ix     *atomic.Value // index.Index
+	ixPath string
 }
 
 var _ csapi.CodeSearch = (*CSBackend)(nil)
 
 func New(indexPath string) *CSBackend {
 	ix := index.Open(indexPath)
-	return &CSBackend{ix}
+	var val atomic.Value
+	val.Store(ix)
+	return &CSBackend{&val, indexPath}
+}
+
+func (b *CSBackend) index() *index.Index {
+	return b.ix.Load().(*index.Index)
+}
+
+func (b *CSBackend) WatchForUpdates(period time.Duration) {
+	go func() {
+		ticker := time.NewTicker(period)
+		defer ticker.Stop()
+		for range ticker.C {
+			mtime := b.index().FileInfo.ModTime()
+			info, err := os.Stat(b.ixPath)
+			if err != nil {
+				log.Printf("WatchForUpdates: failed to open %q: %v", b.ixPath, err)
+			}
+			if info.ModTime() != mtime {
+				log.Printf("Reloading index at %q", b.ixPath)
+				ix := index.Open(b.ixPath) // TODO: recover or make open return an error...
+				b.ix.Store(ix)
+			}
+		}
+	}()
 }
 
 // Info implements csapi.CodeSearch.
 func (b *CSBackend) Info() csapi.CodeSearchInfo {
+	ix := b.index()
 	res := csapi.CodeSearchInfo{
-		IndexTime: b.ix.FileInfo.ModTime(),
+		IndexTime: ix.FileInfo.ModTime(),
 	}
-	for _, p := range b.ix.Paths() {
+	for _, p := range ix.Paths() {
 		repo, version, _ := strings.Cut(p, "@")
 		res.Trees = append(res.Trees, csapi.Tree{Name: repo, Version: version})
 	}
@@ -39,13 +69,13 @@ func (b *CSBackend) Info() csapi.CodeSearchInfo {
 
 // Data implements csapi.CodeSearch.
 func (b *CSBackend) Data(tree, version, path string) string {
-	return string(b.ix.DataAtName(tree + "@" + version + "/+/" + path))
+	return string(b.index().DataAtName(tree + "@" + version + "/+/" + path))
 }
 
 // Paths implements csapi.CodeSearch.
 func (b *CSBackend) Paths(tree, version, prefix string) []csapi.File {
 	var result []csapi.File
-	for _, name := range b.ix.Names([]byte(tree + "@" + version + "/+/" + prefix)) {
+	for _, name := range b.index().Names([]byte(tree + "@" + version + "/+/" + prefix)) {
 		tree, version, path := splitname(name)
 		result = append(result,
 			csapi.File{
@@ -59,6 +89,7 @@ func (b *CSBackend) Paths(tree, version, prefix string) []csapi.File {
 
 // Search implements csapi.CodeSearch.
 func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearchResult, error) {
+	ix := b.index()
 	pat := req.Line
 
 	var flags syntax.Flags
@@ -89,8 +120,8 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	defer close(fresults)
 	go func(re *regexp.Regexp, treeFilter, fileFilter *regexpFilter) {
 		res := []csapi.FileResult{}
-		for _, fileid := range b.ix.PostingQuery(&index.Query{Op: index.QAll}) {
-			postName := b.ix.NameBytes(fileid)
+		for _, fileid := range ix.PostingQuery(&index.Query{Op: index.QAll}) {
+			postName := ix.NameBytes(fileid)
 			tree, version, path := splitname(postName)
 			if !treeFilter.Accept(tree) || !fileFilter.Accept(path) {
 				continue
@@ -122,7 +153,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 
 	if !req.FilenameOnly {
 		q := index.RegexpQuery(syn)
-		post := b.ix.PostingQuery(q)
+		post := ix.PostingQuery(q)
 
 		results := make([]csapi.SearchResult, 0, min(req.MaxMatches, len(post)))
 		ctx, cancel := context.WithCancel(ctx)
@@ -143,12 +174,12 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 					if int(i) >= len(post) {
 						return // No more work.
 					}
-					postName := b.ix.NameBytes(post[i])
+					postName := ix.NameBytes(post[i])
 					tree, version, name := splitname(postName)
 					if !treeFilter.Accept(tree) || !fileFilter.Accept(name) {
 						continue
 					}
-					blob := b.ix.Data(post[i])
+					blob := ix.Data(post[i])
 					results := searchFile(re, blob, tree, version, name, req.ContextLines, req.MaxMatches)
 					if len(results) == 0 {
 						continue
