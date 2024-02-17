@@ -8,7 +8,6 @@
 import "../globals";
 import "../bootstrap/js/bootstrap";
 import "../bootstrap/css/bootstrap.css";
-import "../bootstrap/css/bootstrap-theme.css";
 import "bootstrap-select";
 import "bootstrap-select/dist/css/bootstrap-select.css";
 
