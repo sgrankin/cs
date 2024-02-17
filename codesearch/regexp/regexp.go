@@ -47,7 +47,7 @@ func Compile(expr string, flags syntax.Flags) (*Regexp, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := toByteProg(prog); err != nil {
+	if err := toByteProg(prog, false); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func Compile(expr string, flags syntax.Flags) (*Regexp, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := toByteProg(revprog); err != nil {
+	if err := toByteProg(revprog, true); err != nil {
 		return nil, err
 	}
 
@@ -113,7 +113,7 @@ func Match[T ~[]byte | ~string](r *Regexp, s T) *Range {
 	}
 	start := revmatch(&r.revmatcher, s[:end])
 	if start < 0 {
-		log.Panicf("Reverse regex failed: %q end=%d start=%d\nsyn=%q\nsynprog=%s\nrevsyn=%q\nrevprog=%s", s, end, start,
+		log.Panicf("Reverse regex failed: \n%q\n%x\nend=%d start=%d\nsyn=%q\nsynprog=%s\nrevsyn=%q\nrevprog=%s", s, s, end, start,
 			r.syn.String(),
 			r.matcher.prog.String(),
 			r.revsyn.String(),
@@ -127,6 +127,8 @@ func reverse(syn *syntax.Regexp) *syntax.Regexp {
 		return nil
 	}
 	rsyn := *syn
+	rsyn.Sub = slices.Clone(syn.Sub)
+	rsyn.Rune = slices.Clone(syn.Rune)
 	switch rsyn.Op {
 	case syntax.OpConcat:
 		slices.Reverse(rsyn.Sub)
@@ -143,8 +145,6 @@ func reverse(syn *syntax.Regexp) *syntax.Regexp {
 	case syntax.OpEndText:
 		rsyn.Op = syntax.OpBeginText
 	}
-	rsyn.Sub = slices.Clone(rsyn.Sub)
-	rsyn.Rune = slices.Clone(rsyn.Rune)
 	for i, sub := range rsyn.Sub {
 		rsyn.Sub[i] = reverse(sub)
 	}

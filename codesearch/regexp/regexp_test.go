@@ -122,14 +122,14 @@ var matchTests = []struct {
 	// {`[Aa]BC`, "abc", nil},
 	// {`[Aa]bc`, "abc", []int{1}},
 
-	// // RE2 tests
-	// {`[^\S\s]`, "abcd", nil},
-	// {`[^\S[:space:]]`, "abcd", nil},
-	// {`[^\D\d]`, "abcd", nil},
-	// {`[^\D[:digit:]]`, "abcd", nil},
-	// {`(?i)\W`, "x", nil},
-	// {`(?i)\W`, "k", nil},
-	// {`(?i)\W`, "s", nil},
+	// RE2 tests
+	{`[^\S\s]`, "abcd", nil},
+	{`[^\S[:space:]]`, "abcd", nil},
+	{`[^\D\d]`, "abcd", nil},
+	{`[^\D[:digit:]]`, "abcd", nil},
+	{`(?i)\W`, "x", nil},
+	{`(?i)\W`, "k", nil},
+	{`(?i)\W`, "s", nil},
 
 	// // can backslash-escape any punctuation
 	// {
@@ -140,16 +140,16 @@ var matchTests = []struct {
 	// {
 	// 	`[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\{\|\}\~]+`,
 	// 	`!"#$%&'()*+,-./:;<=>?@[\]^_{|}~`,
-	// 	[]int{1},
+	// 	[]Range{{0, 1}},
 	// },
-	// {"\\`", "`", []int{1}},
-	// {"[\\`]+", "`", []int{1}},
+	{"\\`", "`", []Range{{0, 1}}},
+	{"[\\`]+", "`", []Range{{0, 1}}},
 
 	// // long set of matches (longer than startSize)
 	// {
 	// 	".",
 	// 	"qwertyuiopasdfghjklzxcvbnm1234567890",
-	// 	[]int{1},
+	// 	[]Range{{0, 1}},
 	// },
 
 	// Multiline inputs, matches wthin a line.
@@ -187,6 +187,9 @@ var matchTests = []struct {
 
 	// Match spanning newline:
 	{`x.*x`, "hello x world\nbanana x phone", nil},
+	{`(?s)x.*x`, "hello x world\nbanana x phone", []Range{{6, 22}}},
+	{`(?s)xy.*xy`, "hello xy world\n\n\nbanana xy phone", []Range{{6, 26}}},
+	{`x.*x`, "axöxb", []Range{{1, 5}}},
 }
 
 func TestMatch(t *testing.T) {

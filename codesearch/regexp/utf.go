@@ -18,7 +18,12 @@ const (
 	argFold = 1 << 16
 )
 
-func toByteProg(prog *syntax.Prog) error {
+// toByteProg expands unicode ranges into byte matching instructions.
+//
+// See [compile.cc] for commented RE2 code.
+//
+// [compile.cc]: https://github.com/google/re2/blob/d00d1e93781e6ebe415771a952689dff8f260d44/re2/compile.cc#L692
+func toByteProg(prog *syntax.Prog, reversed bool) error {
 	var b runeBuilder
 	for pc := range prog.Inst {
 		i := &prog.Inst[pc]
@@ -49,7 +54,7 @@ func toByteProg(prog *syntax.Prog) error {
 				r = rr
 			}
 
-			b.init(prog, uint32(pc), i.Out)
+			b.init(prog, uint32(pc), i.Out, reversed)
 			if len(r) == 1 {
 				b.addRange(r[0], r[0], false)
 			} else {
@@ -62,11 +67,11 @@ func toByteProg(prog *syntax.Prog) error {
 			// All runes.
 			// AnyNotNL should exclude \n but the line-at-a-time
 			// execution takes care of that for us.
-			b.init(prog, uint32(pc), i.Out)
+			b.init(prog, uint32(pc), i.Out, reversed)
 			b.addRange(0, unicode.MaxRune, false)
 		case syntax.InstRuneAnyNotNL:
 			// All runes.
-			b.init(prog, uint32(pc), i.Out)
+			b.init(prog, uint32(pc), i.Out, reversed)
 			b.addRange(0, '\n'-1, false)
 			b.addRange('\n'+1, unicode.MaxRune, false)
 		}
@@ -143,13 +148,14 @@ type cacheKey struct {
 }
 
 type runeBuilder struct {
-	begin uint32
-	out   uint32
-	cache map[cacheKey]uint32
-	p     *syntax.Prog
+	begin    uint32
+	out      uint32
+	cache    map[cacheKey]uint32
+	p        *syntax.Prog
+	reversed bool
 }
 
-func (b *runeBuilder) init(p *syntax.Prog, begin, out uint32) {
+func (b *runeBuilder) init(p *syntax.Prog, begin, out uint32, reversed bool) {
 	// We will rewrite p.Inst[begin] to hold the accumulated
 	// machine.  For now, there is no match.
 	p.Inst[begin].Op = instFail
@@ -159,10 +165,9 @@ func (b *runeBuilder) init(p *syntax.Prog, begin, out uint32) {
 	if b.cache == nil {
 		b.cache = make(map[cacheKey]uint32)
 	}
-	for k := range b.cache {
-		delete(b.cache, k)
-	}
+	clear(b.cache)
 	b.p = p
+	b.reversed = reversed
 }
 
 func (b *runeBuilder) uncachedSuffix(lo, hi byte, fold bool, next uint32) uint32 {
@@ -266,8 +271,15 @@ func (b *runeBuilder) addRange(lo, hi rune, fold bool) {
 	}
 
 	pc := uint32(0)
-	for i := n - 1; i >= 0; i-- {
-		pc = b.suffix(ulo[i], uhi[i], false, pc)
+	// TODO: If reversed, see https://github.com/google/re2/blob/main/re2/compile.cc#L768
+	if b.reversed {
+		for i := 0; i < n; i++ {
+			pc = b.suffix(ulo[i], uhi[i], false, pc)
+		}
+	} else {
+		for i := n - 1; i >= 0; i-- {
+			pc = b.suffix(ulo[i], uhi[i], false, pc)
+		}
 	}
 	b.addBranch(pc)
 }
