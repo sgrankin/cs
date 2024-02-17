@@ -192,11 +192,8 @@ func grep(re *Regexp, b []byte) []Range {
 			break
 		}
 		m = append(m, *r.Add(offset))
-		offset += r.End + 1
-		if offset > len(b) {
-			offset = len(b)
-		}
-		b = b[offset:]
+		offset += r.End
+		b = b[r.End:]
 		if len(b) == 0 {
 			break
 		}
