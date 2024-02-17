@@ -166,6 +166,24 @@ var matchTests = []struct {
 	{`xyz`, "banana xyz phone", []Range{{7, 10}}},
 	{`[ax][by][cz]`, "banana axyzb phone", []Range{{8, 11}}},
 	{`xxx$`, "banana xxx", []Range{{7, 10}}},
+
+	// Currently the matches are always non-greedy.
+	// This is fine for the grep case -- we only care about the first match on a line and then we skip the rest anyway.
+	// If longest matches are wanted in the future, see the discussion at [regexp3] and example at [dfa.cc].
+	// Roughly, what will be needed:
+	// - Marks inside the NFA queue, added whenever the initial .* matches, to prioritize earlier matches.
+	// - Discarding everything post the first mark after a match is found.
+	//   - Note that this won't be the first mark if earlier states are still matching!
+	//   - Special handling if the program has an anchor at the end -- it's not matched till EOF.
+	// - Probably a Matched flag to record that we have a match.
+	// - (And no more Start being added once we are in this mode).
+	// - A dead state (empty queue & matched?) to terminate the search.
+	// - Tracking lastmatch position (and updating to the latest one as more are found).
+	// [regexp3]: https://swtch.com/~rsc/regexp/regexp3.html
+	// [dfa.cc]: https://github.com/google/re2/blob/main/re2/dfa.cc#L624
+	{`x`, "banana xxx phone", []Range{{7, 8}, {8, 9}, {9, 10}}},
+	{`xx?`, "banana xxx phone", []Range{{7, 8}, {8, 9}, {9, 10}}},
+	{`x+`, "banana xxx phone", []Range{{7, 8}, {8, 9}, {9, 10}}},
 }
 
 func TestMatch(t *testing.T) {
