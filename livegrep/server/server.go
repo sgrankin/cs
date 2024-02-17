@@ -12,6 +12,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	glog "log"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -77,6 +78,10 @@ func New(cfg *config.Config) *server {
 	h = handlers.CompressHandler(h)
 	h = withTimeout(h)
 	h = withRequestID(h)
+	h = handlers.RecoveryHandler(
+		handlers.PrintRecoveryStack(true),
+		handlers.RecoveryLogger(glog.Default()),
+	)(h)
 
 	srv.Handler = h
 	return srv

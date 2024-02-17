@@ -27,6 +27,7 @@ var (
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
+	log.SetOutput(os.Stdout)
 	flag.Parse()
 
 	cfg := &config.Config{
