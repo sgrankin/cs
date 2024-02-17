@@ -58,12 +58,17 @@ func toByteProg(prog *syntax.Prog) error {
 				}
 			}
 
-		case syntax.InstRuneAny, syntax.InstRuneAnyNotNL:
+		case syntax.InstRuneAny:
 			// All runes.
 			// AnyNotNL should exclude \n but the line-at-a-time
 			// execution takes care of that for us.
 			b.init(prog, uint32(pc), i.Out)
 			b.addRange(0, unicode.MaxRune, false)
+		case syntax.InstRuneAnyNotNL:
+			// All runes.
+			b.init(prog, uint32(pc), i.Out)
+			b.addRange(0, '\n'-1, false)
+			b.addRange('\n'+1, unicode.MaxRune, false)
 		}
 	}
 	return nil

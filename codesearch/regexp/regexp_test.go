@@ -184,6 +184,9 @@ var matchTests = []struct {
 	{`x`, "banana xxx phone", []Range{{7, 8}, {8, 9}, {9, 10}}},
 	{`xx?`, "banana xxx phone", []Range{{7, 8}, {8, 9}, {9, 10}}},
 	{`x+`, "banana xxx phone", []Range{{7, 8}, {8, 9}, {9, 10}}},
+
+	// Match spanning newline:
+	{`x.*x`, "hello x world\nbanana x phone", nil},
 }
 
 func TestMatch(t *testing.T) {

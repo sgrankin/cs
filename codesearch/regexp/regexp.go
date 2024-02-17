@@ -38,7 +38,7 @@ func (re *Regexp) String() string {
 // Compile parses a regular expression and returns, if successful,
 // a Regexp object that can be used to match against lines of text.
 func Compile(expr string, flags syntax.Flags) (*Regexp, error) {
-	syn, err := syntax.Parse(expr, syntax.Perl&^syntax.OneLine|flags)
+	syn, err := syntax.Parse(expr, syntax.UnicodeGroups|flags)
 	if err != nil {
 		return nil, err
 	}
