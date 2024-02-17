@@ -118,6 +118,7 @@ func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.
 	s.renderPage(ctx, w, r, "about.html", &page{
 		Title:         "about",
 		IncludeHeader: true,
+		CSSPath:       "codesearch/codesearch_ui",
 	})
 }
 
@@ -222,7 +223,8 @@ type Backend struct {
 
 type page struct {
 	Title         string
-	ScriptName    string
+	JSPath        string
+	CSSPath       string
 	ScriptData    interface{}
 	IncludeHeader bool
 	Data          interface{}

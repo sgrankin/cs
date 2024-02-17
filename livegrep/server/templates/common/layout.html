@@ -14,8 +14,10 @@
 			window.scriptData = {{.ScriptData}};
 		</script>
 		{{end}}
-		{{ scriptTag .Nonce (print "/static/" .ScriptName ".js") .AssetHashes}}
-		{{linkTag .Nonce "stylesheet" (print "/static/" .ScriptName ".css") .AssetHashes}}
+		{{ if .JSPath }}
+			{{ scriptTag .Nonce (print "/static/" .JSPath ".js") .AssetHashes}}
+		{{ end }}
+		{{ linkTag .Nonce "stylesheet" (print "/static/" .CSSPath ".css") .AssetHashes}}
 		<link{{.Nonce}} rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Stripe Code Search" />
 	</head>
 	<body>

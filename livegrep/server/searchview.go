@@ -40,7 +40,8 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 
 	s.renderPage(ctx, w, r, "index.html", &page{
 		Title:         "code search",
-		ScriptName:    "codesearch/codesearch_ui",
+		JSPath:        "codesearch/codesearch_ui",
+		CSSPath:       "codesearch/codesearch_ui",
 		ScriptData:    script_data,
 		IncludeHeader: true,
 		Data: struct {
