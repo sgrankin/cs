@@ -50,23 +50,28 @@ func run(configPath, gitHubToken string) error {
 	}
 
 	for _, ixConfig := range config.Indexes {
+		log.Printf("Updating index %q", ixConfig.Path)
 		gitPath := ixConfig.Fetch.GitPath
 		repo, err := internal.OpenGitRepo(gitPath)
 		if err != nil {
 			return fmt.Errorf("opening git repo at %q: %w", gitPath, err)
 		}
 
+		log.Println("Resolving specs (via github, etc)...")
 		toFetch, err := internal.ResolveFetchSpecs(ctx, ixConfig.Fetch.Specs, gitHubToken)
 		if err != nil {
 			return fmt.Errorf("resolving specs: %w", err)
 		}
+		log.Println("Fetching from git...")
 		if err := internal.FetchToGitRepo(ctx, repo, toFetch); err != nil {
 			return fmt.Errorf("fetching: %w", err)
 		}
+		log.Println("Pruning untracked refs...")
 		if err := internal.GCRefs(repo, toFetch); err != nil {
 			return fmt.Errorf("pruning: %w", err)
 		}
 
+		log.Println("Creating index...")
 		master := ixConfig.Path
 		temp := master + "~"
 		ix := index.Create(temp)
