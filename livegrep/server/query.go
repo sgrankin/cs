@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"sgrankin.dev/cs/csapi"
+	"sgrankin.dev/cs"
 )
 
 var pieceRE = regexp.MustCompile(`\[|\(|(?:^([a-zA-Z0-9-_]+):|\\.)| `)
@@ -51,8 +51,8 @@ func ensureSingleValue(ops map[string][]string, key string) (string, error) {
 	return "", nil
 }
 
-func ParseQuery(query string, globalRegex bool) (csapi.Query, error) {
-	var out csapi.Query
+func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
+	var out cs.Query
 
 	ops := make(map[string][]string)
 	key := ""

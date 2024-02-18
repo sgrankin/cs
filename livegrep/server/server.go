@@ -21,9 +21,7 @@ import (
 
 	"github.com/gorilla/handlers"
 
-	"sgrankin.dev/cs/csapi"
-	"sgrankin.dev/cs/csbackend"
-	"sgrankin.dev/cs/livegrep/server/config"
+	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/log"
 )
 
@@ -32,7 +30,7 @@ var serveUrlParseError = fmt.Errorf("failed to parse repo and path from URL")
 type server struct {
 	http.Handler
 
-	config  *config.Config
+	config  cs.ServeConfig
 	bk      map[string]*Backend
 	bkOrder []string
 	repos   []string
@@ -43,16 +41,16 @@ type server struct {
 	Layout      *template.Template
 }
 
-func New(cfg *config.Config) *server {
+func New(cfg cs.Config) *server {
 	srv := &server{
-		config: cfg,
+		config: cfg.Serve,
 		bk:     map[string]*Backend{},
 	}
 	srv.loadTemplates()
 
-	for _, icfg := range cfg.IndexConfig {
-		cs := csbackend.New(icfg.Path)
-		cs.WatchForUpdates(cfg.IndexReloadPollPeriod)
+	for _, icfg := range cfg.Indexes {
+		cs := cs.NewBackend(icfg.Path)
+		cs.WatchForUpdates(cfg.Serve.IndexReloadPollPeriod)
 		be := &Backend{CodeSearch: cs, ID: filepath.Base(icfg.Path)}
 		srv.bk[be.ID] = be
 		srv.bkOrder = append(srv.bkOrder, be.ID)
@@ -222,7 +220,7 @@ func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 type Backend struct {
-	csapi.CodeSearch
+	cs.CodeSearch
 	ID string
 }
 
@@ -233,7 +231,7 @@ type page struct {
 	ScriptData    interface{}
 	IncludeHeader bool
 	Data          interface{}
-	Config        *config.Config
+	Config        cs.ServeConfig
 	AssetHashes   map[string]string
 	Nonce         template.HTMLAttr // either `` or ` nonce="..."`
 }

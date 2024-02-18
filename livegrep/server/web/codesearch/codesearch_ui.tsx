@@ -79,10 +79,7 @@ function externalUrl(url, tree, version, path, lno) {
 
 function renderLinkConfigs(linkConfigs, tree, version, path, lno): Element[] {
 	linkConfigs = linkConfigs.filter(function (linkConfig) {
-		return (
-			!linkConfig.whitelist_pattern ||
-			linkConfig.whitelist_pattern.test(tree + "@" + version + "/+/" + path)
-		);
+		return !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path);
 	});
 
 	var links = linkConfigs.map(function (linkConfig) {
@@ -1018,8 +1015,8 @@ function init(initData) {
 	CodesearchUI.backend_repos = initData.backend_repos;
 	CodesearchUI.defaultSearchRepos = initData.default_search_repos;
 	CodesearchUI.linkConfigs = (initData.link_configs || []).map(function (link_config) {
-		if (link_config.whitelist_pattern) {
-			link_config.whitelist_pattern = new RegExp(link_config.whitelist_pattern);
+		if (link_config.match_regexp) {
+			link_config.match_regexp = new RegExp(link_config.match_regexp);
 		}
 		return link_config;
 	});

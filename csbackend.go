@@ -1,4 +1,4 @@
-package csbackend
+package cs
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/codesearch/regexp"
-	"sgrankin.dev/cs/csapi"
 )
 
 type CSBackend struct {
@@ -22,9 +21,9 @@ type CSBackend struct {
 	ixPath string
 }
 
-var _ csapi.CodeSearch = (*CSBackend)(nil)
+var _ CodeSearch = (*CSBackend)(nil)
 
-func New(indexPath string) *CSBackend {
+func NewBackend(indexPath string) *CSBackend {
 	ix := index.Open(indexPath)
 	var val atomic.Value
 	val.Store(ix)
@@ -54,31 +53,31 @@ func (b *CSBackend) WatchForUpdates(period time.Duration) {
 	}()
 }
 
-// Info implements csapi.CodeSearch.
-func (b *CSBackend) Info() csapi.CodeSearchInfo {
+// Info implements CodeSearch.
+func (b *CSBackend) Info() CodeSearchInfo {
 	ix := b.index()
-	res := csapi.CodeSearchInfo{
+	res := CodeSearchInfo{
 		IndexTime: ix.FileInfo.ModTime(),
 	}
 	for _, p := range ix.Paths() {
 		repo, version, _ := strings.Cut(p, "@")
-		res.Trees = append(res.Trees, csapi.Tree{Name: repo, Version: version})
+		res.Trees = append(res.Trees, Tree{Name: repo, Version: version})
 	}
 	return res
 }
 
-// Data implements csapi.CodeSearch.
+// Data implements CodeSearch.
 func (b *CSBackend) Data(repo, version, path string) string {
 	return string(b.index().DataAtName(repo + "@" + version + "/+/" + path))
 }
 
-// Paths implements csapi.CodeSearch.
-func (b *CSBackend) Paths(repo, version, prefix string) []csapi.File {
-	var result []csapi.File
+// Paths implements CodeSearch.
+func (b *CSBackend) Paths(repo, version, prefix string) []File {
+	var result []File
 	for _, name := range b.index().Names([]byte(repo + "@" + version + "/+/" + prefix)) {
 		repo, version, path := splitname(name)
 		result = append(result,
-			csapi.File{
+			File{
 				Tree:    string(repo),
 				Version: string(version),
 				Path:    string(path),
@@ -87,8 +86,8 @@ func (b *CSBackend) Paths(repo, version, prefix string) []csapi.File {
 	return result
 }
 
-// Search implements csapi.CodeSearch.
-func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSearchResult, error) {
+// Search implements CodeSearch.
+func (b *CSBackend) Search(ctx context.Context, req Query) (*CodeSearchResult, error) {
 	ix := b.index()
 	pat := req.Line
 
@@ -120,10 +119,10 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	}
 
 	// Find filename matches.
-	fresults := make(chan []csapi.FileResult, 1)
+	fresults := make(chan []FileResult, 1)
 	defer close(fresults)
 	go func(re *regexp.Regexp, repoFilter, fileFilter *regexpFilter) {
-		res := []csapi.FileResult{}
+		res := []FileResult{}
 		for _, fileid := range ix.PostingQuery(&index.Query{Op: index.QAll}) {
 			postName := ix.NameBytes(fileid)
 			repo, version, path := splitname(postName)
@@ -134,13 +133,13 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 			if m == nil {
 				continue
 			}
-			res = append(res, csapi.FileResult{
-				File: csapi.File{
+			res = append(res, FileResult{
+				File: File{
 					Tree:    string(repo),
 					Version: string(version),
 					Path:    string(path),
 				},
-				Bounds: csapi.Bounds{Left: m.Start, Right: m.End},
+				Bounds: Bounds{Left: m.Start, Right: m.End},
 			})
 			if len(res) >= req.MaxMatches {
 				break
@@ -149,9 +148,9 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		fresults <- res
 	}(re.Clone(), repoFilter.Clone(), fileFilter.Clone())
 
-	csResult := csapi.CodeSearchResult{
-		Stats: csapi.SearchStats{
-			ExitReason: csapi.ExitReasonNone,
+	csResult := CodeSearchResult{
+		Stats: SearchStats{
+			ExitReason: ExitReasonNone,
 		},
 	}
 
@@ -159,7 +158,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		q := index.RegexpQuery(syn)
 		post := ix.PostingQuery(q)
 
-		results := make([]csapi.SearchResult, 0, min(req.MaxMatches, len(post)))
+		results := make([]SearchResult, 0, min(req.MaxMatches, len(post)))
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
@@ -167,7 +166,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 		idx.Store(-1)
 
 		numWorkers := min(runtime.GOMAXPROCS(0), len(post))
-		perFileResults := make(chan []csapi.SearchResult, numWorkers)
+		perFileResults := make(chan []SearchResult, numWorkers)
 		var wg sync.WaitGroup
 		for range numWorkers {
 			wg.Add(1)
@@ -184,7 +183,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 						continue
 					}
 					blob := ix.Data(post[i])
-					results := searchFile(re, blob, repo, version, name, req.ContextLines, req.MaxMatches)
+					results := SearchBlob(re, blob, repo, version, name, req.ContextLines, req.MaxMatches)
 					if len(results) == 0 {
 						continue
 					}
@@ -210,7 +209,7 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 			}
 		}
 		if len(results) >= req.MaxMatches {
-			csResult.Stats.ExitReason = csapi.ExitReasonMatchLimit
+			csResult.Stats.ExitReason = ExitReasonMatchLimit
 			results = results[:req.MaxMatches]
 		}
 		csResult.Results = results
@@ -219,14 +218,14 @@ func (b *CSBackend) Search(ctx context.Context, req csapi.Query) (*csapi.CodeSea
 	fileResults := <-fresults
 	if len(fileResults) >= req.MaxMatches {
 		fileResults = fileResults[:req.MaxMatches]
-		csResult.Stats.ExitReason = csapi.ExitReasonMatchLimit
+		csResult.Stats.ExitReason = ExitReasonMatchLimit
 	}
 	csResult.FileResults = fileResults
 	return &csResult, nil
 }
 
-func searchFile(re *regexp.Regexp, blob, repo, version, name []byte, contextLines, maxMatches int) []csapi.SearchResult {
-	var results []csapi.SearchResult
+func SearchBlob(re *regexp.Regexp, blob, repo, version, name []byte, contextLines, maxMatches int) []SearchResult {
+	var results []SearchResult
 	m := regexp.Match(re, blob)
 	if m == nil {
 		return nil
@@ -254,8 +253,8 @@ func searchFile(re *regexp.Regexp, blob, repo, version, name []byte, contextLine
 		// How many newlines have we missed?
 		lineNum += countNL(blob[lineNumUntil:lineEnd])
 		lineNumUntil = lineEnd
-		results = append(results, csapi.SearchResult{
-			File: csapi.File{
+		results = append(results, SearchResult{
+			File: File{
 				Tree:    string(repo),
 				Version: string(version),
 				Path:    string(name),
@@ -263,7 +262,7 @@ func searchFile(re *regexp.Regexp, blob, repo, version, name []byte, contextLine
 
 			LineNumber: lineNum,
 			Line:       string(blob[lineStart:lineEnd]),
-			Bounds:     csapi.Bounds{Left: m.Start - lineStart, Right: m.End - lineStart},
+			Bounds:     Bounds{Left: m.Start - lineStart, Right: m.End - lineStart},
 
 			ContextBefore: lastLines(blob[:lineStart], contextLines),
 			ContextAfter:  firstLines(blob[lineEnd:], contextLines),

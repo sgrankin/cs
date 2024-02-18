@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/json"
 	_ "expvar"
 	"flag"
 	"log"
@@ -13,16 +12,18 @@ import (
 	"os"
 	"time"
 
-	"sgrankin.dev/cs/internal/flagutil"
+	"github.com/goccy/go-yaml"
+
+	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server"
-	"sgrankin.dev/cs/livegrep/server/config"
 	"sgrankin.dev/cs/livegrep/server/middleware"
 )
 
 var (
-	listenAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on")
-	indexPath    = flagutil.Var[flagutil.StringSet]("index", flagutil.StringSet{}, "The path to the index file")
+	listenAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on.")
 	reloadPeriod = flag.Duration("reload-interval", 30*time.Second, "How often to poll the index files to reload on update.")
+	config       = flag.String("config", "config.yaml", "The config file.")
+	indexPath    = cs.FlagVar[cs.StringSet]("index", cs.StringSet{}, "The path to the index file(s).")
 )
 
 func main() {
@@ -30,38 +31,38 @@ func main() {
 	log.SetOutput(os.Stdout)
 	flag.Parse()
 
-	cfg := &config.Config{
-		Listen: *listenAddr,
+	cfg := cs.Config{
+		Serve: cs.ServeConfig{
+			Listen: *listenAddr,
 
-		DefaultMaxMatches:     500,
-		IndexReloadPollPeriod: *reloadPeriod,
-	}
-	if len(*indexPath) == 0 {
-		log.Fatal("At least one -index is required")
+			DefaultMaxMatches:     500,
+			IndexReloadPollPeriod: *reloadPeriod,
+		},
 	}
 
 	for path := range *indexPath {
-		cfg.IndexConfig = append(cfg.IndexConfig, config.IndexConfig{Path: path})
+		cfg.Indexes = append(cfg.Indexes, cs.IndexConfig{Path: path})
 	}
 
-	if len(flag.Args()) != 0 {
-		data, err := os.ReadFile(flag.Arg(0))
+	if *config != "" {
+		data, err := os.ReadFile(*config)
 		if err != nil {
-			log.Fatalf(err.Error())
+			log.Fatal(err)
 		}
-
-		if err = json.Unmarshal(data, &cfg); err != nil {
-			log.Fatalf("reading %s: %s", flag.Arg(0), err.Error())
+		if err = yaml.Unmarshal(data, &cfg); err != nil {
+			log.Fatalf("reading %s: %v", flag.Arg(0), err.Error())
 		}
+	}
+	if len(cfg.Indexes) == 0 {
+		log.Fatal("At least one Index is required")
 	}
 
 	var handler http.Handler = server.New(cfg)
-	if cfg.ReverseProxy {
+	if cfg.Serve.ReverseProxy {
 		handler = middleware.UnwrapProxyHeaders(handler)
 	}
-
 	http.DefaultServeMux.Handle("/", handler)
 
-	log.Printf("Listening on %s.", cfg.Listen)
-	log.Fatal(http.ListenAndServe(cfg.Listen, nil))
+	log.Printf("Listening on %s.", cfg.Serve.Listen)
+	log.Fatal(http.ListenAndServe(cfg.Serve.Listen, nil))
 }

@@ -1,4 +1,4 @@
-package csapi
+package cs
 
 import (
 	"context"

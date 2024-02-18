@@ -9,15 +9,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
-	"strings"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 
+	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/codesearch/index"
-	"sgrankin.dev/cs/internal/flagutil"
+	"sgrankin.dev/cs/internal"
 )
 
 var usageMessage = `usage: cindex [-list] [-reset] [path...]
@@ -53,9 +50,12 @@ With no path arguments, cindex -reset removes the index.
 `
 
 var (
-	indexPath = flag.String("index", "data/csindex", "The path to the index file")
-	gitPath   = flag.String("git", "data", "The path to the git repo")
-	refNames  = flagutil.Var[flagutil.StringSet]("ref", flagutil.StringSet{}, "The refs to index.  May be suffixed with ':' followed by alternative prefix to use in the index.  Index all refs if not specified.")
+	gitPath = flag.String("git", "data",
+		"The path to the git repo")
+	indexPath = flag.String("index", "data/csindex",
+		"The path to the index file")
+	refNames = cs.FlagVar[cs.StringSet]("ref", cs.StringSet{},
+		"The refs to index.  Index all refs if not specified.")
 
 	verbose = flag.Bool("verbose", false, "Verbose indexing")
 )
@@ -80,79 +80,17 @@ func main() {
 	ix := index.Create(temp)
 	ix.Verbose = *verbose
 
-	paths := []string{}
-	pathToRef := map[string]*plumbing.Reference{}
-
-	refs := []string{}
+	var refs []string
 	for ref := range *refNames {
 		refs = append(refs, ref)
 	}
 	if len(refs) == 0 {
-		ri, err := repo.References()
-		if err != nil {
-			log.Fatal(err)
-		}
-		ri.ForEach(func(r *plumbing.Reference) error {
-			if r.Type() != plumbing.HashReference {
-				return nil
-			}
-			refs = append(refs, r.Name().Short())
-			return nil
-		})
-		ri.Close()
+		refs = internal.ListRefs(repo)
 	}
-
-	for _, refName := range refs {
-		refName, path, _ := strings.Cut(refName, ":")
-		if path == "" {
-			path = refName
-		}
-
-		// Translate paths to absolute paths so that we can generate the file list in sorted order.
-		ref, err := repo.Reference(plumbing.ReferenceName("refs/"+refName), true)
-		if err != nil {
-			log.Fatalf("fetching %q: %v", refName, err)
-		}
-		path += "@" + ref.Hash().String()
-		paths = append(paths, path)
-		pathToRef[path] = ref
-	}
-
-	sort.Strings(paths)
-	ix.AddPaths(paths)
-	for _, path := range paths {
-		if err := indexRef(ix, repo, pathToRef[path], path+"/+/"); err != nil {
-			log.Fatal(err)
-		}
+	if err := internal.IndexRefs(ix, repo, refs); err != nil {
+		log.Fatal(err)
 	}
 	ix.Flush()
-
-	// log.Printf("merge %s %s", master, file)
-	// index.Merge(file+"~", master, file)
-	// os.Remove(file)
 	os.Rename(temp, master)
 	return
-}
-
-// indexRef adds the referenced tree in the repo to the index.
-func indexRef(ix *index.IndexWriter, repo *git.Repository, ref *plumbing.Reference, prefix string) error {
-	commit, err := repo.CommitObject(ref.Hash())
-	if err != nil {
-		return err
-	}
-	tree, err := commit.Tree()
-	if err != nil {
-		return err
-	}
-	return tree.Files().ForEach(func(f *object.File) error {
-		r, err := f.Blob.Reader()
-		if err != nil {
-			return err
-		}
-		// Encode the repo & revision into the file name.
-		// The repo is used for search filtering, etc.
-		ix.Add(prefix+f.Name, r)
-		r.Close()
-		return nil
-	})
 }

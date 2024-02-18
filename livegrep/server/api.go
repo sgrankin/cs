@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"sgrankin.dev/cs/csapi"
+	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/log"
 )
@@ -41,8 +41,8 @@ func writeQueryError(ctx context.Context, w http.ResponseWriter, err error) {
 	// 	fmt.Sprintf("Talking to backend: %s", err.Error()))
 }
 
-func extractQuery(ctx context.Context, r *http.Request) (csapi.Query, bool, error) {
-	var query csapi.Query
+func extractQuery(ctx context.Context, r *http.Request) (cs.Query, bool, error) {
+	var query cs.Query
 
 	if err := r.ParseForm(); err != nil {
 		return query, false, err
@@ -90,8 +90,8 @@ func stringSlice(ss []string) []string {
 	return []string{}
 }
 
-func (s *server) doSearch(ctx context.Context, backend *Backend, q *csapi.Query) (*api.ReplySearch, error) {
-	var search *csapi.CodeSearchResult
+func (s *server) doSearch(ctx context.Context, backend *Backend, q *cs.Query) (*api.ReplySearch, error) {
+	var search *cs.CodeSearchResult
 	var err error
 
 	start := time.Now()

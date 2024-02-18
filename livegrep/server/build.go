@@ -1,5 +1,4 @@
-// Copyright 2011-2013 Nelson Elhage
-// SPDX-License-Identifier: BSD-2-Clause
+//go:build tools
 
 package main
 
@@ -11,6 +10,38 @@ import (
 
 	"github.com/evanw/esbuild/pkg/api"
 )
+
+func main() {
+	log.SetFlags(log.Lshortfile)
+	watch := flag.Bool("watch", false, "Watch and rebuild")
+	analyze := flag.Bool("analyze", false, "Analyze build results")
+	debug := flag.Bool("debug", false, "Debug mode (no minification, etc).")
+	flag.Parse()
+
+	opts := buildOpts(*debug)
+
+	if *watch {
+		ctx, err := api.Context(opts)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer ctx.Dispose()
+		if err := ctx.Watch(api.WatchOptions{}); err != nil {
+			log.Fatal(err)
+		}
+		select {} // Wait forever.
+	}
+
+	res := api.Build(opts)
+	if len(res.Errors) > 0 {
+		os.Exit(1)
+	}
+	if *analyze {
+		fmt.Print(api.AnalyzeMetafile(res.Metafile, api.AnalyzeMetafileOptions{
+			Color: true,
+		}))
+	}
+}
 
 func buildOpts(debug bool) api.BuildOptions {
 	opts := api.BuildOptions{
@@ -45,36 +76,4 @@ func buildOpts(debug bool) api.BuildOptions {
 		opts.LogLevel = api.LogLevelDebug
 	}
 	return opts
-}
-
-func main() {
-	log.SetFlags(log.Lshortfile)
-	watch := flag.Bool("watch", false, "Watch and rebuild")
-	analyze := flag.Bool("analyze", false, "Analyze build results")
-	debug := flag.Bool("debug", false, "Debug mode (no minification, etc).")
-	flag.Parse()
-
-	opts := buildOpts(*debug)
-
-	if *watch {
-		ctx, err := api.Context(opts)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer ctx.Dispose()
-		if err := ctx.Watch(api.WatchOptions{}); err != nil {
-			log.Fatal(err)
-		}
-		select {} // Wait forever.
-	}
-
-	res := api.Build(opts)
-	if len(res.Errors) > 0 {
-		os.Exit(1)
-	}
-	if *analyze {
-		fmt.Print(api.AnalyzeMetafile(res.Metafile, api.AnalyzeMetafileOptions{
-			Color: true,
-		}))
-	}
 }

@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/http"
 
-	"sgrankin.dev/cs/livegrep/server/config"
+	"sgrankin.dev/cs"
 )
 
 type searchScriptData struct {
 	BackendRepos       map[string][]string `json:"backend_repos"`
 	DefaultSearchRepos []string            `json:"default_search_repos"`
-	LinkConfigs        []config.LinkConfig `json:"link_configs"`
+	LinkConfigs        []cs.LinkConfig     `json:"link_configs"`
 }
 
 func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []*Backend, sampleRepo string) {

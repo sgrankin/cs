@@ -6,10 +6,10 @@ package server
 import (
 	"testing"
 
-	"sgrankin.dev/cs/livegrep/server/config"
+	"sgrankin.dev/cs"
 )
 
 func TestTemplatesLoad(t *testing.T) {
-	srv := server{config: &config.Config{}}
+	srv := server{config: cs.ServeConfig{}}
 	srv.loadTemplates()
 }

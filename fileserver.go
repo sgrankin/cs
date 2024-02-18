@@ -1,4 +1,4 @@
-package httputil
+package cs
 
 import (
 	"crypto/sha256"
@@ -12,11 +12,11 @@ import (
 	"sync"
 )
 
-// EmbedFileServer creates an HTTP static file server on the OS.
+// EmbedFSServer creates an HTTP static file server on the OS.
 //
 // The main distinction from http.FileServerFS is that it calculates and caches hashes for the underlying file system.
 // An embed.FS is required since it can be assumed immutable and fixed, so hashes are cached indefinitely.
-func EmbedFileServer(root embed.FS) http.Handler {
+func EmbedFSServer(root embed.FS) http.Handler {
 	fs := &embedFS{FS: root}
 	h := http.FileServerFS(fs)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
