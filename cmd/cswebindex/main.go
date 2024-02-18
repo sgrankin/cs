@@ -39,7 +39,6 @@ func main() {
 
 func run(configPath, gitHubToken string) error {
 	ctx := context.Background()
-
 	cfg, err := os.ReadFile(configPath)
 	if err != nil {
 		return fmt.Errorf("reading config at %q: %w", configPath, err)

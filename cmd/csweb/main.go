@@ -22,7 +22,7 @@ import (
 var (
 	listenAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on.")
 	reloadPeriod = flag.Duration("reload-interval", 30*time.Second, "How often to poll the index files to reload on update.")
-	config       = flag.String("config", "config.yaml", "The config file.")
+	config       = cs.FlagVar[cs.EnvString]("config", "config.yaml", "The config file.")
 	indexPath    = cs.FlagVar[cs.StringSet]("index", cs.StringSet{}, "The path to the index file(s).")
 )
 
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	if *config != "" {
-		data, err := os.ReadFile(*config)
+		data, err := os.ReadFile(config.Get())
 		if err != nil {
 			log.Fatal(err)
 		}
