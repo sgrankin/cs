@@ -1,34 +1,39 @@
 {
-    "files.associations": {
-        "*.html": "gotmpl",
-        "*.xml": "gotmpl"
-    },
-    "gopls": {
-        "build.templateExtensions": [
-            "html",
-            "xml"
-        ],
-    },
-    "prettier.printWidth": 120,
-    "prettier.semi": true,
-    "prettier.singleQuote": false,
-    "prettier.trailingComma": "all",
-    "prettier.useTabs": true,
-    "prettier.tabWidth": 8,
-    "javascript.preferences.quoteStyle": "double",
-    "typescript.preferences.quoteStyle": "double",
-    "[javascript]": {
-        "editor.maxTokenizationLineLength": 2500,
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[typescript]": {
-        "editor.useTabStops": true,
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[typescriptreact]": {
-        "editor.useTabStops": true,
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true,
-    },
-    "editor.formatOnSave": true
+	"files.associations": {
+		"*.html": "gotmpl",
+		"*.xml": "gotmpl"
+	},
+	"gopls": {
+		"build.standaloneTags": ["ignore", "tools"],
+		"build.templateExtensions": ["html", "xml"]
+	},
+	"prettier.printWidth": 120,
+	"prettier.semi": true,
+	"prettier.singleQuote": false,
+	"prettier.trailingComma": "all",
+	"prettier.useTabs": true,
+	"prettier.tabWidth": 8,
+	"javascript.preferences.quoteStyle": "double",
+	"typescript.preferences.quoteStyle": "double",
+	"[javascript]": {
+		"editor.maxTokenizationLineLength": 2500,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[typescript]": {
+		"editor.useTabStops": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[typescriptreact]": {
+		"editor.useTabStops": true,
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"editor.formatOnSave": true,
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/bower_components": true,
+		"**/*.code-search": true,
+		"**/static/**": true,
+		"**/package-lock.json": true
+	}
 }
