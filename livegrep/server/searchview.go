@@ -13,8 +13,8 @@ type searchScriptData struct {
 	LinkConfigs        []cs.LinkConfig     `json:"link_configs"`
 }
 
-func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []*Backend, sampleRepo string) {
-	backends = []*Backend{}
+func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []cs.SearchIndex, sampleRepo string) {
+	backends = []cs.SearchIndex{}
 	repos := map[string][]string{}
 	sampleRepo = ""
 	for _, bkId := range s.bkOrder {
@@ -28,10 +28,10 @@ func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends
 			}
 			trees = append(trees, tree.Name)
 		}
-		repos[bk.ID] = trees
+		repos[bk.Name()] = trees
 	}
 
-	script_data = &searchScriptData{repos, s.repos, s.config.LinkConfigs}
+	script_data = &searchScriptData{repos, s.repos, s.config.Templates.Links}
 	return script_data, backends, sampleRepo
 }
 
@@ -45,7 +45,7 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 		ScriptData:    script_data,
 		IncludeHeader: true,
 		Data: struct {
-			Backends   []*Backend
+			Backends   []cs.SearchIndex
 			SampleRepo string
 		}{
 			Backends:   backends,

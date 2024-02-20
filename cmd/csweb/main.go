@@ -16,30 +16,31 @@ import (
 
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server"
-	"sgrankin.dev/cs/livegrep/server/middleware"
 )
 
 var (
-	listenAddr   = flag.String("listen", "127.0.0.1:8910", "The address to listen on.")
-	reloadPeriod = flag.Duration("reload-interval", 30*time.Second, "How often to poll the index files to reload on update.")
-	config       = cs.FlagVar[cs.EnvString]("config", "config.yaml", "The config file.")
-	indexPath    = cs.FlagVar[cs.StringSet]("index", cs.StringSet{}, "The path to the index file(s).")
+	listenAddr = flag.String("listen", "127.0.0.1:8910",
+		"The address to listen on.")
+	pollInterval = flag.Duration("poll-interval", 10*time.Minute,
+		"How often to poll git repos for updates.")
+	config = cs.FlagVar[cs.EnvString]("config", "config.yaml",
+		"The config file.")
+	indexPath = cs.FlagVar[cs.StringSet]("index", cs.StringSet{},
+		"The path to the index file(s).")
+	githubToken = cs.FlagVar[cs.EnvString]("github-token", "${GITHUB_TOKEN}",
+		"GitHub token for private repo access.")
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 	flag.Parse()
 
 	cfg := cs.Config{
 		Serve: cs.ServeConfig{
-			Listen: *listenAddr,
-
-			DefaultMaxMatches:     500,
-			IndexReloadPollPeriod: *reloadPeriod,
+			DefaultMaxMatches: 500,
 		},
 	}
-
 	for path := range *indexPath {
 		cfg.Indexes = append(cfg.Indexes, cs.IndexConfig{Path: path})
 	}
@@ -57,12 +58,14 @@ func main() {
 		log.Fatal("At least one Index is required")
 	}
 
-	var handler http.Handler = server.New(cfg)
-	if cfg.Serve.ReverseProxy {
-		handler = middleware.UnwrapProxyHeaders(handler)
+	var indexes []cs.SearchIndex
+	for _, icfg := range cfg.Indexes {
+		indexes = append(indexes, cs.NewSearchIndex(icfg, *pollInterval, githubToken.Get()))
 	}
+
+	var handler http.Handler = server.New(cfg.Serve, indexes)
 	http.DefaultServeMux.Handle("/", handler)
 
-	log.Printf("Listening on %s.", cfg.Serve.Listen)
-	log.Fatal(http.ListenAndServe(cfg.Serve.Listen, nil))
+	log.Printf("Listening on %s.", *listenAddr)
+	log.Fatal(http.ListenAndServe(*listenAddr, nil))
 }

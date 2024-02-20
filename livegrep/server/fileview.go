@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"sgrankin.dev/cs"
 )
 
 // Mapping from known file extensions to filetype hinting.
@@ -287,7 +289,7 @@ func languageFromFirstLine(line string) string {
 	return ""
 }
 
-func buildFileData(backend *Backend, repoName, commit, backendPrefix string) (*fileViewerContext, error) {
+func buildFileData(backend cs.SearchIndex, repoName, commit, backendPrefix string) (*fileViewerContext, error) {
 	paths := backend.Paths(repoName, commit, backendPrefix)
 	if len(paths) == 0 {
 		return nil, fmt.Errorf("not found: %q", backendPrefix)
@@ -329,7 +331,7 @@ func buildFileData(backend *Backend, repoName, commit, backendPrefix string) (*f
 				// Subdirectory, and already handled.
 				continue
 			}
-			viewURL := viewPath(backend.ID, repoName, commit, backendPrefix, base)
+			viewURL := viewPath(backend.Name(), repoName, commit, backendPrefix, base)
 			if isdir {
 				viewURL += "/"
 			}
@@ -382,15 +384,15 @@ func buildFileData(backend *Backend, repoName, commit, backendPrefix string) (*f
 		}
 		segments[i] = breadCrumbEntry{
 			Name: name,
-			Path: viewPath(backend.ID, repoName, commit, parentPath, name) + slash,
+			Path: viewPath(backend.Name(), repoName, commit, parentPath, name) + slash,
 		}
 	}
 
 	return &fileViewerContext{
-		Backend:      backend.ID,
+		Backend:      backend.Name(),
 		PathSegments: segments,
 		RepoName:     repoName,
-		RepoURL:      viewPath(backend.ID, repoName, commit),
+		RepoURL:      viewPath(backend.Name(), repoName, commit),
 		Commit:       commit,
 		DirContent:   dirContent,
 		FileContent:  fileContent,

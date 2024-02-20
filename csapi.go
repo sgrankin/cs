@@ -5,10 +5,13 @@ import (
 	"time"
 )
 
-type CodeSearch interface {
+type SearchIndex interface {
+	// User visible name of the index
+	Name() string
+
 	// Info returns the metadata about the index.
 	// Background data updates may cause this info to update.
-	Info() CodeSearchInfo
+	Info() IndexInfo
 
 	// Paths returns the list of file paths in this index.
 	Paths(tree, version, pathPrefix string) []File
@@ -20,7 +23,7 @@ type CodeSearch interface {
 	// Search returns search results.
 	// Errors will be returned if the query is invalid.
 	// The context may be used to cancel the search.
-	Search(context.Context, Query) (*CodeSearchResult, error)
+	Search(ctx context.Context, q Query) (*CodeSearchResult, error)
 }
 
 type Query struct {
@@ -38,7 +41,7 @@ type Query struct {
 	ContextLines int  // Results have the N lines before and after matched line.
 }
 
-type CodeSearchInfo struct {
+type IndexInfo struct {
 	IndexTime time.Time
 	Trees     []Tree
 }

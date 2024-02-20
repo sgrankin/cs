@@ -258,18 +258,28 @@ func (ix *IndexWriter) Flush() {
 	ix.main.writeUint32(uint32(len(segments) * 4 * 2))
 	ix.main.writeString(trailerMagic)
 
+	log.Printf("%d data bytes, %d index bytes", ix.totalBytes, ix.main.offset())
+	ix.main.flush()
+	ix.Close()
+}
+
+func (ix *IndexWriter) Close() {
+	ix.nameData.Close()
 	os.Remove(ix.nameData.name)
 	for _, f := range ix.postFile {
+		f.Close()
 		os.Remove(f.Name())
 	}
+	ix.nameIndex.Close()
 	os.Remove(ix.nameIndex.name)
+	ix.postIndex.Close()
 	os.Remove(ix.postIndex.name)
+	ix.blobIndex.Close()
 	os.Remove(ix.blobIndex.name)
+	ix.blobData.Close()
 	os.Remove(ix.blobData.name)
 
-	log.Printf("%d data bytes, %d index bytes", ix.totalBytes, ix.main.offset())
-
-	ix.main.flush()
+	ix.main.Close()
 }
 
 func copyFile(dst, src *bufWriter) {
@@ -522,6 +532,10 @@ func bufCreate(name string) *bufWriter {
 		buf:  make([]byte, 0, 256<<10),
 		file: f,
 	}
+}
+
+func (b *bufWriter) Close() error {
+	return b.file.Close()
 }
 
 func (b *bufWriter) write(x []byte) {

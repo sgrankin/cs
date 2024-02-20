@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build darwin freebsd openbsd netbsd
+//go:build darwin || freebsd || openbsd || netbsd
 
 package index
 
@@ -36,4 +36,8 @@ func mmapFile(f *os.File) mmapData {
 		log.Fatalf("mmap %s: %v", f.Name(), err)
 	}
 	return mmapData{f, data[:n]}
+}
+
+func munmap(b []byte) error {
+	return syscall.Munmap(b)
 }

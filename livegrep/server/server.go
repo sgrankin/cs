@@ -14,7 +14,6 @@ import (
 	"io/fs"
 	glog "log"
 	"net/http"
-	"path/filepath"
 	"regexp"
 	texttemplate "text/template"
 	"time"
@@ -31,7 +30,7 @@ type server struct {
 	http.Handler
 
 	config  cs.ServeConfig
-	bk      map[string]*Backend
+	bk      map[string]cs.SearchIndex
 	bkOrder []string
 	repos   []string
 
@@ -41,30 +40,27 @@ type server struct {
 	Layout      *template.Template
 }
 
-func New(cfg cs.Config) *server {
+func New(cfg cs.ServeConfig, indexes []cs.SearchIndex) *server {
 	srv := &server{
-		config: cfg.Serve,
-		bk:     map[string]*Backend{},
+		config: cfg,
+		bk:     map[string]cs.SearchIndex{},
 	}
 	srv.loadTemplates()
 
-	for _, icfg := range cfg.Indexes {
-		cs := cs.NewBackend(icfg.Path)
-		cs.WatchForUpdates(cfg.Serve.IndexReloadPollPeriod)
-		be := &Backend{CodeSearch: cs, ID: filepath.Base(icfg.Path)}
-		srv.bk[be.ID] = be
-		srv.bkOrder = append(srv.bkOrder, be.ID)
-		info := be.Info()
+	for _, idx := range indexes {
+		srv.bk[idx.Name()] = idx
+		srv.bkOrder = append(srv.bkOrder, idx.Name())
+		info := idx.Info()
 		for _, t := range info.Trees {
 			srv.repos = append(srv.repos, t.Name)
 		}
 	}
 
-	for ext, lang := range srv.config.FileExtToLang {
+	for ext, lang := range srv.config.Languages.FileExtToLang {
 		extToLangMap[ext] = lang
 	}
 
-	for regexStr, lang := range srv.config.FileFirstLineRegexToLang {
+	for regexStr, lang := range srv.config.Languages.FileFirstLineRegexToLang {
 		regex := regexp.MustCompile(regexStr)
 		fileFirstLineToLangMap[regex] = lang
 	}
@@ -157,27 +153,15 @@ func (s *server) ServeStats(ctx context.Context, w http.ResponseWriter, r *http.
 	})
 }
 
-func (s *server) requestProtocol(r *http.Request) string {
-	if s.config.ReverseProxy {
-		if proto := r.Header.Get("X-Real-Proto"); len(proto) > 0 {
-			return proto
-		}
-	}
-	if r.TLS != nil {
-		return "https"
-	}
-	return "http"
-}
-
 func (s *server) ServeOpensearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	data := &struct {
 		BackendName, BaseURL string
 	}{
-		BaseURL: s.requestProtocol(r) + "://" + r.Host + "/",
+		BaseURL: r.URL.JoinPath("/").String(),
 	}
 
 	for _, bk := range s.bk {
-		data.BackendName = bk.ID
+		data.BackendName = bk.Name()
 		break
 	}
 
@@ -220,7 +204,7 @@ func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 type Backend struct {
-	cs.CodeSearch
+	cs.SearchIndex
 	ID string
 }
 

@@ -50,19 +50,19 @@
 				<span class="label">Search:</span>
 				<select id='backend' tabindex="7">
 				{{range .Data.Backends}}
-					<option value="{{.ID}}">{{.ID}}</option>
+					<option value="{{.Name}}">{{.Name}}</option>
 				{{end}}
 				</select>
 			</div>
 		{{else}}
 			{{with index .Data.Backends 0}}
 				<select id='backend' style='display: none;'>
-					<option value="{{.ID}}">{{.ID}}</option>
+					<option value="{{.Name}}">{{.Name}}</option>
 				</select>
-				{{if ne (.ID) "-"}}
+				{{if ne (.Name) "-"}}
 					<div class="search-option">
 						<span class="label">Searching:</span>
-						{{.ID}}
+						{{.Name}}
 					</div>
 				{{end}}
 			{{end}}

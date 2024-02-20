@@ -90,7 +90,7 @@ func stringSlice(ss []string) []string {
 	return []string{}
 }
 
-func (s *server) doSearch(ctx context.Context, backend *Backend, q *cs.Query) (*api.ReplySearch, error) {
+func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Query) (*api.ReplySearch, error) {
 	var search *cs.CodeSearchResult
 	var err error
 
@@ -151,7 +151,7 @@ func (s *server) doSearch(ctx context.Context, backend *Backend, q *cs.Query) (*
 
 func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	backendName := r.PathValue("backend")
-	var backend *Backend
+	var backend cs.SearchIndex
 	if backendName != "" {
 		backend = s.bk[backendName]
 		if backend == nil {

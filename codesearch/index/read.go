@@ -116,9 +116,9 @@ package index
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"log"
 	"os"
-	"path/filepath"
 	"runtime"
 	"sort"
 )
@@ -130,10 +130,12 @@ const (
 
 // An Index implements read-only access to a trigram index.
 type Index struct {
-	Verbose  bool
+	Verbose bool
+
+	Path     string
 	FileInfo os.FileInfo
 
-	data mmapData
+	data *mmapData
 
 	pathData            []byte
 	nameData, nameIndex []byte
@@ -151,6 +153,7 @@ type segment struct {
 const postEntrySize = 3 + 4 + 4
 
 func Open(file string) *Index {
+	// TODO: return errors instead of panics.
 	mm := mmap(file)
 	if len(mm.d) < 4*4+len(trailerMagic) || string(mm.d[len(mm.d)-len(trailerMagic):]) != trailerMagic {
 		corrupt()
@@ -160,7 +163,7 @@ func Open(file string) *Index {
 	if err != nil {
 		log.Panic(err)
 	}
-	ix := &Index{data: mm, FileInfo: info}
+	ix := &Index{data: mm, FileInfo: info, Path: file}
 
 	segsOffset := ix.uint32(uint32(len(mm.d) - len(trailerMagic) - 4*2))
 	segsLength := ix.uint32(uint32(len(mm.d) - len(trailerMagic) - 4*1))
@@ -186,6 +189,10 @@ func Open(file string) *Index {
 	ix.numName = len(ix.nameIndex)/4 - 1
 	ix.numPost = len(ix.postIndex) / postEntrySize
 	return ix
+}
+
+func (ix *Index) Close() error {
+	return ix.data.Close()
 }
 
 // slice returns the slice of index data starting at the given byte offset.
@@ -561,7 +568,7 @@ func mergeOr(l1, l2 []uint32) []uint32 {
 }
 
 func corrupt() {
-	log.Panic("corrupt index: remove " + File())
+	log.Panic("corrupt index: remove")
 }
 
 // An mmapData is mmap'ed read-only data from a file.
@@ -571,25 +578,20 @@ type mmapData struct {
 }
 
 // mmap maps the given file into memory.
-func mmap(file string) mmapData {
+func mmap(file string) *mmapData {
 	f, err := os.Open(file)
 	if err != nil {
 		log.Panic(err)
 	}
-	return mmapFile(f)
+	data := mmapFile(f)
+	runtime.SetFinalizer(&data, func(data *mmapData) { data.Close() })
+	return &data
 }
 
-// File returns the name of the index file to use.
-// It is either $CSEARCHINDEX or $HOME/.csearchindex.
-func File() string {
-	f := os.Getenv("CSEARCHINDEX")
-	if f != "" {
-		return f
-	}
-	var home string
-	home = os.Getenv("HOME")
-	if runtime.GOOS == "windows" && home == "" {
-		home = os.Getenv("USERPROFILE")
-	}
-	return filepath.Clean(home + "/.csearchindex")
+func (m *mmapData) Close() error {
+	err := errors.Join(
+		munmap(m.d),
+		m.f.Close())
+	runtime.SetFinalizer(m, nil)
+	return err
 }

@@ -35,3 +35,7 @@ func mmapFile(f *os.File) mmapData {
 	data := (*[1 << 30]byte)(unsafe.Pointer(addr))
 	return mmapData{f, data[:size]}
 }
+
+func unmmap(b []byte) error {
+	return syscall.UnmapViewOfFile(uintptr(unsafe.Pointer(&b)))
+}
