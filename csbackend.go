@@ -84,7 +84,9 @@ func (si *searchIndex) refresh() {
 	if ix := si.indexBuilder.Build(repos); ix != nil {
 		log.Printf("Updating index %q", si.name)
 		ix = si.indexSearcher.swapIndex(ix)
-		ix.Close()
+		if err := ix.Close(); err != nil {
+			log.Printf("Error closing old index: %v", err)
+		}
 	}
 }
 

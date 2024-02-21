@@ -116,10 +116,8 @@ package index
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"log"
 	"os"
-	"runtime"
 	"sort"
 )
 
@@ -569,29 +567,4 @@ func mergeOr(l1, l2 []uint32) []uint32 {
 
 func corrupt() {
 	log.Panic("corrupt index: remove")
-}
-
-// An mmapData is mmap'ed read-only data from a file.
-type mmapData struct {
-	f *os.File
-	d []byte
-}
-
-// mmap maps the given file into memory.
-func mmap(file string) *mmapData {
-	f, err := os.Open(file)
-	if err != nil {
-		log.Panic(err)
-	}
-	data := mmapFile(f)
-	runtime.SetFinalizer(&data, func(data *mmapData) { data.Close() })
-	return &data
-}
-
-func (m *mmapData) Close() error {
-	err := errors.Join(
-		munmap(m.d),
-		m.f.Close())
-	runtime.SetFinalizer(m, nil)
-	return err
 }

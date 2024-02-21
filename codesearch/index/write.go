@@ -45,9 +45,10 @@ type IndexWriter struct {
 	numName    int        // number of names written
 	totalBytes int64
 
-	post      []postEntry // list of (trigram, file#) pairs
-	postFile  []*os.File  // flushed post entries
-	postIndex *bufWriter  // temp file holding posting list index
+	post         []postEntry // list of (trigram, file#) pairs
+	postFile     []*os.File  // flushed post entries
+	postFileData []*mmapData // Mmaped postFiles.  Unmap on flush.
+	postIndex    *bufWriter  // temp file holding posting list index
 
 	blobData  *bufWriter // temp file holding content blobs
 	blobIndex *bufWriter // temp file holding content blob offset & length
@@ -266,6 +267,9 @@ func (ix *IndexWriter) Flush() {
 func (ix *IndexWriter) Close() {
 	ix.nameData.Close()
 	os.Remove(ix.nameData.name)
+	for _, f := range ix.postFileData {
+		f.Close()
+	}
 	for _, f := range ix.postFile {
 		f.Close()
 		os.Remove(f.Name())
@@ -340,7 +344,8 @@ func (ix *IndexWriter) mergePost(out *bufWriter) {
 
 	log.Printf("merge %d files + mem", len(ix.postFile))
 	for _, f := range ix.postFile {
-		heap.addFile(f)
+		md := heap.addFile(f)
+		ix.postFileData = append(ix.postFileData, md)
 	}
 	sortPost(ix.post)
 	heap.addMem(ix.post)
@@ -392,10 +397,12 @@ type postHeap struct {
 	ch []*postChunk
 }
 
-func (h *postHeap) addFile(f *os.File) {
-	data := mmapFile(f).d
+func (h *postHeap) addFile(f *os.File) *mmapData {
+	md := mmapFile(f)
+	data := md.d
 	m := (*[npost]postEntry)(unsafe.Pointer(&data[0]))[:len(data)/8]
 	h.addMem(m)
+	return md
 }
 
 func (h *postHeap) addMem(x []postEntry) {
