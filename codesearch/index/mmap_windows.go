@@ -22,7 +22,7 @@ func mmapFileInner(f *os.File, size int) (*mmapData, error) {
 		log.Fatalf("MapViewOfFile %s: %v", f.Name(), err)
 	}
 	data := (*[1 << 30]byte)(unsafe.Pointer(addr))
-	return mmapData{f, data[:size], data}
+	return &mmapData{f, data[:size], data[:size]}, nil
 }
 
 func munmap(b []byte) error {
