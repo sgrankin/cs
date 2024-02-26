@@ -44,14 +44,18 @@ func NewSearchIndex(cfg IndexConfig, pollInterval time.Duration, githubToken str
 	}
 	ix := index.Open(indexName)
 
-	git, err := openGitRepo(filepath.Join(cfg.Path, "git"))
+	gitPath := filepath.Join(cfg.Path, "git")
+	// Open the repo to make sure it's valid... but then don't use it.
+	// Background changes (e.g. from maintenance) may cause go-git repos to become non-functional,
+	// so we reopen the repo every time we index.
+	_, err := openGitRepo(gitPath)
 	if err != nil {
 		log.Panicf("could not open git repo: %v", err)
 	}
 
 	searcher := newIndexSearcher(ix)
-	builder := newIndexBuilder(ix, git)
-	syncer := newRepoSyncer(git, githubToken, cfg.Repos, cfg.RepoSources)
+	builder := newIndexBuilder(ix)
+	syncer := newRepoSyncer(gitPath, githubToken, cfg.Repos, cfg.RepoSources)
 
 	done := make(chan bool, 1)
 	si := &searchIndex{searcher, builder, syncer, cfg.Name, done}

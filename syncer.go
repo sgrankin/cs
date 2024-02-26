@@ -1,14 +1,14 @@
 package cs
 
 import (
+	"fmt"
 	"net/url"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/google/go-github/v57/github"
 )
 
 type repoSyncer struct {
-	git            *git.Repository
+	gitPath        string
 	github         *github.Client
 	githubUserInfo *url.Userinfo
 
@@ -17,13 +17,13 @@ type repoSyncer struct {
 }
 
 func newRepoSyncer(
-	git *git.Repository,
+	gitPath string,
 	githubToken string,
 	repos []RepoConfig,
 	sources RepoSourceConfig,
 ) *repoSyncer {
 	s := &repoSyncer{
-		git:     git,
+		gitPath: gitPath,
 		github:  github.NewClient(nil),
 		repos:   repos,
 		sources: sources,
@@ -42,10 +42,15 @@ func (s *repoSyncer) Refresh() ([]Repo, error) {
 		return nil, err
 	}
 	repos = append(repos, ghRepos...)
+
+	git, err := openGitRepo(s.gitPath)
+	if err != nil {
+		return nil, fmt.Errorf("opening git repo %q: %w", s.gitPath, err)
+	}
 	var res []Repo
 	for _, rc := range repos {
 		res = append(res, &gitRepo{
-			repo:      s.git,
+			repo:      git,
 			remoteURL: rc.RemoteURL,
 			remoteRef: rc.RemoteRef,
 			localRef:  rc.Name,

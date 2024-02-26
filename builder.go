@@ -9,8 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-git/go-git/v5"
-
 	"sgrankin.dev/cs/codesearch/index"
 )
 
@@ -44,7 +42,6 @@ type indexBuilder struct {
 // ix is used to determine what the current versions are.
 func newIndexBuilder(
 	ix *index.Index,
-	git *git.Repository,
 ) *indexBuilder {
 	b := &indexBuilder{
 		ix:       ix,
