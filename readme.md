@@ -94,6 +94,5 @@ There are a few things in the index directory. You will need to allocate enough 
 - Incremental updates where just the updated repo is rebuilt.
   Codesearch supports an index merge, so it would be easy to cache an index per repo and then merge them all whenever a component is updated.
   This was a motivation for replacing the backend... but practice, CS is faster than livegerp indexing, so this no longer seems necessary.
-- Tailscale tsnet integration: to make this trivial to self host when you have a couple machines and use tailscale.
 - Cleanup: simplify the logger used to not double log time, etc.
 - Metrics, maybe, so than you know when something broke.
