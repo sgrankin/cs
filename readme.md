@@ -81,7 +81,14 @@ There are a few things in the index directory. You will need to allocate enough 
   The fetch is incremental, but the repo is never GC'd due to limits in [go-git].
   You may want to run `go maintenance` on this repo.
 
-## Wishlist (maybe?)
+## Hacking
+
+### Building
+
+- `go generate ./...` when updating web assets.
+- `go run ./cmd/csweb` to run locally.
+
+### Wishlist (maybe?)
 
 - Trigger repo updates on webhook push (so that you don't have to wait for a poll reindex).
 - Incremental updates where just the updated repo is rebuilt.
@@ -90,8 +97,3 @@ There are a few things in the index directory. You will need to allocate enough 
 - Tailscale tsnet integration: to make this trivial to self host when you have a couple machines and use tailscale.
 - Cleanup: simplify the logger used to not double log time, etc.
 - Metrics, maybe, so than you know when something broke.
-
-### Building
-
-- `go generate ./...` when updating web assets.
-- `go run ./cmd/csweb` to run locally.
