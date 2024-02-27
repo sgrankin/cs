@@ -114,7 +114,7 @@ func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.R
 }
 
 func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	s.renderPage(ctx, w, r, "about.html", &page{
+	s.renderPage(ctx, w, "about.html", &page{
 		Title:         "about",
 		IncludeHeader: true,
 		CSSPath:       "codesearch/codesearch_ui",
@@ -176,7 +176,7 @@ func (s *server) ServeOpensearch(ctx context.Context, w http.ResponseWriter, r *
 	buf.WriteTo(w)
 }
 
-func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.Request, templateName string, pageData *page) {
+func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, templateName string, pageData *page) {
 	t, ok := s.Templates[templateName]
 	if !ok {
 		http.Error(w, fmt.Sprintf("Error: no template named %v", templateName), http.StatusInternalServerError)
@@ -188,7 +188,6 @@ func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, r *http.
 	pageData.AssetHashes = s.AssetHashes
 
 	nonce := "" // custom nonce computation can go here
-
 	if nonce != "" {
 		pageData.Nonce = template.HTMLAttr(fmt.Sprintf(` nonce="%s"`, nonce))
 	}

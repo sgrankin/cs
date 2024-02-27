@@ -38,7 +38,7 @@ func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	script_data, backends, sampleRepo := s.makeSearchScriptData()
 
-	s.renderPage(ctx, w, r, "index.html", &page{
+	s.renderPage(ctx, w, "index.html", &page{
 		Title:         "code search",
 		JSPath:        "codesearch/codesearch_ui",
 		CSSPath:       "codesearch/codesearch_ui",
