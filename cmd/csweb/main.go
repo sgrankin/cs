@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-yaml"
+	"tailscale.com/tsnet"
 
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server"
@@ -23,12 +24,19 @@ var (
 		"The address to listen on.")
 	pollInterval = flag.Duration("poll-interval", 10*time.Minute,
 		"How often to poll git repos for updates.")
+
 	config = cs.FlagVar[cs.EnvString]("config", "config.yaml",
 		"The config file.")
 	indexPath = cs.FlagVar[cs.StringSet]("index", cs.StringSet{},
-		"The path to the index file(s).")
+		"The path to the index file(s).  Allows serving an index without a config.")
+
 	githubToken = cs.FlagVar[cs.EnvString]("github-token", "${GITHUB_TOKEN}",
 		"GitHub token for private repo access.")
+
+	tailscaleHost = flag.String("tailscale-host", "",
+		"Create a tailscale service and listen on it.")
+	tailscaleAddr = flag.String("tailscale-addr", ":80",
+		"Listen address to use on tailscale interface.")
 )
 
 func main() {
@@ -63,9 +71,29 @@ func main() {
 		indexes = append(indexes, cs.NewSearchIndex(icfg, *pollInterval, githubToken.Get()))
 	}
 
-	var handler http.Handler = server.New(cfg.Serve, indexes)
-	http.DefaultServeMux.Handle("/", handler)
+	srv := server.New(cfg.Serve, indexes)
 
-	log.Printf("Listening on %s.", *listenAddr)
-	log.Fatal(http.ListenAndServe(*listenAddr, nil))
+	if *listenAddr != "" {
+		go func() {
+			log.Printf("Listening on %s.", *listenAddr)
+			log.Fatal(http.ListenAndServe(*listenAddr, srv))
+		}()
+	}
+
+	if *tailscaleHost != "" && *tailscaleAddr != "" {
+		ts := &tsnet.Server{}
+		ts.Hostname = *tailscaleHost
+		defer ts.Close()
+
+		ln, err := ts.Listen("tcp", *tailscaleAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer ln.Close()
+		go func() {
+			log.Fatal(http.Serve(ln, srv))
+		}()
+	}
+
+	select {} // And now we wait...
 }
