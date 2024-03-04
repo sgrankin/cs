@@ -147,7 +147,7 @@ func (s *server) ServeStats(ctx context.Context, w http.ResponseWriter, r *http.
 			maxBkAge = bkAge
 		}
 	}
-	replyJSON(ctx, w, 200, &stats{
+	replyJSON(w, 200, &stats{
 		IndexAge: int64(maxBkAge / time.Second),
 	})
 }
