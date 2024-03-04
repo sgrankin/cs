@@ -83,6 +83,7 @@ func (si *searchIndex) refresh() {
 	repos, err := si.repoSyncer.Refresh()
 	if err != nil {
 		log.Printf("Repo sync failed: %v", err)
+		return
 	}
 	log.Printf("Maybe rebuilding index for %q", si.name)
 	if ix := si.indexBuilder.Build(repos); ix != nil {
