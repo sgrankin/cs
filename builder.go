@@ -1,6 +1,7 @@
 package cs
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -16,7 +17,7 @@ type RepoFile interface {
 	Path() string
 	Size() int
 	FileMode() fs.FileMode
-	Reader() io.ReadCloser
+	Reader() (io.Reader, error)
 }
 
 type Repo interface {
@@ -93,8 +94,10 @@ func (b *indexBuilder) rebuildIndex(repos []Repo) *index.Index {
 		repo := pathToRepo[path]
 		prefix := path + "/+/"
 		if err := repo.Files(func(rf RepoFile) error {
-			r := rf.Reader()
-			defer r.Close()
+			r, err := rf.Reader()
+			if err != nil {
+				return fmt.Errorf("reader for %s  %s: %w", path, rf.Path(), err)
+			}
 			ix.Add(prefix+rf.Path(), r)
 			return nil
 		}); err != nil {
