@@ -123,7 +123,7 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 		Commit:     commit,
 	}
 
-	s.renderPage(ctx, w, "fileview.html", &page{
+	s.renderPage(w, "fileview.html", &page{
 		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
 		JSPath:        "fileview/fileview",
 		CSSPath:       "fileview/fileview",

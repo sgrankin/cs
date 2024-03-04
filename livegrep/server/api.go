@@ -8,13 +8,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/api"
-	"sgrankin.dev/cs/livegrep/server/log"
 )
 
 func replyJSON(ctx context.Context, w http.ResponseWriter, status int, obj interface{}) {
@@ -22,14 +22,14 @@ func replyJSON(ctx context.Context, w http.ResponseWriter, status int, obj inter
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(obj); err != nil {
-		log.Printf(ctx, "writing http response, data=%s err=%q",
+		log.Printf("writing http response, data=%s err=%q",
 			asJSON{obj},
 			err.Error())
 	}
 }
 
 func writeError(ctx context.Context, w http.ResponseWriter, status int, code, message string) {
-	log.Printf(ctx, "error status=%d code=%s message=%q",
+	log.Printf("error status=%d code=%s message=%q",
 		status, code, message)
 	replyJSON(ctx, w, status, &api.ReplyError{Err: api.InnerError{Code: code, Message: message}})
 }
@@ -41,7 +41,7 @@ func writeQueryError(ctx context.Context, w http.ResponseWriter, err error) {
 	// 	fmt.Sprintf("Talking to backend: %s", err.Error()))
 }
 
-func extractQuery(ctx context.Context, r *http.Request) (cs.Query, bool, error) {
+func extractQuery(r *http.Request) (cs.Query, bool, error) {
 	var query cs.Query
 
 	if err := r.ParseForm(); err != nil {
@@ -58,7 +58,6 @@ func extractQuery(ctx context.Context, r *http.Request) (cs.Query, bool, error) 
 
 	if q, ok := params["q"]; ok {
 		query, err = ParseQuery(q[0], regex)
-		log.Printf(ctx, "parsing query q=%q out=%s", q[0], asJSON{query})
 	}
 
 	// Repo multiselect, but only if "repo:" is not in the query.
@@ -101,7 +100,7 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 
 	search, err = backend.Search(ctx, *q)
 	if err != nil {
-		log.Printf(ctx, "error talking to backend err=%s", err)
+		log.Printf("error talking to backend err=%s", err)
 		return nil, err
 	}
 
@@ -165,7 +164,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		}
 	}
 
-	q, is_regex, err := extractQuery(ctx, r)
+	q, is_regex, err := extractQuery(r)
 	if err != nil {
 		writeError(ctx, w, 400, "bad_query", err.Error())
 		return
@@ -190,7 +189,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 
 	reply, err := s.doSearch(ctx, backend, &q)
 	if err != nil {
-		log.Printf(ctx, "error in search err=%s", err)
+		log.Printf("error in search err=%s", err)
 		writeQueryError(ctx, w, err)
 		return
 	}
@@ -220,8 +219,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 	// e.AddField("exit_reason", reply.Info.ExitReason)
 	// e.Send()
 
-	log.Printf(ctx,
-		"responding success results=%d why=%s stats=%s",
+	log.Printf("responding success results=%d why=%s stats=%s",
 		len(reply.Results),
 		reply.Info.ExitReason,
 		asJSON{reply.Info})

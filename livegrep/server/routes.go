@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
 	"sgrankin.dev/cs"
-	"sgrankin.dev/cs/livegrep/server/log"
 	"sgrankin.dev/cs/livegrep/server/reqid"
 )
 
@@ -45,7 +45,7 @@ func withTimeout(h http.Handler) http.Handler {
 func withRequestID(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := reqid.NewContext(r.Context(), reqid.New())
-		log.Printf(ctx, "http request: remote=%q method=%q url=%q",
+		log.Printf("http request: remote=%q method=%q url=%q",
 			r.RemoteAddr, r.Method, r.URL)
 		r = r.WithContext(ctx)
 		h.ServeHTTP(w, r)

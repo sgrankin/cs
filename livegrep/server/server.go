@@ -12,7 +12,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
-	glog "log"
+	"log"
 	"net/http"
 	"regexp"
 	texttemplate "text/template"
@@ -21,7 +21,6 @@ import (
 	"github.com/gorilla/handlers"
 
 	"sgrankin.dev/cs"
-	"sgrankin.dev/cs/livegrep/server/log"
 )
 
 var serveUrlParseError = fmt.Errorf("failed to parse repo and path from URL")
@@ -74,7 +73,7 @@ func New(cfg cs.ServeConfig, indexes []cs.SearchIndex) *server {
 	h = withRequestID(h)
 	h = handlers.RecoveryHandler(
 		handlers.PrintRecoveryStack(true),
-		handlers.RecoveryLogger(glog.Default()),
+		handlers.RecoveryLogger(log.Default()),
 	)(h)
 
 	srv.Handler = h
@@ -114,7 +113,7 @@ func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.R
 }
 
 func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	s.renderPage(ctx, w, "about.html", &page{
+	s.renderPage(w, "about.html", &page{
 		Title:         "about",
 		IncludeHeader: true,
 		CSSPath:       "codesearch/codesearch_ui",
@@ -176,11 +175,10 @@ func (s *server) ServeOpensearch(ctx context.Context, w http.ResponseWriter, r *
 	buf.WriteTo(w)
 }
 
-func (s *server) renderPage(ctx context.Context, w http.ResponseWriter, templateName string, pageData *page) {
+func (s *server) renderPage(w http.ResponseWriter, templateName string, pageData *page) {
 	t, ok := s.Templates[templateName]
 	if !ok {
-		http.Error(w, fmt.Sprintf("Error: no template named %v", templateName), http.StatusInternalServerError)
-		log.Printf(ctx, "Error: no template named %v", templateName)
+		log.Panicf("Error: no template named %v", templateName)
 		return
 	}
 
