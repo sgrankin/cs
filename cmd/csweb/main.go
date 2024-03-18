@@ -23,6 +23,7 @@ var (
 	listenAddr = flag.String("listen", "127.0.0.1:8910",
 		"The address to listen on.")
 	pollInterval = flag.Duration("poll-interval", 10*time.Minute,
+
 		"How often to poll git repos for updates.")
 
 	config = cs.FlagVar[cs.EnvString]("config", "config.yaml",

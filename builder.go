@@ -1,7 +1,7 @@
 package cs
 
 import (
-	"io"
+	"bytes"
 	"io/fs"
 	"log"
 	"maps"
@@ -14,9 +14,8 @@ import (
 
 type RepoFile interface {
 	Path() string
-	Size() int
 	FileMode() fs.FileMode
-	Reader() io.ReadCloser
+	Contents() ([]byte, error)
 }
 
 type Repo interface {
@@ -93,9 +92,11 @@ func (b *indexBuilder) rebuildIndex(repos []Repo) *index.Index {
 		repo := pathToRepo[path]
 		prefix := path + "/+/"
 		if err := repo.Files(func(rf RepoFile) error {
-			r := rf.Reader()
-			defer r.Close()
-			ix.Add(prefix+rf.Path(), r)
+			b, err := rf.Contents()
+			if err != nil {
+				return err
+			}
+			ix.Add(prefix+rf.Path(), bytes.NewReader(b))
 			return nil
 		}); err != nil {
 			log.Printf("Failed to build a new index: %v", err)

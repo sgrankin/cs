@@ -2,24 +2,25 @@ package cs
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/url"
+	"path"
 	"strings"
 
-	"github.com/go-git/go-git/v5"
-	gitplumb "github.com/go-git/go-git/v5/plumbing"
 	"github.com/google/go-github/v57/github"
+
+	gg "github.com/sgrankin/git2go"
 )
 
-func openGitRepo(gitPath string) (*git.Repository, error) {
+func openGitRepo(gitPath string) (*gg.Repository, error) {
 	if gitPath == "" {
 		return nil, fmt.Errorf("gitPath is empty")
 	}
-	repo, err := git.PlainOpen(gitPath)
-	if err != nil && errors.Is(err, git.ErrRepositoryNotExists) {
-		repo, err = git.PlainInit(gitPath, true)
+	repo, err := gg.OpenRepository(gitPath)
+	if gg.IsErrorCode(err, gg.ErrorCodeNotFound) {
+		repo, err = gg.InitRepository(gitPath, true)
 	}
 	return repo, err
 }
@@ -39,6 +40,10 @@ func ResolveFetchSpecs(client *github.Client, specs []GitHubSourceConfig, auth *
 		ref := "HEAD"
 		if spec.Ref != "" {
 			ref = spec.Ref
+		}
+		if (*repo.Name)[0] == '.' {
+			return // Hidden repo, and technically an invalid refspec.  Ignore.
+
 		}
 		if (repo.Archived != nil && *repo.Archived && !spec.Archived) ||
 			(repo.Fork != nil && *repo.Fork && !spec.Forks) {
@@ -94,50 +99,87 @@ func ResolveFetchSpecs(client *github.Client, specs []GitHubSourceConfig, auth *
 	return result, nil
 }
 
-func GCRefs(repo *git.Repository, keep []string) error {
-	log.Println("pruning unused refs")
-	want := map[string]bool{}
-	for _, ref := range keep {
-		want[ref] = true
-	}
-	refs, err := repo.References()
-	if err != nil {
-		return fmt.Errorf("resolving references: %w", err)
-	}
-	defer refs.Close()
-	var toRemove []gitplumb.ReferenceName
-	if err := refs.ForEach(func(r *gitplumb.Reference) error {
-		if r.Type() != gitplumb.HashReference {
-			return nil
-		}
-		if !want[r.Name().String()] {
-			toRemove = append(toRemove, r.Name())
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	for _, r := range toRemove {
-		log.Printf("removing ref %s", r.Short())
-		if err := repo.Storer.RemoveReference(r); err != nil {
-			return fmt.Errorf("removing %v: %w", r, err)
-		}
-	}
-	return nil
+type gitRepo struct {
+	repo      *gg.Repository
+	remoteURL string
+	remoteRef string
+	localRef  string
 }
 
-func ListRefs(repo *git.Repository) []string {
-	ri, err := repo.References()
-	if err != nil {
-		log.Panicf("listing refs: %v", err)
+func (r *gitRepo) Name() string { return r.localRef }
+
+func (r *gitRepo) Version() Version {
+	ref := r.ref()
+	if ref == nil {
+		return ""
 	}
-	defer ri.Close()
-	var refs []string
-	ri.ForEach(func(r *gitplumb.Reference) error {
-		if r.Type() == gitplumb.HashReference {
-			refs = append(refs, r.Name().Short())
+	return ref.Target().String()
+}
+
+func (r *gitRepo) Files(yield func(RepoFile) error) error {
+	ref := r.ref()
+	if ref == nil {
+		// A missing ref has no files.
+		// This is not an error as this is also the case when the repo is simply empty.
+		return nil
+	}
+	commit, err := r.repo.LookupCommit(ref.Target())
+	if err != nil {
+		return fmt.Errorf("commit not found: %v", err)
+	}
+	tree, err := commit.Tree()
+	if err != nil {
+		return fmt.Errorf("tree not found: %v", err)
+	}
+	return tree.Walk(func(s string, te *gg.TreeEntry) error {
+		if te.Type == gg.ObjectBlob {
+			return yield(gitRepoFile{r.repo, s, te})
 		}
 		return nil
 	})
-	return refs
+}
+
+func (r *gitRepo) Refresh() (Version, error) {
+	spec := "+" + r.remoteRef + ":refs/" + r.localRef
+	log.Printf("fetching %q -> %q", r.Name(), spec)
+	remote, err := r.repo.Remotes.CreateAnonymous(r.remoteURL)
+	if err != nil {
+		return "", err
+	}
+	err = remote.Fetch([]string{spec}, &gg.FetchOptions{DownloadTags: gg.DownloadTagsNone}, "")
+	switch {
+	case err == nil:
+	default:
+		return "", fmt.Errorf("fetching: %v", err)
+	}
+	return r.Version(), nil
+}
+
+func (r *gitRepo) ref() *gg.Reference {
+	ref, err := r.repo.References.Lookup("refs/" + r.localRef)
+	if err != nil {
+		log.Printf("Missing reference %q in git repo %v: %v", r.localRef, r.repo.Path(), err)
+		return nil
+	}
+	return ref
+}
+
+type gitRepoFile struct {
+	repo *gg.Repository
+	root string
+	blob *gg.TreeEntry
+}
+
+func (f gitRepoFile) Path() string { return path.Join(f.root, f.blob.Name) }
+func (f gitRepoFile) Contents() ([]byte, error) {
+	blob, err := f.repo.LookupBlob(f.blob.Id)
+	if err != nil {
+		return nil, err
+	}
+	return blob.Contents(), nil
+}
+
+func (f gitRepoFile) FileMode() fs.FileMode {
+	// Ignoring err.  Submodules will return a zero mode.
+	return fs.FileMode(f.blob.Filemode)
 }
