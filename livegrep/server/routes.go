@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"net/http/pprof"
 	"time"
 
 	"sgrankin.dev/cs"
@@ -14,14 +15,21 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	// TODO? pass dependencies explicitly instead of just `srv`
 	mux.Handle("GET /", ctxHandlerFunc(srv.ServeRoot))
 	mux.Handle("GET /about", ctxHandlerFunc(srv.ServeAbout))
-	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
-	mux.Handle("GET /debug/stats", ctxHandlerFunc(srv.ServeStats))
 	mux.Handle("GET /opensearch.xml", ctxHandlerFunc(srv.ServeOpensearch))
 	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSearch))
 	mux.Handle("GET /search/{backend}", ctxHandlerFunc(srv.ServeSearch))
 	mux.Handle("GET /static/", cs.EmbedFSServer(staticFS))
 	mux.Handle("GET /view/{backend}/{path...}", ctxHandlerFunc(srv.ServeFile))
+
 	mux.Handle("POST /api/v1/search/{backend}", ctxHandlerFunc(srv.ServeAPISearch)) // Parameters are in form format.
+
+	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
+	mux.Handle("GET /debug/stats", ctxHandlerFunc(srv.ServeStats))
+	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
+	mux.HandleFunc("GET /debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("GET /debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("GET /debug/pprof/trace", pprof.Trace)
 }
 
 // Handler is an http.HandlerFunc with an additional Context param.
