@@ -23,7 +23,7 @@ func NewSearchIndex(cfg IndexConfig, pollInterval time.Duration, githubToken str
 	if cfg.Name == "" {
 		cfg.Name = filepath.Base(cfg.Path)
 	}
-	if err := os.MkdirAll(cfg.Path, 0777); err != nil {
+	if err := os.MkdirAll(cfg.Path, 0o777); err != nil {
 		log.Panicf("creating %q: %v", cfg.Path, err)
 	}
 
@@ -50,7 +50,9 @@ func NewSearchIndex(cfg IndexConfig, pollInterval time.Duration, githubToken str
 	done := make(chan bool, 1)
 	si := &searchIndex{searcher, builder, syncer, cfg.Name, done}
 
-	go si.refreshLoop(pollInterval)
+	if pollInterval > 0 {
+		go si.refreshLoop(pollInterval)
+	}
 	return si
 }
 
