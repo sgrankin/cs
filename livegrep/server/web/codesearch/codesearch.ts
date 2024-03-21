@@ -7,9 +7,7 @@
 export namespace Codesearch {
 	interface Delegate {
 		on_connect: () => void;
-		match: (id: number, result: any) => void;
-		file_match: (id: number, result: any) => void;
-		search_done: (arg0: any, arg1: number, arg2: any, arg3: any) => void;
+		search_done: (id: number, file_matches, matches, { time, search_type, why }) => void;
 		error: (arg0: any, arg1: string) => void;
 	}
 
@@ -28,7 +26,7 @@ export namespace Codesearch {
 		fold_case: boolean;
 		regex: boolean;
 		repo: string;
-		backend?: string;
+		backend: string;
 	};
 
 	export function new_search(opts: SearchOpts) {
@@ -42,10 +40,7 @@ export namespace Codesearch {
 
 		var opts = in_flight;
 
-		var url = "/api/v1/search/";
-		if ("backend" in opts) {
-			url = url + opts.backend;
-		}
+		var url = "/api/v1/search/" + opts.backend;
 		const start = Date.now();
 		try {
 			let data = await jQuery.ajax({
@@ -60,13 +55,11 @@ export namespace Codesearch {
 				dataType: "json",
 			});
 			const elapsed = Date.now() - start;
-			data.results.forEach((r) => {
-				delegate.match(opts.id, r);
+			delegate.search_done(opts.id, data.file_results, data.results, {
+				time: elapsed,
+				search_type: data.search_type,
+				why: data.info.why,
 			});
-			data.file_results.forEach((r) => {
-				delegate.file_match(opts.id, r);
-			});
-			delegate.search_done(opts.id, elapsed, data.search_type, data.info.why);
 		} catch (err) {
 			let xhr = err as JQuery.jqXHR;
 			console.log(xhr);

@@ -6,23 +6,25 @@
 // Bootstrap depends on a global jQuery existing.
 // Imports are resolved at file load... so set the global jquery in a separate module.
 import "../globals";
-import "../bootstrap/js/bootstrap";
-import "../bootstrap/css/bootstrap.css";
+
 import "bootstrap-select";
 import "bootstrap-select/dist/css/bootstrap-select.css";
+import "../bootstrap/css/bootstrap.css";
+import "../bootstrap/js/bootstrap";
 
 import "../codesearch/codesearch.css";
 
-import { Idiomorph } from "idiomorph/dist/idiomorph.esm";
-import h from "hyperscript";
-import { View, Model, Collection, ViewOptions } from "backbone";
+import jQuery from "jquery";
+import { signal } from "@preact/signals";
+import { createDraft, finishDraft, immerable, produce } from "immer";
 import { getJSON, set } from "js-cookie";
-import { isEqual, clone, keys } from "underscore";
+import { Fragment, JSX, h, render } from "preact";
+import { createPortal } from "preact/compat";
+import { useEffect, useState } from "preact/hooks";
+import { isEqual } from "underscore";
 
 import { Codesearch } from "./codesearch";
-import { init as _init, updateSelected, updateOptions } from "./repo_selector";
-
-var last_url_update = 0;
+import { init as _init, updateOptions, updateSelected } from "./repo_selector";
 
 var KeyCodes = {
 	SLASH_OR_QUESTION_MARK: 191,
@@ -34,7 +36,9 @@ function getSelectedText() {
 
 function shorten(ref) {
 	var match = /^refs\/(tags|branches)\/(.*)/.exec(ref);
-	if (match) return match[2];
+	if (match) {
+		return match[2];
+	}
 	match = /^([0-9a-f]{8})[0-9a-f]+$/.exec(ref);
 	if (match) return match[1];
 	// If reference is origin/foo, assume that foo is
@@ -77,7 +81,7 @@ function externalUrl(url, tree, version, path, lno) {
 	return url;
 }
 
-function renderLinkConfigs(linkConfigs, tree, version, path, lno): Element[] {
+function renderLinkConfigs(linkConfigs, tree, version, path, lno): JSX.Element[] {
 	linkConfigs = linkConfigs.filter(function (linkConfig) {
 		return !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path);
 	});
@@ -93,7 +97,7 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno): Element[] {
 			</a>
 		);
 	});
-	let out: Element[] = [];
+	let out: JSX.Element[] = [];
 	for (var i = 0; i < links.length; i++) {
 		if (i > 0) {
 			out.push(<span className="file-action-link-separator">\u00B7</span>);
@@ -103,140 +107,127 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno): Element[] {
 	return out;
 }
 
-class MatchView extends View<Match> {
-	constructor(options) {
-		super({
-			...options,
-			tagName: "div",
-		});
-		this.model.on("change", this.render, this);
-	}
+function MatchView({ match }: { match: Match }) {
+	// this.model.on("change", this.render, this);
 
-	render() {
-		var div = this._render();
-		this.setElement(Idiomorph.morph(this.$el[0], div));
-		return this;
-	}
-	_renderLno(n: number, isMatch: boolean): Element {
+	const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
 		var lnoStr = n.toString() + (isMatch ? ":" : "-");
 		var classes = ["lno-link"];
 		if (isMatch) classes.push("matchlno");
 		return (
-			<a className={classes.join(" ")} href={this.model.viewUrl(n)}>
+			<a className={classes.join(" ")} href={match.viewUrl(n)}>
 				<span className="lno" aria-label={lnoStr}>
 					{lnoStr}
 				</span>
 			</a>
 		);
-	}
-	_render() {
-		var i;
-		var ctx_before: Element[] = [],
-			ctx_after: Element[] = [];
-		var lno = this.model.get("lno");
-		var ctxBefore = this.model.get("context_before"),
-			clip_before = this.model.get("clip_before");
-		var ctxAfter = this.model.get("context_after"),
-			clip_after = this.model.get("clip_after");
+	};
 
-		let idForLine = (lno: number) =>
-			`L:${this.model.get("backend")}:${this.model.get("tree")}:${this.model.get(
-				"version",
-			)}:${this.model.get("path")}:${lno}`;
+	let i: number;
+	let ctx_before: JSX.Element[] = [];
+	let ctx_after: JSX.Element[] = [];
+	let lno = match.m.lno;
+	let ctxBefore = match.m.context_before;
+	let clip_before = match.clip_before;
+	let ctxAfter = match.m.context_after;
+	let clip_after = match.clip_after;
 
-		var lines_to_display_before = Math.max(0, ctxBefore.length - (clip_before || 0));
-		for (i = 0; i < lines_to_display_before; i++) {
-			ctx_before.unshift(
-				this._renderLno(lno - i - 1, false),
-				<span id={idForLine(lno)}>{this.model.get("context_before")[i]}</span>,
-				<span />,
-			);
-		}
-		var lines_to_display_after = Math.max(0, ctxAfter.length - (clip_after || 0));
-		for (i = 0; i < lines_to_display_after; i++) {
-			ctx_after.push(
-				this._renderLno(lno + i + 1, false),
-				<span id={idForLine(lno)}>{this.model.get("context_after")[i]}</span>,
-				<span />,
-			);
-		}
-		var line = this.model.get("line");
-		var bounds = this.model.get("bounds");
-		var pieces = [
-			line.substring(0, bounds[0]),
-			line.substring(bounds[0], bounds[1]),
-			line.substring(bounds[1]),
-		];
-
-		var classes = ["match"];
-		if (clip_before !== undefined) classes.push("clip-before");
-		if (clip_after !== undefined) classes.push("clip-after");
-
-		var links = renderLinkConfigs(
-			CodesearchUI.linkConfigs.filter(function (linkConfig) {
-				return linkConfig.url_template.includes("{lno}");
-			}),
-			this.model.get("tree"),
-			this.model.get("version"),
-			this.model.get("path"),
-			lno,
+	var lines_to_display_before = Math.max(0, ctxBefore.length - (clip_before || 0));
+	for (i = 0; i < lines_to_display_before; i++) {
+		ctx_before.unshift(
+			_renderLno(lno - i - 1, false),
+			<span>{match.m.context_before[i]}</span>,
+			<span />,
 		);
+	}
+	var lines_to_display_after = Math.max(0, ctxAfter.length - (clip_after || 0));
+	for (i = 0; i < lines_to_display_after; i++) {
+		ctx_after.push(_renderLno(lno + i + 1, false), <span>{match.m.context_after[i]}</span>, <span />);
+	}
+	var line = match.m.line;
+	var bounds = match.m.bounds;
+	var pieces = [
+		line.substring(0, bounds[0]),
+		line.substring(bounds[0], bounds[1]),
+		line.substring(bounds[1]),
+	];
 
-		return (
-			<div className={classes.join(" ")}>
-				<div className="contents">
-					{ctx_before}
-					{this._renderLno(lno, true)}
-					<span id={idForLine(lno)} className="matchline">
-						{pieces[0]}
-						<span className="matchstr">{pieces[1]}</span>
-						{pieces[2]}
-					</span>
-					<span className="matchlinks">{links}</span>
-					{ctx_after}
-				</div>
+	var classes = ["match"];
+	if (clip_before !== undefined) classes.push("clip-before");
+	if (clip_after !== undefined) classes.push("clip-after");
+
+	var links = renderLinkConfigs(
+		CodesearchUI.linkConfigs.filter((c) => c.url_template.includes("{lno}")),
+		match.m.tree,
+		match.m.version,
+		match.m.path,
+		lno,
+	);
+
+	return (
+		<div className={classes.join(" ")}>
+			<div className="contents">
+				{ctx_before}
+				{_renderLno(lno, true)}
+				<span className="matchline">
+					{pieces[0]}
+					<span className="matchstr">{pieces[1]}</span>
+					{pieces[2]}
+				</span>
+				<span className="matchlinks">{links}</span>
+				{ctx_after}
 			</div>
-		);
-	}
+		</div>
+	);
 }
 
-/**
- * A Match represents a single match in the code base.
- *
- * This model wraps the JSON response from the Codesearch backend for an individual match.
- */
-class Match extends Model {
-	path_info() {
-		var tree = this.get("tree");
-		var version = this.get("version");
-		var path = this.get("path");
-		var backend = this.get("backend");
+type PathInfo = {
+	tree: string;
+	version: string;
+	path: string;
+	backend: string;
+};
+
+type MatchResult = PathInfo & {
+	line: string;
+	lno: number;
+	bounds: number[];
+	context_before: string[];
+	context_after: string[];
+};
+
+// A Match represents a single match in the code base.
+// This model wraps the JSON response from the Codesearch backend for an individual match.
+class Match {
+	m: MatchResult;
+	clip_after: number | undefined;
+	clip_before: number | undefined;
+
+	constructor(m: MatchResult) {
+		this.m = m;
+	}
+
+	PathInfo(): PathInfo & { id: string } {
 		return {
-			backend: backend,
-			id: tree + "@" + version + "/+/" + path,
-			tree: tree,
-			version: version,
-			path: path,
+			id: this.m.tree + "@" + this.m.version + "/+/" + this.m.path,
+			...this.m,
 		};
 	}
 
-	viewUrl(lno?) {
-		if (lno === undefined) {
-			lno = this.get("lno");
-		}
-		return viewUrl(this.get("backend"), this.get("tree"), this.get("version"), this.get("path"), lno);
+	viewUrl(lno?: number) {
+		return viewUrl(this.m.backend, this.m.tree, this.m.version, this.m.path, lno ?? this.m.lno);
 	}
 }
 
 /** A set of Matches at a single path. */
-class FileGroup extends Model {
-	path_info;
+class FileGroup {
+	id: string; // The id attribute is used by collections to fetch models
+	info: PathInfo;
 	matched: Match[] = [];
 
-	constructor(path_info) {
-		super();
-		this.set("id", path_info.id); // The id attribute is used by collections to fetch models
-		this.path_info = path_info;
+	constructor(pathInfo: PathInfo & { id: string }) {
+		this.info = pathInfo;
+		this.id = pathInfo.id;
 	}
 
 	add_match(match: Match) {
@@ -256,62 +247,65 @@ class FileGroup extends Model {
 		}
 
 		// NOTE: The logic below requires matches to be sorted by line number.
-		this.matched.sort((a, b) => a.get("lno") - b.get("lno"));
+		this.matched.sort((a, b) => a.m.lno - b.m.lno);
 
 		for (var i = 1, len = this.matched.length; i < len; i++) {
-			var previous_match = this.matched[i - 1],
-				this_match = this.matched[i];
-			var last_line_of_prev_context =
-				previous_match.get("lno") + previous_match.get("context_after").length;
-			var first_line_of_this_context =
-				this_match.get("lno") - this_match.get("context_before").length;
-			var num_intersecting_lines = last_line_of_prev_context - first_line_of_this_context + 1;
-			if (num_intersecting_lines >= 0) {
+			let previous = this.matched[i - 1];
+			let current = this.matched[i];
+			let lastLineOfPrevContext = previous.m.lno + previous.m.context_after.length;
+			let firstLineOfThisContext = current.m.lno - current.m.context_before.length;
+			let numIntersectingLines = lastLineOfPrevContext - firstLineOfThisContext + 1;
+			if (numIntersectingLines >= 0) {
 				// The matches are intersecting or share a boundary.
 				// Try to split the context between the previous match and this one.
 				// Uneven splits should leave the latter element with the larger piece.
 
 				// split_at will be the first line number grouped with the latter element.
-				var split_at = parseInt(
-					Math.ceil((previous_match.get("lno") + this_match.get("lno")) / 2.0),
-					10,
-				);
-				if (split_at < first_line_of_this_context) {
-					split_at = first_line_of_this_context;
-				} else if (last_line_of_prev_context + 1 < split_at) {
-					split_at = last_line_of_prev_context + 1;
+				let splitAt = Math.ceil((previous.m.lno + current.m.lno) / 2.0);
+				if (splitAt < firstLineOfThisContext) {
+					splitAt = firstLineOfThisContext;
+				} else if (lastLineOfPrevContext + 1 < splitAt) {
+					splitAt = lastLineOfPrevContext + 1;
 				}
 
-				var clip_for_previous = last_line_of_prev_context - (split_at - 1);
-				var clip_for_this = split_at - first_line_of_this_context;
-				previous_match.set("clip_after", clip_for_previous);
-				this_match.set("clip_before", clip_for_this);
+				var clipForPrevious = lastLineOfPrevContext - (splitAt - 1);
+				var clipForCurrent = splitAt - firstLineOfThisContext;
+				previous.clip_after = clipForPrevious;
+				current.clip_before = clipForCurrent;
 			} else {
-				previous_match.unset("clip_after");
-				this_match.unset("clip_before");
+				previous.clip_after = undefined;
+				current.clip_before = undefined;
 			}
 		}
 	}
 }
 
 /** A set of matches that are automatically grouped by path. */
-class SearchResultSet extends Collection<FileGroup> {
+class SearchResultSet {
+	groups: Record<string, FileGroup> = {};
+
 	add_match(match: Match) {
-		var path_info = match.path_info();
-		var file_group = this.get(path_info.id);
-		if (!file_group) {
-			file_group = new FileGroup(path_info);
-			this.add(file_group);
+		let info = match.PathInfo();
+		let group: FileGroup = this.groups[info.id];
+		if (!group) {
+			group = new FileGroup(info);
+			this.groups[info.id] = group;
 		}
-		file_group.add_match(match);
+		group.add_match(match);
 	}
 
 	num_matches() {
-		return this.reduce(function (memo, file_group) {
-			return memo + file_group.matched.length;
-		}, 0);
+		let num = 0;
+		for (const id in this.groups) {
+			num += this.groups[id].matched.length;
+		}
+		return num;
 	}
 }
+
+type FileMatchResult = PathInfo & {
+	bounds: number[];
+};
 
 /**
  * A FileMatch represents a single filename match in the code base.
@@ -320,100 +314,117 @@ class SearchResultSet extends Collection<FileGroup> {
  *
  * XXX almost identical to Match
  */
-class FileMatch extends Model<Record<"tree" | "version" | "path" | "backend" | "bounds", any>> {
-	path_info() {
-		var tree = super.get("tree");
-		var version = super.get("version");
-		var path = super.get("path");
-		let backend = super.get("backend");
-		return {
-			backend: backend,
-			id: tree + "@" + version + "/+/" + path,
-			tree: tree,
-			version: version,
-			path: path,
-			bounds: super.get("bounds"),
-		};
+class FileMatch {
+	m: FileMatchResult;
+
+	constructor(m: FileMatchResult) {
+		this.m = m;
 	}
 
 	viewUrl() {
-		return viewUrl(super.get("backend"), super.get("tree"), super.get("version"), super.get("path"));
+		return viewUrl(this.m.backend, this.m.tree, this.m.version, this.m.path);
 	}
 }
 
-class FileMatchView extends View<FileMatch> {
-	constructor(options?) {
-		super({
-			...options,
-			tagName: "div",
-		});
-	}
+function FileMatchView({ match }: { match: FileMatch }) {
+	var path_info = match.m;
+	var pieces = [
+		path_info.path.substring(0, path_info.bounds[0]),
+		path_info.path.substring(path_info.bounds[0], path_info.bounds[1]),
+		path_info.path.substring(path_info.bounds[1]),
+	];
 
-	render() {
-		var path_info = this.model.path_info();
-		var pieces = [
-			path_info.path.substring(0, path_info.bounds[0]),
-			path_info.path.substring(path_info.bounds[0], path_info.bounds[1]),
-			path_info.path.substring(path_info.bounds[1]),
-		];
-
-		var el = jQuery(this.$el[0].cloneNode());
-		el.addClass("filename-match");
-		el.append(
-			<a className="label header result-path" href={this.model.viewUrl()}>
+	return (
+		<div class="filename-match">
+			<a className="label header result-path" href={match.viewUrl()}>
 				<span className="repo">{path_info.tree}:</span>
 				<span className="version">{shorten(path_info.version)}:</span>
 				{pieces[0]}
 				<span className="matchstr">{pieces[1]}</span>
 				{pieces[2]}
-			</a>,
-		);
-		this.setElement(Idiomorph.morph(this.$el[0], el));
-		return this;
-	}
+			</a>
+		</div>
+	);
 }
 
-class SearchState extends Model {
-	search_map = {};
-	search_results = new SearchResultSet();
-	file_search_results = new Collection();
-	search_id = 0;
+type Query = {
+	q: string;
+	fold_case: boolean;
+	regex: boolean;
+	backend: string;
+	repo: string[];
+};
 
-	defaults() {
-		return {
-			context: true,
-			displaying: null,
-			error: null,
-			search_type: "",
-			time: null,
-			why: null,
-		};
+type QueryState = Query & {
+	id: number;
+};
+
+class SearchState {
+	[immerable] = true;
+	readonly search_map: Record<number, Query> = {};
+	readonly search_results = new SearchResultSet();
+	readonly file_search_results: FileMatch[] = [];
+
+	readonly search_id = 0;
+	readonly displaying: number = 0;
+
+	readonly context = true;
+	readonly error: string | undefined;
+	readonly search_type: string = "";
+	readonly time: number | undefined;
+	readonly why: string | undefined;
+
+	viewUrl() {
+		var current = this.search_map[this.displaying];
+		if (!current) {
+			return "/search";
+		}
+
+		var base = "/search";
+		if (current.backend) {
+			base += "/" + current.backend;
+		} else if (CodesearchUI.input_backend) {
+			base += "/" + CodesearchUI.input_backend.val();
+		}
+
+		var query = {};
+		if (current.q !== "") {
+			query = { ...current, context: this.context };
+		}
+
+		var qs = jQuery.param(query);
+		return base + (qs ? "?" + qs : "");
 	}
 
-	constructor(opts?) {
-		super(opts);
-		this.on("change:displaying", this.new_search, this);
+	title() {
+		var current = this.search_map[this.displaying];
+		if (!current || !current.q) {
+			return "code search";
+		}
+		return current.q + " ⋅ search";
 	}
 
-	new_search() {
-		this.set({
-			error: null,
-			time: null,
-			why: null,
-		});
-		this.search_results.reset();
-		this.file_search_results.reset();
-		for (var k in this.search_map) {
-			if (parseInt(k) < this.get("displaying")) delete this.search_map[k];
+	reset() {
+		this.error = undefined;
+		this.time = undefined;
+		this.why = undefined;
+		this.search_results = new SearchResultSet();
+		this.file_search_results = [];
+		for (let k in this.search_map) {
+			if (parseInt(k) < (this.displaying ?? 0)) {
+				delete this.search_map[k];
+			}
 		}
 	}
 
-	next_id() {
-		return ++this.search_id;
+	on_set_context(context: boolean): SearchState {
+		return produce(this, (next) => {
+			next.context = context;
+		});
 	}
 
-	dispatch(search) {
-		var cur = this.search_map[this.get("displaying")];
+	handle_query(search: Query): [SearchState, QueryState | undefined] {
+		var cur = this.search_map[this.displaying];
 		if (
 			cur &&
 			cur.q === search.q &&
@@ -422,358 +433,275 @@ class SearchState extends Model {
 			cur.backend === search.backend &&
 			isEqual(cur.repo, search.repo)
 		) {
-			return false;
+			return [this, undefined];
 		}
-		var id = this.next_id();
-		search.id = id;
-		this.search_map[id] = {
-			q: search.q,
-			fold_case: search.fold_case,
-			regex: search.regex,
-			backend: search.backend,
-			repo: search.repo,
-		};
+		const next = createDraft(this);
+		var id = ++next.search_id;
+		next.search_map[id] = search;
 		if (!search.q.length) {
-			this.set("displaying", id);
-			return false;
+			next.displaying = id;
+			next.reset();
+			return [finishDraft(next), undefined];
 		}
-		return true;
+		return [finishDraft(next), { id, ...search }];
 	}
 
-	viewUrl() {
-		var q = {};
-		var current = this.search_map[this.get("displaying")];
-		if (!current) return "/search";
-		var base = "/search";
-
-		if (current.q !== "") {
-			q.q = current.q;
-			q.fold_case = current.fold_case;
-			q.regex = current.regex;
-			q.context = this.get("context");
-			q.repo = current.repo;
-		}
-
-		if (current.backend) {
-			base += "/" + current.backend;
-		} else if (CodesearchUI.input_backend) {
-			base += "/" + CodesearchUI.input_backend.val();
-		}
-		var qs = jQuery.param(q);
-		return base + (qs ? "?" + qs : "");
-	}
-
-	title() {
-		var current = this.search_map[this.get("displaying")];
-		if (!current || !current.q) return "code search";
-		return current.q + " ⋅ search";
-	}
-
-	handle_error(search, error) {
+	handle_error(search: number, error: string): SearchState {
 		if (search === this.search_id) {
-			this.set("displaying", search);
-			this.set("error", error);
+			return produce(this, (next) => {
+				next.displaying = search;
+				next.error = error;
+			});
 		}
+		return this;
 	}
 
-	handle_match(search, match) {
-		if (search < this.get("displaying")) return false;
-		this.set("displaying", search);
-		var m = clone(match);
-		m.backend = this.search_map[search].backend;
-		this.search_results.add_match(new Match(m));
-	}
-	handle_file_match(search, file_match) {
-		if (search < this.get("displaying")) return false;
-		this.set("displaying", search);
-		var fm = clone(file_match);
-		fm.backend = this.search_map[search].backend;
-		this.file_search_results.add(new FileMatch(fm));
-	}
-	handle_done(search, time, search_type, why) {
-		if (search < this.get("displaying")) return false;
-		this.set("displaying", search);
-		this.set({ time: time, search_type: search_type, why: why });
-		this.search_results.trigger("search-complete");
+	handle_done(
+		search: number,
+		file_matches: FileMatchResult[],
+		matches: MatchResult[],
+		{ time, search_type, why }: { time: number; search_type: string; why: string },
+	): SearchState {
+		if (search < this.displaying) {
+			return this;
+		}
+		return produce(this, (next) => {
+			if (next.displaying < search) {
+				next.displaying = search;
+				next.reset();
+			}
+			const backend = next.search_map[search].backend;
+			for (const fm of file_matches) {
+				next.file_search_results.push(new FileMatch({ ...fm, backend }));
+			}
+			for (const m of matches) {
+				next.search_results.add_match(new Match({ ...m, backend }));
+			}
+			next.time = time;
+			next.search_type = search_type;
+			next.why = why;
+		});
 	}
 }
 
-class FileGroupView extends View<FileGroup> {
-	constructor(options) {
-		super({
-			...options,
-			tagName: "div",
-		});
+function FileGroupView({ group }: { group: FileGroup }) {
+	const { path, tree, version } = group.info;
+
+	let basename = path;
+	let dirname = "";
+	let indexOfLastPathSep = path.lastIndexOf("/");
+	if (indexOfLastPathSep !== -1) {
+		basename = path.substring(indexOfLastPathSep + 1, path.length);
+		dirname = path.substring(0, indexOfLastPathSep + 1);
 	}
 
-	render_header(tree, version, path) {
-		var basename, dirname;
-		var indexOfLastPathSep = path.lastIndexOf("/");
-
-		if (indexOfLastPathSep !== -1) {
-			basename = path.substring(indexOfLastPathSep + 1, path.length);
-			dirname = path.substring(0, indexOfLastPathSep + 1);
-		} else {
-			basename = path; // path doesn"t contain any dir parts, only the basename
-			dirname = "";
-		}
-
-		var first_match = this.model.matched[0];
-		return (
+	let first = group.matched[0];
+	return (
+		<div className="file-group">
 			<div className="header">
 				<span className="header-path">
-					<a className="result-path" href={first_match.viewUrl()}>
+					<a className="result-path" href={first.viewUrl()}>
 						<span className="repo">{tree}:</span>
 						<span className="version">{shorten(version)}:</span>
 						{dirname}
 						<span className="filename">{basename}</span>
 					</a>
 					<div className="header-links">
-						{renderLinkConfigs(
-							CodesearchUI.linkConfigs,
-							tree,
-							version,
-							path,
-							first_match.get("lno"),
-						)}
+						{renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path, first.m.lno)}
 					</div>
 				</span>
 			</div>
-		);
-	}
-
-	render() {
-		var matches = this.model.matched;
-		var el = jQuery(this.$el[0].cloneNode());
-		el.append(
-			this.render_header(
-				this.model.path_info.tree,
-				this.model.path_info.version,
-				this.model.path_info.path,
-			),
-		);
-		matches.forEach(function (match) {
-			el.append(new MatchView({ model: match }).render().el);
-		});
-		el.addClass("file-group");
-		let m = matches[0];
-		let id = `F:${m.get("backend")}:${m.get("tree")}:${m.get("version")}:${m.get("path")}`;
-		el.attr("id", id);
-		this.setElement(Idiomorph.morph(this.$el[0], el));
-		return this;
-	}
+			{group.matched.map((match) => MatchView({ match }))}
+		</div>
+	);
 }
 
-class MatchesView extends View<SearchState> {
-	constructor(options) {
-		super({
-			...options,
-			tagName: "div",
-			events: {
-				"click .file-extension": "_limitExtension",
-				keydown: "_handleKey",
-			},
-		});
-		this.setElement(jQuery("#results"));
-		this.model.search_results.on("search-complete", this.render, this);
-		this.model.search_results.on("rerender", this.render, this);
-	}
-	render() {
-		let el = jQuery(this.$el[0].cloneNode());
-
-		// Collate which file extensions (.py, .go, etc) are most common.
-		// countExtension() is called for file_search_results and search_results
-		var extension_map = {};
-		var countExtension = function (path) {
-			var r = /[^\/](\.[a-z.]{1,6})$/i;
-			var match = path.match(r);
-			if (match) {
-				var ext = match[1];
-				extension_map[ext] = extension_map[ext] ? extension_map[ext] + 1 : 1;
-			}
-		};
-
-		var count = 0;
-		let pathResults: Element[] = [];
-		this.model.file_search_results.each(function (file) {
-			if (this.model.get("search_type") == "filename_only" || count < 10) {
-				var view = new FileMatchView({ model: file });
-				pathResults.push(view.render().el);
-			}
-			countExtension(file.attributes.path);
-			count += 1;
-		}, this);
-		el.append(<div className="path-results">{pathResults}</div>);
-
-		this.model.search_results.each(function (file_group) {
-			file_group.process_context_overlaps();
-			var view = new FileGroupView({ model: file_group });
-			el.append(view.render().el);
-			countExtension(file_group.path_info.path);
-		}, this);
-
-		this.setElement(Idiomorph.morph(this.$el[0], el));
-		var i = this.model.search_id;
-		var query = this.model.search_map[i].q;
-		var already_file_limited = /\bfile:/.test(query);
-		if (!already_file_limited) this._render_extension_buttons(extension_map);
-
-		return this;
-	}
-	_render_extension_buttons(extension_map) {
-		// Display a series of buttons for the most common file extensions
-		// among the current search results, that each narrow the search to
-		// files matching that extension.
-		var extension_array = [];
-		for (var ext in extension_map) extension_array.push([extension_map[ext], ext]);
-
-		if (extension_array.length < 2) return;
-
-		extension_array.sort(function (a, b) {
-			return b[0] - a[0];
-		});
-
-		var popular_extensions = [];
-		var end = Math.min(extension_array.length, 5);
-		for (var i = 0; i < end; i++) popular_extensions.push(extension_array[i][1]);
-		popular_extensions.sort();
-
-		var help = "Narrow to:";
-		let fileExtensions: Element[] = [];
-		for (var i = 0; i < popular_extensions.length; i++) {
-			fileExtensions.push(<button className="file-extension">{popular_extensions[i]}</button>);
+function MatchesView({ model }: { model: SearchState }) {
+	// Collate which file extensions (.py, .go, etc) are most common.
+	// countExtension() is called for file_search_results and search_results
+	var extension_map: Record<string, number> = {};
+	var countExtension = (path) => {
+		var r = /[^\/](\.[a-z.]{1,6})$/i;
+		var match = path.match(r);
+		if (match) {
+			var ext = match[1];
+			extension_map[ext] = extension_map[ext] ? extension_map[ext] + 1 : 1;
 		}
-		this.$el.prepend(
-			<div className="file-extensions">
-				{help}
-				{fileExtensions}
-			</div>,
-		);
+	};
+
+	var count = 0;
+	let pathResults: JSX.Element[] = [];
+	for (const match of model.file_search_results) {
+		if (model.search_type == "filename_only" || count < 10) {
+			pathResults.push(FileMatchView({ match }));
+		}
+		countExtension(match.m.path);
+		count += 1;
 	}
-	_limitExtension(e) {
-		var ext = e.target.textContent;
-		var q = CodesearchUI.input.val();
-		if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
-		else q = "file:" + ext + " " + q;
-		CodesearchUI.input.val(q);
+
+	let nodes = [<div className="path-results">{pathResults}</div>];
+
+	for (const id in model.search_results.groups) {
+		const group = model.search_results.groups[id];
+		group.process_context_overlaps();
+		nodes.push(FileGroupView({ group }));
+		countExtension(group.info.path);
+	}
+
+	var id = model.search_id;
+	var query = model.search_map[id].q;
+	var already_file_limited = /\bfile:/.test(query);
+	if (!already_file_limited) {
+		nodes.unshift(..._render_extension_buttons(extension_map));
+	}
+	return (
+		<div tabIndex={-1} style={{ outline: "none" }} onKeyDown={_handleKey}>
+			{nodes}
+		</div>
+	);
+}
+
+function _render_extension_buttons(extension_map: Record<string, number>) {
+	// Display a series of buttons for the most common file extensions
+	// among the current search results, that each narrow the search to
+	// files matching that extension.
+	var extension_array: [number, string][] = [];
+	for (let ext in extension_map) {
+		extension_array.push([extension_map[ext], ext]);
+	}
+	if (extension_array.length < 2) {
+		return [];
+	}
+	extension_array.sort((a, b) => b[0] - a[0]);
+
+	var popular: string[] = [];
+	var end = Math.min(extension_array.length, 5);
+	for (var i = 0; i < end; i++) {
+		popular.push(extension_array[i][1]);
+	}
+	popular.sort();
+
+	return [
+		<div className="file-extensions">
+			Narrow to:
+			{popular.map((ex) => (
+				<button className="file-extension" onClick={_limitExtension}>
+					{ex}
+				</button>
+			))}
+		</div>,
+	];
+}
+
+function _limitExtension(e: MouseEvent) {
+	var ext = e.target.textContent;
+	var q = CodesearchUI.input.val();
+	if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
+	else q = "file:" + ext + " " + q;
+	CodesearchUI.input.val(q);
+	CodesearchUI.newsearch();
+}
+
+function _handleKey(event: KeyboardEvent) {
+	if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+		return;
+	}
+	var which = event.which;
+	if (which === KeyCodes.SLASH_OR_QUESTION_MARK) {
+		var t = getSelectedText();
+		if (!t) return;
+		event.preventDefault();
+		if (CodesearchUI.input_regex.is(":checked")) {
+			t = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // from mozilla docs
+		}
+
+		// Make sure that the search results the user is looking at, in
+		// which they"ve selected text, get persisted in their browser
+		// history so that they can come back to them.
+		// last_url_update = 0;
+
+		CodesearchUI.input.val(t);
 		CodesearchUI.newsearch();
 	}
-	_handleKey(event) {
-		if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-		var which = event.which;
-		if (which === KeyCodes.SLASH_OR_QUESTION_MARK) {
-			var t = getSelectedText();
-			if (!t) return;
-			event.preventDefault();
-			if (CodesearchUI.input_regex.is(":checked")) t = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // from mozilla docs
-
-			// Make sure that the search results the user is looking at, in
-			// which they"ve selected text, get persisted in their browser
-			// history so that they can come back to them.
-			last_url_update = 0;
-
-			CodesearchUI.input.val(t);
-			CodesearchUI.newsearch();
-		}
-	}
 }
 
-class ResultView extends View<SearchState> {
-	matches_view;
-	results;
-	errorbox;
-	time;
-	last_url;
-	last_title;
+function ResultView({ model }: { model: SearchState }) {
+	const [last_url, set_last_url] = useState(["", 0] as [string, number]);
+	var browser_url = window.location.pathname + window.location.search;
 
-	constructor(opts) {
-		super(opts);
-		this.setElement(jQuery("#resultarea"));
-		this.matches_view = new MatchesView({ model: this.model });
-		this.results = this.$("#numresults");
-		this.errorbox = jQuery("#regex-error");
-		this.time = this.$("#searchtime");
-		this.last_url = null;
-		this.last_title = null;
-
-		this.model.on("all", this.render, this);
-		this.model.search_results.on("all", this.render, this);
-	}
-
-	render() {
-		if (this.model.get("displaying") === null) {
+	// Update history if needed.
+	useEffect(() => {
+		if (model.error) {
 			return;
 		}
-		if (this.model.get("error")) {
-			this.errorbox.find("#errortext").text(this.model.get("error"));
-			this.errorbox.show();
-		} else {
-			this.errorbox.hide();
-		}
 
-		var url = this.model.viewUrl();
-		if (this.last_url !== url) {
-			if (history.pushState) {
-				var browser_url = window.location.pathname + window.location.search;
-				if (browser_url !== url) {
-					// If the user is typing quickly, just keep replacing the
-					// current URL.  But after they"ve paused, enroll the URL they
-					// paused at into their browser history.
-					var now = Date.now();
-					var two_seconds = 2000;
-					if (this.last_url === null) {
-						// If this.last_url is null, that means this is the initial
-						// navigation. We should never pushState here, otherwise the
-						// user will need to backspace twice to go back to the
-						// previous page.
-						history.replaceState(null, "", url);
-					} else if (now - last_url_update > two_seconds) {
-						history.pushState(null, "", url);
-					} else {
-						history.replaceState(null, "", url);
-					}
-					last_url_update = now;
-				}
+		var url = model.viewUrl();
+		if (browser_url !== url) {
+			// If the user is typing quickly, just keep replacing the current URL.
+			// But after they"ve paused, enroll the URL they paused at into their browser history.
+			var now = Date.now();
+			var two_seconds = 2000;
+			if (last_url[0] === "") {
+				// If this.last_url is null, that means this is the initial navigation.
+				// We should never pushState here, otherwise the user will need to
+				// backspace twice to go back to the previous page.
+				history.replaceState(null, "", url);
+			} else if (now - last_url[1] > two_seconds) {
+				history.pushState(null, "", url);
+			} else {
+				history.replaceState(null, "", url);
 			}
-			this.last_url = url;
+			set_last_url([url, now]);
 		}
+	}, [model, browser_url, last_url]);
 
-		var title = this.model.title();
-		if (this.last_title !== title) {
-			document.title = title;
-			this.last_title = title;
+	// Update visibilities of various containers based on the results.
+	useEffect(() => {
+		jQuery("#regex-error").toggle(!!model.error);
+		if (model.error) {
+			return;
 		}
-
-		if (this.model.search_map[this.model.get("displaying")].q === "" || this.model.get("error")) {
-			this.$el.hide();
+		document.title = model.title();
+		if (!model.displaying || !model.search_map[model.displaying]?.q) {
+			// No results -- show help.
+			jQuery("#resultarea").hide();
 			jQuery("#helparea").show();
-			return this;
+			return;
 		}
 
-		jQuery("#results").toggleClass("no-context", !this.model.get("context"));
-
-		this.$el.show();
+		jQuery("#results").toggleClass("no-context", !model.context);
+		// jQuery("#results").show();
+		jQuery("#resultarea").show();
 		jQuery("#helparea").hide();
 
-		if (this.model.get("time")) {
-			this.$("#searchtimebox").show();
-			var time = this.model.get("time");
-			this.time.text(time + " ms");
+		if (model.time) {
+			jQuery("#searchtimebox").show();
+			jQuery("#searchtime").text(model.time + " ms");
 		} else {
-			this.$("#searchtimebox").hide();
+			jQuery("#searchtimebox").hide();
 		}
 
-		var results;
-		if (this.model.get("search_type") == "filename_only") {
-			results = "" + this.model.file_search_results.length;
+		var num_results = "";
+		if (model.search_type == "filename_only") {
+			num_results += model.file_search_results.length;
 		} else {
-			results = "" + this.model.search_results.num_matches();
+			num_results += model.search_results.num_matches();
 		}
-		if (this.model.get("why") !== "NONE") results = results + "+";
-		this.results.text(results);
+		if (model.why !== "NONE") {
+			num_results = num_results + "+";
+		}
+		jQuery("#numresults").text(num_results);
+	}, [model]);
 
-		return this;
+	if (model.error) {
+		return <>{createPortal(<span id="errortext">{model.error}</span>, jQuery("#regex-error")[0])}</>;
 	}
+
+	if (!model.displaying || !model.search_map[model.displaying]?.q) {
+		return <></>;
+	}
+
+	return <>{MatchesView({ model: model })}</>;
 }
 
 // TODO: this should be an instance of a singleton... maybe?
@@ -781,8 +709,7 @@ namespace CodesearchUI {
 	export let backend_repos = {};
 	export let defaultSearchRepos;
 	export let linkConfigs;
-	let state = new SearchState();
-	let view: ResultView;
+	let state = signal(new SearchState());
 	export let input, input_backend, input_regex;
 	let input_repos, inputs_case, input_context;
 	let timer;
@@ -790,7 +717,10 @@ namespace CodesearchUI {
 	export function onload() {
 		if (input) return;
 
-		view = new ResultView({ model: state });
+		const App = () => {
+			return ResultView({ model: state.value });
+		};
+		render(<App />, jQuery("#results")[0]);
 
 		input = jQuery("#searchbox");
 		input_repos = jQuery("#repos");
@@ -847,16 +777,18 @@ namespace CodesearchUI {
 		});
 
 		// Update the search when the user hits Forward or Back.
-		window.onpopstate = function (event) {
+		window.onpopstate = (event) => {
 			var parms = parse_query_params();
 			init_query_from_parms(parms);
 			newsearch();
 		};
 	}
+
 	function toggle_context() {
-		state.set("context", input_context.prop("checked"));
+		state.value = state.value.on_set_context(input_context.prop("checked"));
 	}
-	// Initialize query from URL or user"s saved preferences
+
+	// Initialize query from URL or user's saved preferences.
 	function init_query() {
 		var parms = parse_query_params();
 
@@ -874,6 +806,7 @@ namespace CodesearchUI {
 
 		setTimeout(keypress, 0);
 	}
+
 	function init_query_from_parms(parms) {
 		var q: string[] = [];
 		if (parms.q) q.push(parms.q[0]);
@@ -917,6 +850,7 @@ namespace CodesearchUI {
 		if (parms["repo[]"]) repos = repos.concat(parms["repo[]"]);
 		updateSelected(repos);
 	}
+
 	function init_controls_from_prefs() {
 		var prefs = getJSON("prefs");
 		if (!prefs) {
@@ -934,6 +868,7 @@ namespace CodesearchUI {
 			input_context.prop("checked", prefs["context"]);
 		}
 	}
+
 	function set_pref(key: string, value: any) {
 		// Load from the cookie again every time in case some other pref has been
 		// changed out from under us.
@@ -944,14 +879,13 @@ namespace CodesearchUI {
 		prefs[key] = value;
 		set("prefs", prefs, { expires: 36500 });
 	}
+
 	function parse_query_params() {
 		var urlParams = {};
 		var e,
 			a = /\+/g,
 			r = /([^&=]+)=?([^&]*)/g,
-			d = function (s) {
-				return decodeURIComponent(s.replace(a, " "));
-			},
+			d = (s) => decodeURIComponent(s.replace(a, " ")),
 			q = window.location.search.substring(1);
 
 		while ((e = r.exec(q))) {
@@ -963,51 +897,60 @@ namespace CodesearchUI {
 		}
 		return urlParams;
 	}
+
 	export function on_connect() {
 		newsearch();
 	}
+
 	function select_backend() {
 		if (!input_backend) return;
 		update_repo_options();
 		keypress();
 	}
+
 	function update_repo_options() {
 		if (!input_backend) return;
 		var backend = input_backend.val();
 		updateOptions(backend_repos[backend]);
 	}
+
 	function keypress() {
 		clear_timer();
 		timer = setTimeout(newsearch, 100);
 	}
+
 	export function newsearch() {
 		clear_timer();
-		var search = {
+		let search: Query = {
 			q: input.val(),
 			fold_case: inputs_case.filter(":checked").val(),
 			regex: input_regex.is(":checked"),
 			repo: input_repos.val(),
 		};
-		if (input_backend) search.backend = input_backend.val();
-		if (state.dispatch(search)) Codesearch.new_search(search);
+
+		if (input_backend) {
+			search.backend = input_backend.val();
+		}
+		const [next, qs] = state.value.handle_query(search);
+		if (qs) {
+			Codesearch.new_search(qs);
+		}
+		state.value = next;
 	}
+
 	function clear_timer() {
 		if (timer) {
 			clearTimeout(timer);
 			timer = null;
 		}
 	}
+
 	export function error(search, error) {
-		state.handle_error(search, error);
+		state.value = state.value.handle_error(search, error);
 	}
-	export function match(search, match) {
-		state.handle_match(search, match);
-	}
-	export function file_match(search, file_match) {
-		state.handle_file_match(search, file_match);
-	}
-	export function search_done(search, time, search_type, why) {
-		state.handle_done(search, time, search_type, why);
+
+	export function search_done(search, file_matches, matches, meta: { time; search_type; why }) {
+		state.value = state.value.handle_done(search, file_matches, matches, meta);
 	}
 }
 

@@ -29,14 +29,6 @@ bootstrap-select/dist/js/bootstrap-select.js:
    * Licensed under MIT (https://github.com/snapappointments/bootstrap-select/blob/master/LICENSE)
    */
 
-browser-split/index.js:
-  /*!
-   * Cross-Browser Split 1.1.1
-   * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
-   * Available under the MIT License
-   * ECMAScript compliant, uniform cross-browser split method
-   */
-
 js-cookie/src/js.cookie.js:
   /*!
    * JavaScript Cookie v2.1.4
