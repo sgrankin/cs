@@ -146,7 +146,7 @@ func (b *indexSearcher) Search(ctx context.Context, req Query) (*CodeSearchResul
 		idx.Store(-1)
 
 		numWorkers := min(runtime.GOMAXPROCS(0), len(post))
-		perFileResults := make(chan []SearchResult, numWorkers)
+		perFileResults := make(chan SearchResult, numWorkers)
 		var wg sync.WaitGroup
 		for range numWorkers {
 			wg.Add(1)
@@ -164,11 +164,11 @@ func (b *indexSearcher) Search(ctx context.Context, req Query) (*CodeSearchResul
 					}
 					blob := b.ix.Data(post[i])
 					results := searchBlob(re, blob, repo, version, name, req.ContextLines, req.MaxMatches)
-					if len(results) == 0 {
+					if results == nil || len(results.Lines) == 0 {
 						continue
 					}
 					select {
-					case perFileResults <- results:
+					case perFileResults <- *results:
 					case <-ctx.Done():
 						return // Cancelled
 					}
@@ -181,16 +181,17 @@ func (b *indexSearcher) Search(ctx context.Context, req Query) (*CodeSearchResul
 			close(perFileResults)
 		}()
 
+		count := 0
 		for perFileResults := range perFileResults {
-			results = append(results, perFileResults...)
-			if len(results) >= req.MaxMatches {
+			results = append(results, perFileResults)
+			count += len(perFileResults.Lines)
+			if count >= req.MaxMatches {
 				cancel()
 				break
 			}
 		}
-		if len(results) >= req.MaxMatches {
+		if count >= req.MaxMatches {
 			csResult.Stats.ExitReason = ExitReasonMatchLimit
-			results = results[:req.MaxMatches]
 		}
 		csResult.Results = results
 	}
@@ -204,8 +205,8 @@ func (b *indexSearcher) Search(ctx context.Context, req Query) (*CodeSearchResul
 	return &csResult, nil
 }
 
-func searchBlob(re *regexp.Regexp, blob, repo, version, name []byte, contextLines, maxMatches int) []SearchResult {
-	var results []SearchResult
+func searchBlob(re *regexp.Regexp, blob, repo, version, name []byte, contextLines, maxMatches int) *SearchResult {
+	var results []LineResult
 	m := regexp.Match(re, blob)
 	if m == nil {
 		return nil
@@ -233,13 +234,7 @@ func searchBlob(re *regexp.Regexp, blob, repo, version, name []byte, contextLine
 		// How many newlines have we missed?
 		lineNum += countNL(blob[lineNumUntil:lineEnd])
 		lineNumUntil = lineEnd
-		results = append(results, SearchResult{
-			File: File{
-				Tree:    string(repo),
-				Version: string(version),
-				Path:    string(name),
-			},
-
+		results = append(results, LineResult{
 			LineNumber: lineNum,
 			Line:       string(blob[lineStart:lineEnd]),
 			Bounds:     Bounds{Left: m.Start - lineStart, Right: m.End - lineStart},
@@ -255,7 +250,14 @@ func searchBlob(re *regexp.Regexp, blob, repo, version, name []byte, contextLine
 		}
 		m = regexp.Match(re, blob[lineEnd+1:]).Add(lineEnd + 1)
 	}
-	return results
+	return &SearchResult{
+		File: File{
+			Tree:    string(repo),
+			Version: string(version),
+			Path:    string(name),
+		},
+		Lines: results,
+	}
 }
 
 func splitname(b []byte) (repo, version, name []byte) {

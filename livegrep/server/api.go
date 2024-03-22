@@ -115,15 +115,21 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 	}
 
 	for _, r := range search.Results {
+		lines := []api.LineResult{}
+		for _, r := range r.Lines {
+			lines = append(lines, api.LineResult{
+				LineNumber:    int(r.LineNumber),
+				ContextBefore: stringSlice(r.ContextBefore),
+				ContextAfter:  stringSlice(r.ContextAfter),
+				Bounds:        [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
+				Line:          r.Line,
+			})
+		}
 		reply.Results = append(reply.Results, &api.Result{
-			Tree:          r.File.Tree,
-			Version:       r.File.Version,
-			Path:          r.File.Path,
-			LineNumber:    int(r.LineNumber),
-			ContextBefore: stringSlice(r.ContextBefore),
-			ContextAfter:  stringSlice(r.ContextAfter),
-			Bounds:        [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
-			Line:          r.Line,
+			Tree:    r.File.Tree,
+			Version: r.File.Version,
+			Path:    r.File.Path,
+			Lines:   lines,
 		})
 	}
 

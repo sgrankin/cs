@@ -32,9 +32,13 @@ type Stats struct {
 }
 
 type Result struct {
-	Tree          string   `json:"tree"`
-	Version       string   `json:"version"`
-	Path          string   `json:"path"`
+	Tree    string       `json:"tree"`
+	Version string       `json:"version"`
+	Path    string       `json:"path"`
+	Lines   []LineResult `json:"lines"`
+}
+
+type LineResult struct {
 	LineNumber    int      `json:"lno"`
 	ContextBefore []string `json:"context_before"`
 	ContextAfter  []string `json:"context_after"`

@@ -81,7 +81,7 @@ function externalUrl(url, tree, version, path, lno) {
 	return url;
 }
 
-function renderLinkConfigs(linkConfigs, tree, version, path, lno): JSX.Element[] {
+function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[] {
 	linkConfigs = linkConfigs.filter(function (linkConfig) {
 		return !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path);
 	});
@@ -107,7 +107,7 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno): JSX.Element[]
 	return out;
 }
 
-function MatchView({ match }: { match: Match }) {
+function MatchView({ path, match }: { path: PathInfo; match: ClippedLineMatch }) {
 	// this.model.on("change", this.render, this);
 
 	const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
@@ -115,7 +115,10 @@ function MatchView({ match }: { match: Match }) {
 		var classes = ["lno-link"];
 		if (isMatch) classes.push("matchlno");
 		return (
-			<a className={classes.join(" ")} href={match.viewUrl(n)}>
+			<a
+				className={classes.join(" ")}
+				href={viewUrl(path.backend, path.tree, path.version, path.path, n)}
+			>
 				<span className="lno" aria-label={lnoStr}>
 					{lnoStr}
 				</span>
@@ -126,26 +129,22 @@ function MatchView({ match }: { match: Match }) {
 	let i: number;
 	let ctx_before: JSX.Element[] = [];
 	let ctx_after: JSX.Element[] = [];
-	let lno = match.m.lno;
-	let ctxBefore = match.m.context_before;
+	let lno = match.lno;
+	let ctxBefore = match.context_before;
 	let clip_before = match.clip_before;
-	let ctxAfter = match.m.context_after;
+	let ctxAfter = match.context_after;
 	let clip_after = match.clip_after;
 
 	var lines_to_display_before = Math.max(0, ctxBefore.length - (clip_before || 0));
 	for (i = 0; i < lines_to_display_before; i++) {
-		ctx_before.unshift(
-			_renderLno(lno - i - 1, false),
-			<span>{match.m.context_before[i]}</span>,
-			<span />,
-		);
+		ctx_before.unshift(_renderLno(lno - i - 1, false), <span>{match.context_before[i]}</span>, <span />);
 	}
 	var lines_to_display_after = Math.max(0, ctxAfter.length - (clip_after || 0));
 	for (i = 0; i < lines_to_display_after; i++) {
-		ctx_after.push(_renderLno(lno + i + 1, false), <span>{match.m.context_after[i]}</span>, <span />);
+		ctx_after.push(_renderLno(lno + i + 1, false), <span>{match.context_after[i]}</span>, <span />);
 	}
-	var line = match.m.line;
-	var bounds = match.m.bounds;
+	var line = match.line;
+	var bounds = match.bounds;
 	var pieces = [
 		line.substring(0, bounds[0]),
 		line.substring(bounds[0], bounds[1]),
@@ -158,9 +157,9 @@ function MatchView({ match }: { match: Match }) {
 
 	var links = renderLinkConfigs(
 		CodesearchUI.linkConfigs.filter((c) => c.url_template.includes("{lno}")),
-		match.m.tree,
-		match.m.version,
-		match.m.path,
+		path.tree,
+		path.version,
+		path.path,
 		lno,
 	);
 
@@ -188,7 +187,7 @@ type PathInfo = {
 	backend: string;
 };
 
-type MatchResult = PathInfo & {
+type LineMatch = {
 	line: string;
 	lno: number;
 	bounds: number[];
@@ -196,43 +195,33 @@ type MatchResult = PathInfo & {
 	context_after: string[];
 };
 
-// A Match represents a single match in the code base.
-// This model wraps the JSON response from the Codesearch backend for an individual match.
-class Match {
-	m: MatchResult;
+type MatchResult = PathInfo & {
+	lines: LineMatch[];
+};
+
+type ClippedLineMatch = LineMatch & {
 	clip_after: number | undefined;
 	clip_before: number | undefined;
-
-	constructor(m: MatchResult) {
-		this.m = m;
-	}
-
-	PathInfo(): PathInfo & { id: string } {
-		return {
-			id: this.m.tree + "@" + this.m.version + "/+/" + this.m.path,
-			...this.m,
-		};
-	}
-
-	viewUrl(lno?: number) {
-		return viewUrl(this.m.backend, this.m.tree, this.m.version, this.m.path, lno ?? this.m.lno);
-	}
-}
+};
 
 /** A set of Matches at a single path. */
 class FileGroup {
 	id: string; // The id attribute is used by collections to fetch models
 	info: PathInfo;
-	matched: Match[] = [];
+	matched: ClippedLineMatch[] = [];
 
-	constructor(pathInfo: PathInfo & { id: string }) {
-		this.info = pathInfo;
-		this.id = pathInfo.id;
+	constructor(m: MatchResult) {
+		this.info = { ...m };
+		this.matched = m.lines;
 	}
 
-	add_match(match: Match) {
-		this.matched.push(match);
+	viewUrl(lno?: number) {
+		return viewUrl(this.info.backend, this.info.tree, this.info.version, this.info.path, lno);
 	}
+
+	// add_match(match: Match) {
+	// 	this.matched.push(match);
+	// }
 
 	/** Prepare the matches for rendering by clipping the context of matches to avoid duplicate
 	 *  lines being displayed in the search results.
@@ -247,13 +236,13 @@ class FileGroup {
 		}
 
 		// NOTE: The logic below requires matches to be sorted by line number.
-		this.matched.sort((a, b) => a.m.lno - b.m.lno);
+		this.matched.sort((a, b) => a.lno - b.lno);
 
 		for (var i = 1, len = this.matched.length; i < len; i++) {
 			let previous = this.matched[i - 1];
 			let current = this.matched[i];
-			let lastLineOfPrevContext = previous.m.lno + previous.m.context_after.length;
-			let firstLineOfThisContext = current.m.lno - current.m.context_before.length;
+			let lastLineOfPrevContext = previous.lno + previous.context_after.length;
+			let firstLineOfThisContext = current.lno - current.context_before.length;
 			let numIntersectingLines = lastLineOfPrevContext - firstLineOfThisContext + 1;
 			if (numIntersectingLines >= 0) {
 				// The matches are intersecting or share a boundary.
@@ -261,7 +250,7 @@ class FileGroup {
 				// Uneven splits should leave the latter element with the larger piece.
 
 				// split_at will be the first line number grouped with the latter element.
-				let splitAt = Math.ceil((previous.m.lno + current.m.lno) / 2.0);
+				let splitAt = Math.ceil((previous.lno + current.lno) / 2.0);
 				if (splitAt < firstLineOfThisContext) {
 					splitAt = firstLineOfThisContext;
 				} else if (lastLineOfPrevContext + 1 < splitAt) {
@@ -282,24 +271,14 @@ class FileGroup {
 
 /** A set of matches that are automatically grouped by path. */
 class SearchResultSet {
-	groups: Record<string, FileGroup> = {};
+	groups: FileGroup[] = [];
 
-	add_match(match: Match) {
-		let info = match.PathInfo();
-		let group: FileGroup = this.groups[info.id];
-		if (!group) {
-			group = new FileGroup(info);
-			this.groups[info.id] = group;
-		}
-		group.add_match(match);
+	add_match(match: MatchResult) {
+		this.groups.push(new FileGroup(match));
 	}
 
 	num_matches() {
-		let num = 0;
-		for (const id in this.groups) {
-			num += this.groups[id].matched.length;
-		}
-		return num;
+		return this.groups.reduce((sum, g) => sum + g.matched.length, 0);
 	}
 }
 
@@ -475,7 +454,7 @@ class SearchState {
 				next.file_search_results.push(new FileMatch({ ...fm, backend }));
 			}
 			for (const m of matches) {
-				next.search_results.add_match(new Match({ ...m, backend }));
+				next.search_results.add_match({ ...m, backend });
 			}
 			next.time = time;
 			next.search_type = search_type;
@@ -485,7 +464,7 @@ class SearchState {
 }
 
 function FileGroupView({ group }: { group: FileGroup }) {
-	const { path, tree, version } = group.info;
+	const { tree, version, path } = group.info;
 
 	let basename = path;
 	let dirname = "";
@@ -495,23 +474,22 @@ function FileGroupView({ group }: { group: FileGroup }) {
 		dirname = path.substring(0, indexOfLastPathSep + 1);
 	}
 
-	let first = group.matched[0];
 	return (
 		<div className="file-group">
 			<div className="header">
 				<span className="header-path">
-					<a className="result-path" href={first.viewUrl()}>
+					<a className="result-path" href={group.viewUrl()}>
 						<span className="repo">{tree}:</span>
 						<span className="version">{shorten(version)}:</span>
 						{dirname}
 						<span className="filename">{basename}</span>
 					</a>
 					<div className="header-links">
-						{renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path, first.m.lno)}
+						{renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path)}
 					</div>
 				</span>
 			</div>
-			{group.matched.map((match) => MatchView({ match }))}
+			{group.matched.map((match) => MatchView({ path: group.info, match }))}
 		</div>
 	);
 }

@@ -46,17 +46,23 @@ type IndexInfo struct {
 	Trees     []Tree
 }
 
-type Tree struct{ Name, Version string }
-type File struct{ Tree, Version, Path string }
-type Bounds struct{ Left, Right int }
-
+type Tree struct {
+	Name, Version string
+}
+type File struct {
+	Tree, Version, Path string
+}
+type Bounds struct {
+	Left, Right int
+}
 type SearchResult struct {
-	File       File
-	LineNumber int
-
-	Line   string
-	Bounds Bounds
-
+	File  File
+	Lines []LineResult
+}
+type LineResult struct {
+	LineNumber                  int
+	Line                        string
+	Bounds                      Bounds
 	ContextBefore, ContextAfter []string
 }
 
