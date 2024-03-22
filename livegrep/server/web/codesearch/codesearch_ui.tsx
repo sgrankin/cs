@@ -16,7 +16,7 @@ import "../codesearch/codesearch.css";
 
 import jQuery from "jquery";
 import { signal } from "@preact/signals";
-import { createDraft, finishDraft, immerable, produce } from "immer";
+import { Draft, createDraft, finishDraft, immerable, produce } from "immer";
 import { getJSON, set } from "js-cookie";
 import { Fragment, JSX, h, render } from "preact";
 import { createPortal } from "preact/compat";
@@ -347,7 +347,7 @@ class SearchState {
 	readonly search_id = 0;
 	readonly displaying: number = 0;
 
-	readonly context = true;
+	readonly context: boolean = true;
 	readonly error: string | undefined;
 	readonly search_type: string = "";
 	readonly time: number | undefined;
@@ -383,15 +383,15 @@ class SearchState {
 		return current.q + " ⋅ search";
 	}
 
-	reset() {
-		this.error = undefined;
-		this.time = undefined;
-		this.why = undefined;
-		this.search_results = new SearchResultSet();
-		this.file_search_results = [];
-		for (let k in this.search_map) {
-			if (parseInt(k) < (this.displaying ?? 0)) {
-				delete this.search_map[k];
+	static reset(draft: Draft<SearchState>) {
+		draft.error = undefined;
+		draft.time = undefined;
+		draft.why = undefined;
+		draft.search_results = new SearchResultSet();
+		draft.file_search_results = [];
+		for (let k in draft.search_map) {
+			if (parseInt(k) < (draft.displaying ?? 0)) {
+				delete draft.search_map[k];
 			}
 		}
 	}
@@ -419,7 +419,7 @@ class SearchState {
 		next.search_map[id] = search;
 		if (!search.q.length) {
 			next.displaying = id;
-			next.reset();
+			SearchState.reset(next);
 			return [finishDraft(next), undefined];
 		}
 		return [finishDraft(next), { id, ...search }];
@@ -447,7 +447,7 @@ class SearchState {
 		return produce(this, (next) => {
 			if (next.displaying < search) {
 				next.displaying = search;
-				next.reset();
+				SearchState.reset(next);
 			}
 			const backend = next.search_map[search].backend;
 			for (const fm of file_matches) {
