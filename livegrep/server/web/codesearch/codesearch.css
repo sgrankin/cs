@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+@import "../fonts/fonts.css";
+
 :root {
 	--color-background: #ffffff;
 	--color-background-subtle: #f8f8f8;
@@ -165,6 +167,12 @@ a {
 a:hover {
 	text-decoration: underline;
 	color: var(--color-foreground-accent);
+}
+
+code {
+	font-family: "Intel One Mono", "Menlo", "Consolas", "Monaco", monospace;
+	font-size: 12px;
+	line-height: 1.2;
 }
 
 #searcharea {
@@ -381,8 +389,9 @@ a:hover {
 
 .result-path {
 	color: var(--color-foreground-muted);
-	font-family: "Menlo", "Consolas", "Monaco", monospace;
+	font-family: "Intel One Mono", "Menlo", "Consolas", "Monaco", monospace;
 	font-size: 12px;
+	line-height: 1.2;
 	font-weight: normal;
 }
 
@@ -422,8 +431,9 @@ a:hover {
 	display: grid;
 	grid-template-columns: 4em auto auto;
 	white-space: pre-wrap;
-	font-family: "Menlo", "Consolas", "Monaco", monospace;
+	font-family: "Intel One Mono", "Menlo", "Consolas", "Monaco", monospace;
 	font-size: 12px;
+	line-height: 1.2;
 	padding: 10px 5px;
 	color: var(--color-foreground);
 	margin: 0;
@@ -534,8 +544,9 @@ a:hover {
 	width: 100%;
 	overflow: visible;
 	/* Allow code content to overflow */
-	font-family: "Menlo", "Consolas", "Monaco", monospace;
+	font-family: "Intel One Mono", "Menlo", "Consolas", "Monaco", monospace;
 	font-size: 12px;
+	line-height: 1.2;
 }
 
 .file-viewer .header {
@@ -589,8 +600,6 @@ a:hover {
 
 .file-viewer .file-content,
 .file-viewer .file-content pre code {
-	font-family: "Menlo", "Consolas", "Monaco", monospace;
-	font-size: 12px;
 }
 
 .file-viewer .line-numbers {
@@ -792,7 +801,7 @@ div.example {
 }
 
 .query {
-	font-family: "Menlo", "Consolas", "Monaco", monospace;
+	font-family: "Intel One Mono", "Menlo", "Consolas", "Monaco", monospace;
 	font-size: 12px;
 	font-weight: bold;
 }
