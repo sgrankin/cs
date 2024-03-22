@@ -26,167 +26,14 @@ import { isEqual } from "underscore";
 import { Codesearch } from "./codesearch";
 import { init as _init, updateOptions, updateSelected } from "./repo_selector";
 
-var KeyCodes = {
-	SLASH_OR_QUESTION_MARK: 191,
-};
-
-function getSelectedText() {
-	return window.getSelection ? window.getSelection()?.toString() : null;
-}
-
-function shorten(ref) {
-	var match = /^refs\/(tags|branches)\/(.*)/.exec(ref);
-	if (match) {
-		return match[2];
-	}
-	match = /^([0-9a-f]{8})[0-9a-f]+$/.exec(ref);
-	if (match) return match[1];
-	// If reference is origin/foo, assume that foo is
-	// the branch name.
-	match = /^origin\/(.*)/.exec(ref);
-	if (match) {
-		return match[1];
-	}
-	return ref;
-}
-
-function viewUrl(backend, tree, version, path, lno?) {
-	path = path.replace(/^\/+/, ""); // Trim any leading slashes
-	// Tree/version/path separation is via : as tree may have slashes in it...
-	// TODO: should we just URL encode it?
-	var url = "/view/" + backend + "/" + tree + "@" + version + "/+/" + path;
-	if (lno !== undefined) {
-		url += "#L" + lno;
-	}
-	return url;
-}
-
-function externalUrl(url, tree, version, path, lno) {
-	if (lno === undefined) {
-		lno = 1;
-	}
-
-	// If {path} already has a slash in front of it, trim extra leading
-	// slashes from `path` to avoid a double-slash in the URL.
-	if (url.indexOf("/{path}") !== -1) {
-		path = path.replace(/^\/+/, "");
-	}
-
-	// the order of these replacements is used to minimize conflicts
-	url = url.replace(/{lno}/g, lno);
-	url = url.replace(/{version}/g, shorten(version));
-	url = url.replace(/{name}/g, tree);
-	url = url.replace(/{basename}/g, tree.split("/")[1]); // E.g. "foo" in "username/foo"
-	url = url.replace(/{path}/g, path);
-	return url;
-}
-
-function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[] {
-	linkConfigs = linkConfigs.filter(function (linkConfig) {
-		return !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path);
-	});
-
-	var links = linkConfigs.map(function (linkConfig) {
-		return (
-			<a
-				className="file-action-link"
-				href={externalUrl(linkConfig.url_template, tree, version, path, lno)}
-				target={linkConfig.target}
-			>
-				{linkConfig.label}
-			</a>
-		);
-	});
-	let out: JSX.Element[] = [];
-	for (var i = 0; i < links.length; i++) {
-		if (i > 0) {
-			out.push(<span className="file-action-link-separator">\u00B7</span>);
-		}
-		out.push(links[i]);
-	}
-	return out;
-}
-
-function MatchView({ path, match }: { path: PathInfo; match: ClippedLineMatch }) {
-	// this.model.on("change", this.render, this);
-
-	const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
-		var lnoStr = n.toString() + (isMatch ? ":" : "-");
-		var classes = ["lno-link"];
-		if (isMatch) classes.push("matchlno");
-		return (
-			<a
-				className={classes.join(" ")}
-				href={viewUrl(path.backend, path.tree, path.version, path.path, n)}
-			>
-				<span className="lno" aria-label={lnoStr}>
-					{lnoStr}
-				</span>
-			</a>
-		);
-	};
-
-	let i: number;
-	let ctx_before: JSX.Element[] = [];
-	let ctx_after: JSX.Element[] = [];
-	let lno = match.lno;
-	let ctxBefore = match.context_before;
-	let clip_before = match.clip_before;
-	let ctxAfter = match.context_after;
-	let clip_after = match.clip_after;
-
-	var lines_to_display_before = Math.max(0, ctxBefore.length - (clip_before || 0));
-	for (i = 0; i < lines_to_display_before; i++) {
-		ctx_before.unshift(_renderLno(lno - i - 1, false), <span>{match.context_before[i]}</span>, <span />);
-	}
-	var lines_to_display_after = Math.max(0, ctxAfter.length - (clip_after || 0));
-	for (i = 0; i < lines_to_display_after; i++) {
-		ctx_after.push(_renderLno(lno + i + 1, false), <span>{match.context_after[i]}</span>, <span />);
-	}
-	var line = match.line;
-	var bounds = match.bounds;
-	var pieces = [
-		line.substring(0, bounds[0]),
-		line.substring(bounds[0], bounds[1]),
-		line.substring(bounds[1]),
-	];
-
-	var classes = ["match"];
-	if (clip_before !== undefined) classes.push("clip-before");
-	if (clip_after !== undefined) classes.push("clip-after");
-
-	var links = renderLinkConfigs(
-		CodesearchUI.linkConfigs.filter((c) => c.url_template.includes("{lno}")),
-		path.tree,
-		path.version,
-		path.path,
-		lno,
-	);
-
-	return (
-		<div className={classes.join(" ")}>
-			<div className="contents">
-				{ctx_before}
-				{_renderLno(lno, true)}
-				<span className="matchline">
-					{pieces[0]}
-					<span className="matchstr">{pieces[1]}</span>
-					{pieces[2]}
-				</span>
-				<span className="matchlinks">{links}</span>
-				{ctx_after}
-			</div>
-		</div>
-	);
-}
-
-type PathInfo = {
+type FilePath = {
+	backend: string;
 	tree: string;
 	version: string;
 	path: string;
-	backend: string;
 };
 
+// LineMatch describes the match for a single line in some file, including context.
 type LineMatch = {
 	line: string;
 	lno: number;
@@ -195,33 +42,29 @@ type LineMatch = {
 	context_after: string[];
 };
 
-type MatchResult = PathInfo & {
+type MatchResult = FilePath & {
 	lines: LineMatch[];
 };
 
+// ClippedLineMatch is a LineMatch with limits on how much context will be displayed.
 type ClippedLineMatch = LineMatch & {
-	clip_after: number | undefined;
 	clip_before: number | undefined;
+	clip_after: number | undefined;
 };
 
-/** A set of Matches at a single path. */
+// FileGroup holds all the matches for a file.
 class FileGroup {
-	id: string; // The id attribute is used by collections to fetch models
-	info: PathInfo;
+	path: FilePath;
 	matched: ClippedLineMatch[] = [];
 
 	constructor(m: MatchResult) {
-		this.info = { ...m };
+		this.path = { ...m };
 		this.matched = m.lines;
 	}
 
-	viewUrl(lno?: number) {
-		return viewUrl(this.info.backend, this.info.tree, this.info.version, this.info.path, lno);
+	viewURL(lno?: number) {
+		return viewURL(this.path.backend, this.path.tree, this.path.version, this.path.path, lno);
 	}
-
-	// add_match(match: Match) {
-	// 	this.matched.push(match);
-	// }
 
 	/** Prepare the matches for rendering by clipping the context of matches to avoid duplicate
 	 *  lines being displayed in the search results.
@@ -230,7 +73,7 @@ class FileGroup {
 	 * - The matches are all for the same file
 	 * - Two matches cannot have the same line number
 	 */
-	process_context_overlaps() {
+	processContextOverlaps() {
 		if (!this.matched || this.matched.length < 2) {
 			return; // We don"t have overlaps unless we have at least two things
 		}
@@ -273,16 +116,16 @@ class FileGroup {
 class SearchResultSet {
 	groups: FileGroup[] = [];
 
-	add_match(match: MatchResult) {
+	addMatch(match: MatchResult) {
 		this.groups.push(new FileGroup(match));
 	}
 
-	num_matches() {
+	numMatches() {
 		return this.groups.reduce((sum, g) => sum + g.matched.length, 0);
 	}
 }
 
-type FileMatchResult = PathInfo & {
+type FileMatchResult = FilePath & {
 	bounds: number[];
 };
 
@@ -300,30 +143,36 @@ class FileMatch {
 		this.m = m;
 	}
 
-	viewUrl() {
-		return viewUrl(this.m.backend, this.m.tree, this.m.version, this.m.path);
+	viewURL() {
+		return viewURL(this.m.backend, this.m.tree, this.m.version, this.m.path);
 	}
 }
 
-function FileMatchView({ match }: { match: FileMatch }) {
-	var path_info = match.m;
-	var pieces = [
-		path_info.path.substring(0, path_info.bounds[0]),
-		path_info.path.substring(path_info.bounds[0], path_info.bounds[1]),
-		path_info.path.substring(path_info.bounds[1]),
-	];
+function viewURL(backend, tree, version, path, lno?) {
+	path = path.replace(/^\/+/, ""); // Trim any leading slashes
+	// Tree/version/path separation is via : as tree may have slashes in it...
+	// TODO: should we just URL encode it?
+	var url = "/view/" + backend + "/" + tree + "@" + version + "/+/" + path;
+	if (lno !== undefined) {
+		url += "#L" + lno;
+	}
+	return url;
+}
 
-	return (
-		<div class="filename-match">
-			<a className="label header result-path" href={match.viewUrl()}>
-				<span className="repo">{path_info.tree}:</span>
-				<span className="version">{shorten(path_info.version)}:</span>
-				{pieces[0]}
-				<span className="matchstr">{pieces[1]}</span>
-				{pieces[2]}
-			</a>
-		</div>
-	);
+function shorten(ref) {
+	var match = /^refs\/(tags|branches)\/(.*)/.exec(ref);
+	if (match) {
+		return match[2];
+	}
+	match = /^([0-9a-f]{8})[0-9a-f]+$/.exec(ref);
+	if (match) return match[1];
+	// If reference is origin/foo, assume that foo is
+	// the branch name.
+	match = /^origin\/(.*)/.exec(ref);
+	if (match) {
+		return match[1];
+	}
+	return ref;
 }
 
 type Query = {
@@ -340,21 +189,24 @@ type QueryState = Query & {
 
 class SearchState {
 	[immerable] = true;
-	readonly search_map: Record<number, Query> = {};
-	readonly search_results = new SearchResultSet();
-	readonly file_search_results: FileMatch[] = [];
+	readonly matches = new SearchResultSet();
+	readonly fileMatches: FileMatch[] = [];
 
-	readonly search_id = 0;
-	readonly displaying: number = 0;
+	// searchMap holds all the pending search queries.
+	// The query info is used for display when the search completes.
+	// Any searches preceeding the currently displayedSearch are removed.
+	readonly searchMap: Record<number, Query> = {};
+	readonly lastSearch: number = 0;
+	readonly displayedSearch: number = 0;
 
 	readonly context: boolean = true;
 	readonly error: string | undefined;
-	readonly search_type: string = "";
+	readonly searchType: string = "";
 	readonly time: number | undefined;
 	readonly why: string | undefined;
 
-	viewUrl() {
-		var current = this.search_map[this.displaying];
+	viewURL() {
+		var current = this.searchMap[this.displayedSearch];
 		if (!current) {
 			return "/search";
 		}
@@ -376,7 +228,7 @@ class SearchState {
 	}
 
 	title() {
-		var current = this.search_map[this.displaying];
+		var current = this.searchMap[this.displayedSearch];
 		if (!current || !current.q) {
 			return "code search";
 		}
@@ -387,23 +239,23 @@ class SearchState {
 		draft.error = undefined;
 		draft.time = undefined;
 		draft.why = undefined;
-		draft.search_results = new SearchResultSet();
-		draft.file_search_results = [];
-		for (let k in draft.search_map) {
-			if (parseInt(k) < (draft.displaying ?? 0)) {
-				delete draft.search_map[k];
+		draft.matches = new SearchResultSet();
+		draft.fileMatches = [];
+		for (let k in draft.searchMap) {
+			if (parseInt(k) < (draft.displayedSearch ?? 0)) {
+				delete draft.searchMap[k];
 			}
 		}
 	}
 
-	on_set_context(context: boolean): SearchState {
+	OnSetContext(context: boolean): SearchState {
 		return produce(this, (next) => {
 			next.context = context;
 		});
 	}
 
-	handle_query(search: Query): [SearchState, QueryState | undefined] {
-		var cur = this.search_map[this.displaying];
+	OnNewSearch(search: Query): [SearchState, QueryState | undefined] {
+		var cur = this.searchMap[this.displayedSearch];
 		if (
 			cur &&
 			cur.q === search.q &&
@@ -415,56 +267,191 @@ class SearchState {
 			return [this, undefined];
 		}
 		const next = createDraft(this);
-		var id = ++next.search_id;
-		next.search_map[id] = search;
+		var id = ++next.lastSearch;
+		next.searchMap[id] = search;
 		if (!search.q.length) {
-			next.displaying = id;
+			next.displayedSearch = id;
 			SearchState.reset(next);
 			return [finishDraft(next), undefined];
 		}
 		return [finishDraft(next), { id, ...search }];
 	}
 
-	handle_error(search: number, error: string): SearchState {
-		if (search === this.search_id) {
+	OnSearchError(search: number, error: string): SearchState {
+		if (search === this.lastSearch) {
 			return produce(this, (next) => {
-				next.displaying = search;
+				next.displayedSearch = search;
 				next.error = error;
 			});
 		}
 		return this;
 	}
 
-	handle_done(
+	OnSearchDone(
 		search: number,
 		file_matches: FileMatchResult[],
 		matches: MatchResult[],
 		{ time, search_type, why }: { time: number; search_type: string; why: string },
 	): SearchState {
-		if (search < this.displaying) {
+		if (search < this.displayedSearch) {
 			return this;
 		}
 		return produce(this, (next) => {
-			if (next.displaying < search) {
-				next.displaying = search;
+			if (next.displayedSearch < search) {
+				next.displayedSearch = search;
 				SearchState.reset(next);
 			}
-			const backend = next.search_map[search].backend;
+			const backend = next.searchMap[search].backend;
 			for (const fm of file_matches) {
-				next.file_search_results.push(new FileMatch({ ...fm, backend }));
+				next.fileMatches.push(new FileMatch({ ...fm, backend }));
 			}
 			for (const m of matches) {
-				next.search_results.add_match({ ...m, backend });
+				next.matches.addMatch({ ...m, backend });
 			}
 			next.time = time;
-			next.search_type = search_type;
+			next.searchType = search_type;
 			next.why = why;
 		});
 	}
 }
 
+function MatchView({ path, match }: { path: FilePath; match: ClippedLineMatch }) {
+	const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
+		var lnoStr = n.toString() + (isMatch ? ":" : "-");
+		var classes = ["lno-link"];
+		if (isMatch) classes.push("matchlno");
+		return (
+			<a
+				className={classes.join(" ")}
+				href={viewURL(path.backend, path.tree, path.version, path.path, n)}
+			>
+				<span className="lno" aria-label={lnoStr}>
+					{lnoStr}
+				</span>
+			</a>
+		);
+	};
+
+	let ctxBefore: JSX.Element[] = [];
+	var linesBefore = Math.max(0, match.context_before.length - (match.clip_before || 0));
+	for (let i = 0; i < linesBefore; i++) {
+		ctxBefore.unshift(
+			_renderLno(match.lno - i - 1, false),
+			<span>{match.context_before[i]}</span>,
+			<span />,
+		);
+	}
+	let ctxAfter: JSX.Element[] = [];
+	var linesAfter = Math.max(0, match.context_after.length - (match.clip_after || 0));
+	for (let i = 0; i < linesAfter; i++) {
+		ctxAfter.push(_renderLno(match.lno + i + 1, false), <span>{match.context_after[i]}</span>, <span />);
+	}
+	var line = match.line;
+	var bounds = match.bounds;
+	var pieces = [
+		line.substring(0, bounds[0]),
+		line.substring(bounds[0], bounds[1]),
+		line.substring(bounds[1]),
+	];
+
+	var classes = ["match"];
+	if (match.clip_before !== undefined) classes.push("clip-before");
+	if (match.clip_after !== undefined) classes.push("clip-after");
+
+	var links = renderLinkConfigs(
+		CodesearchUI.linkConfigs.filter((c) => c.url_template.includes("{lno}")),
+		path.tree,
+		path.version,
+		path.path,
+		match.lno,
+	);
+
+	return (
+		<div className={classes.join(" ")}>
+			<div className="contents">
+				{ctxBefore}
+				{_renderLno(match.lno, true)}
+				<span className="matchline">
+					{pieces[0]}
+					<span className="matchstr">{pieces[1]}</span>
+					{pieces[2]}
+				</span>
+				<span className="matchlinks">{links}</span>
+				{ctxAfter}
+			</div>
+		</div>
+	);
+}
+
+function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[] {
+	linkConfigs = linkConfigs.filter(function (linkConfig) {
+		return !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path);
+	});
+
+	var links = linkConfigs.map(function (linkConfig) {
+		return (
+			<a
+				className="file-action-link"
+				href={externalURL(linkConfig.url_template, tree, version, path, lno)}
+				target={linkConfig.target}
+			>
+				{linkConfig.label}
+			</a>
+		);
+	});
+	let out: JSX.Element[] = [];
+	for (let i = 0; i < links.length; i++) {
+		if (i > 0) {
+			out.push(<span className="file-action-link-separator">\u00B7</span>);
+		}
+		out.push(links[i]);
+	}
+	return out;
+}
+
+function externalURL(url, tree, version, path, lno) {
+	if (lno === undefined) {
+		lno = 1;
+	}
+
+	// If {path} already has a slash in front of it, trim extra leading
+	// slashes from `path` to avoid a double-slash in the URL.
+	if (url.indexOf("/{path}") !== -1) {
+		path = path.replace(/^\/+/, "");
+	}
+
+	// the order of these replacements is used to minimize conflicts
+	url = url.replace(/{lno}/g, lno);
+	url = url.replace(/{version}/g, shorten(version));
+	url = url.replace(/{name}/g, tree);
+	url = url.replace(/{basename}/g, tree.split("/")[1]); // E.g. "foo" in "username/foo"
+	url = url.replace(/{path}/g, path);
+	return url;
+}
+
+function FileMatchView({ match }: { match: FileMatch }) {
+	var path_info = match.m;
+	var pieces = [
+		path_info.path.substring(0, path_info.bounds[0]),
+		path_info.path.substring(path_info.bounds[0], path_info.bounds[1]),
+		path_info.path.substring(path_info.bounds[1]),
+	];
+
+	return (
+		<div class="filename-match">
+			<a className="label header result-path" href={match.viewURL()}>
+				<span className="repo">{path_info.tree}:</span>
+				<span className="version">{shorten(path_info.version)}:</span>
+				{pieces[0]}
+				<span className="matchstr">{pieces[1]}</span>
+				{pieces[2]}
+			</a>
+		</div>
+	);
+}
+
 function FileGroupView({ group }: { group: FileGroup }) {
-	const { tree, version, path } = group.info;
+	const { tree, version, path } = group.path;
 
 	let basename = path;
 	let dirname = "";
@@ -478,7 +465,7 @@ function FileGroupView({ group }: { group: FileGroup }) {
 		<div className="file-group">
 			<div className="header">
 				<span className="header-path">
-					<a className="result-path" href={group.viewUrl()}>
+					<a className="result-path" href={group.viewURL()}>
 						<span className="repo">{tree}:</span>
 						<span className="version">{shorten(version)}:</span>
 						{dirname}
@@ -489,7 +476,7 @@ function FileGroupView({ group }: { group: FileGroup }) {
 					</div>
 				</span>
 			</div>
-			{group.matched.map((match) => MatchView({ path: group.info, match }))}
+			{group.matched.map((match) => MatchView({ path: group.path, match }))}
 		</div>
 	);
 }
@@ -509,8 +496,8 @@ function MatchesView({ model }: { model: SearchState }) {
 
 	var count = 0;
 	let pathResults: JSX.Element[] = [];
-	for (const match of model.file_search_results) {
-		if (model.search_type == "filename_only" || count < 10) {
+	for (const match of model.fileMatches) {
+		if (model.searchType == "filename_only" || count < 10) {
 			pathResults.push(FileMatchView({ match }));
 		}
 		countExtension(match.m.path);
@@ -519,27 +506,27 @@ function MatchesView({ model }: { model: SearchState }) {
 
 	let nodes = [<div className="path-results">{pathResults}</div>];
 
-	for (const id in model.search_results.groups) {
-		const group = model.search_results.groups[id];
-		group.process_context_overlaps();
+	for (const id in model.matches.groups) {
+		const group = model.matches.groups[id];
+		group.processContextOverlaps();
 		nodes.push(FileGroupView({ group }));
-		countExtension(group.info.path);
+		countExtension(group.path.path);
 	}
 
-	var id = model.search_id;
-	var query = model.search_map[id].q;
+	var id = model.lastSearch;
+	var query = model.searchMap[id].q;
 	var already_file_limited = /\bfile:/.test(query);
 	if (!already_file_limited) {
-		nodes.unshift(..._render_extension_buttons(extension_map));
+		nodes.unshift(...renderExtensionButtons(extension_map));
 	}
 	return (
-		<div tabIndex={-1} style={{ outline: "none" }} onKeyDown={_handleKey}>
+		<div tabIndex={-1} style={{ outline: "none" }} onKeyDown={handleKey}>
 			{nodes}
 		</div>
 	);
 }
 
-function _render_extension_buttons(extension_map: Record<string, number>) {
+function renderExtensionButtons(extension_map: Record<string, number>) {
 	// Display a series of buttons for the most common file extensions
 	// among the current search results, that each narrow the search to
 	// files matching that extension.
@@ -563,7 +550,7 @@ function _render_extension_buttons(extension_map: Record<string, number>) {
 		<div className="file-extensions">
 			Narrow to:
 			{popular.map((ex) => (
-				<button className="file-extension" onClick={_limitExtension}>
+				<button className="file-extension" onClick={limitToExtension}>
 					{ex}
 				</button>
 			))}
@@ -571,21 +558,21 @@ function _render_extension_buttons(extension_map: Record<string, number>) {
 	];
 }
 
-function _limitExtension(e: MouseEvent) {
+function limitToExtension(e: MouseEvent) {
 	var ext = e.target.textContent;
 	var q = CodesearchUI.input.val();
 	if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
 	else q = "file:" + ext + " " + q;
 	CodesearchUI.input.val(q);
-	CodesearchUI.newsearch();
+	CodesearchUI.NewSearch();
 }
 
-function _handleKey(event: KeyboardEvent) {
+function handleKey(event: KeyboardEvent) {
 	if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
 		return;
 	}
-	var which = event.which;
-	if (which === KeyCodes.SLASH_OR_QUESTION_MARK) {
+	var which = event.key;
+	if (which == "/" || which == "?") {
 		var t = getSelectedText();
 		if (!t) return;
 		event.preventDefault();
@@ -599,8 +586,12 @@ function _handleKey(event: KeyboardEvent) {
 		// last_url_update = 0;
 
 		CodesearchUI.input.val(t);
-		CodesearchUI.newsearch();
+		CodesearchUI.NewSearch();
 	}
+}
+
+function getSelectedText() {
+	return window.getSelection ? window.getSelection()?.toString() : null;
 }
 
 function ResultView({ model }: { model: SearchState }) {
@@ -613,7 +604,7 @@ function ResultView({ model }: { model: SearchState }) {
 			return;
 		}
 
-		var url = model.viewUrl();
+		var url = model.viewURL();
 		if (browser_url !== url) {
 			// If the user is typing quickly, just keep replacing the current URL.
 			// But after they"ve paused, enroll the URL they paused at into their browser history.
@@ -640,7 +631,7 @@ function ResultView({ model }: { model: SearchState }) {
 			return;
 		}
 		document.title = model.title();
-		if (!model.displaying || !model.search_map[model.displaying]?.q) {
+		if (!model.displayedSearch || !model.searchMap[model.displayedSearch]?.q) {
 			// No results -- show help.
 			jQuery("#resultarea").hide();
 			jQuery("#helparea").show();
@@ -660,10 +651,10 @@ function ResultView({ model }: { model: SearchState }) {
 		}
 
 		var num_results = "";
-		if (model.search_type == "filename_only") {
-			num_results += model.file_search_results.length;
+		if (model.searchType == "filename_only") {
+			num_results += model.fileMatches.length;
 		} else {
-			num_results += model.search_results.num_matches();
+			num_results += model.matches.numMatches();
 		}
 		if (model.why !== "NONE") {
 			num_results = num_results + "+";
@@ -675,7 +666,7 @@ function ResultView({ model }: { model: SearchState }) {
 		return <>{createPortal(<span id="errortext">{model.error}</span>, jQuery("#regex-error")[0])}</>;
 	}
 
-	if (!model.displaying || !model.search_map[model.displaying]?.q) {
+	if (!model.displayedSearch || !model.searchMap[model.displayedSearch]?.q) {
 		return <></>;
 	}
 
@@ -713,33 +704,33 @@ namespace CodesearchUI {
 		}
 
 		_init();
-		update_repo_options();
+		updateRepoOptions();
 
-		init_query();
+		initQuery();
 
-		input.keydown(keypress);
-		input.bind("paste", keypress);
+		input.keydown(onKeypress);
+		input.bind("paste", onKeypress);
 		input.focus();
-		if (input_backend) input_backend.change(select_backend);
+		if (input_backend) input_backend.change(selectBackend);
 
-		inputs_case.change(keypress);
-		input_regex.change(keypress);
-		input_repos.change(keypress);
-		input_context.change(toggle_context);
+		inputs_case.change(onKeypress);
+		input_regex.change(onKeypress);
+		input_repos.change(onKeypress);
+		input_context.change(toggleContext);
 
 		input_regex.change(function () {
-			set_pref("regex", input_regex.prop("checked"));
+			setPref("regex", input_regex.prop("checked"));
 		});
 		input_repos.change(function () {
-			set_pref("repos", input_repos.val());
+			setPref("repos", input_repos.val());
 		});
 		input_context.change(function () {
-			set_pref("context", input_context.prop("checked"));
+			setPref("context", input_context.prop("checked"));
 		});
 
-		toggle_context();
+		toggleContext();
 
-		Codesearch.connect(CodesearchUI);
+		Codesearch.Connect(CodesearchUI);
 		jQuery(".query-hint code").click(function (e) {
 			var ext = e.target.textContent;
 			var q = input.val();
@@ -756,19 +747,19 @@ namespace CodesearchUI {
 
 		// Update the search when the user hits Forward or Back.
 		window.onpopstate = (event) => {
-			var parms = parse_query_params();
-			init_query_from_parms(parms);
-			newsearch();
+			var parms = parseQueryParams();
+			initQueryFromParams(parms);
+			NewSearch();
 		};
 	}
 
-	function toggle_context() {
-		state.value = state.value.on_set_context(input_context.prop("checked"));
+	function toggleContext() {
+		state.value = state.value.OnSetContext(input_context.prop("checked"));
 	}
 
 	// Initialize query from URL or user's saved preferences.
-	function init_query() {
-		var parms = parse_query_params();
+	function initQuery() {
+		var parms = parseQueryParams();
 
 		var hasParms = false;
 		for (var p in parms) {
@@ -777,15 +768,15 @@ namespace CodesearchUI {
 		}
 
 		if (hasParms) {
-			init_query_from_parms(parms);
+			initQueryFromParams(parms);
 		} else {
-			init_controls_from_prefs();
+			initControlsFromPrefs();
 		}
 
-		setTimeout(keypress, 0);
+		setTimeout(onKeypress, 0);
 	}
 
-	function init_query_from_parms(parms) {
+	function initQueryFromParams(parms) {
 		var q: string[] = [];
 		if (parms.q) q.push(parms.q[0]);
 		if (parms.file) q.push("file:" + parms.file[0]);
@@ -829,7 +820,7 @@ namespace CodesearchUI {
 		updateSelected(repos);
 	}
 
-	function init_controls_from_prefs() {
+	function initControlsFromPrefs() {
 		var prefs = getJSON("prefs");
 		if (!prefs) {
 			prefs = {};
@@ -847,7 +838,7 @@ namespace CodesearchUI {
 		}
 	}
 
-	function set_pref(key: string, value: any) {
+	function setPref(key: string, value: any) {
 		// Load from the cookie again every time in case some other pref has been
 		// changed out from under us.
 		var prefs = getJSON("prefs");
@@ -858,7 +849,7 @@ namespace CodesearchUI {
 		set("prefs", prefs, { expires: 36500 });
 	}
 
-	function parse_query_params() {
+	function parseQueryParams() {
 		var urlParams = {};
 		var e,
 			a = /\+/g,
@@ -876,29 +867,29 @@ namespace CodesearchUI {
 		return urlParams;
 	}
 
-	export function on_connect() {
-		newsearch();
+	export function OnConnect() {
+		NewSearch();
 	}
 
-	function select_backend() {
+	function selectBackend() {
 		if (!input_backend) return;
-		update_repo_options();
-		keypress();
+		updateRepoOptions();
+		onKeypress();
 	}
 
-	function update_repo_options() {
+	function updateRepoOptions() {
 		if (!input_backend) return;
 		var backend = input_backend.val();
 		updateOptions(backend_repos[backend]);
 	}
 
-	function keypress() {
-		clear_timer();
-		timer = setTimeout(newsearch, 100);
+	function onKeypress() {
+		clearTimer();
+		timer = setTimeout(NewSearch, 100);
 	}
 
-	export function newsearch() {
-		clear_timer();
+	export function NewSearch() {
+		clearTimer();
 		let search: Query = {
 			q: input.val(),
 			fold_case: inputs_case.filter(":checked").val(),
@@ -909,26 +900,26 @@ namespace CodesearchUI {
 		if (input_backend) {
 			search.backend = input_backend.val();
 		}
-		const [next, qs] = state.value.handle_query(search);
+		const [next, qs] = state.value.OnNewSearch(search);
 		if (qs) {
-			Codesearch.new_search(qs);
+			Codesearch.NewSearch(qs);
 		}
 		state.value = next;
 	}
 
-	function clear_timer() {
+	function clearTimer() {
 		if (timer) {
 			clearTimeout(timer);
 			timer = null;
 		}
 	}
 
-	export function error(search, error) {
-		state.value = state.value.handle_error(search, error);
+	export function SearchFailed(search, error) {
+		state.value = state.value.OnSearchError(search, error);
 	}
 
-	export function search_done(search, file_matches, matches, meta: { time; search_type; why }) {
-		state.value = state.value.handle_done(search, file_matches, matches, meta);
+	export function SearchDone(search, file_matches, matches, meta: { time; search_type; why }) {
+		state.value = state.value.OnSearchDone(search, file_matches, matches, meta);
 	}
 }
 
