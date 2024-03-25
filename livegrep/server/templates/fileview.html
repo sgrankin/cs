@@ -2,66 +2,78 @@
  Copyright 2011-2013 Nelson Elhage
  SPDX-License-Identifier: BSD-2-Clause
 -->
-{{- template "layout" .}}
-
-{{define "body"}}
-{{with .Data}}
+{{- template "layout" .}} {{define "body"}} {{with .Data}}
 <section class="file-viewer">
 	<header class="header">
 		<nav class="header-title">
-			<a href="{{.RepoURL}}/" class="path-segment repo" title="Repository: {{.RepoName}}">{{.RepoName}}</a>:
-			{{range $i, $e := .PathSegments}}{{if gt $i 0}}/{{end}}<a href="{{$e.Path}}" class="path-segment">{{$e.Name}}</a>{{end}}
+			<a href="{{.RepoURL}}/" class="path-segment repo" title="Repository: {{.RepoName}}"
+				>{{.RepoName}}</a
+			>: {{range $i, $e := .PathSegments}}{{if gt $i 0}}/{{end}}<a
+				href="{{$e.Path}}"
+				class="path-segment"
+				>{{$e.Name}}</a
+			>{{end}}
 		</nav>
 		<ul class="header-actions without-selection">
 			<li class="header-action">
-				<a data-action-name="search" title="Perform a new search. Keyboard shortcut: /" href="#">new search [<span class='shortcut'>/</span>]</a>
-			</li>,
-			{{ with .ExternalDomain}}
+				<a data-action-name="search" title="Perform a new search. Keyboard shortcut: /" href="#"
+					>new search [<span class="shortcut">/</span>]</a
+				>
+			</li>
+			, {{ with .ExternalDomain}}
 			<li class="header-action">
-				<a id="external-link" data-action-name="" title="View at {{.}}. Keyboard shortcut: v" href="#">view at {{.}} [<span class='shortcut'>v</span>]</a>
-			</li>,
-			{{end}}
+				<a
+					id="external-link"
+					data-action-name=""
+					title="View at {{.}}. Keyboard shortcut: v"
+					href="#"
+					>view at {{.}} [<span class="shortcut">v</span>]</a
+				>
+			</li>
+			, {{end}}
 			<li class="header-action">
-				<a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#">help [<span class='shortcut'>?</span>]</a>
+				<a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#"
+					>help [<span class="shortcut">?</span>]</a
+				>
 			</li>
 		</ul>
-		<ul class="header-actions with-selection" style="display:none">
+		<ul class="header-actions with-selection" style="display: none">
+			<li class="header-action">search for selected text [/]</li>
+			,
+			<li class="header-action">previous match [p]</li>
+			,
+			<li class="header-action">next match [n]</li>
+			,
 			<li class="header-action">
-				search for selected text [/]
-			</li>,
-			<li class="header-action">
-				previous match [p]
-			</li>,
-			<li class="header-action">
-				next match [n]
-			</li>,
-			<li class="header-action">
-				<a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#">help [<span class='shortcut'>?</span>]</a>
+				<a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#"
+					>help [<span class="shortcut">?</span>]</a
+				>
 			</li>
 		</ul>
 	</header>
 
 	<div class="content-wrapper">
-			{{with .DirContent}}
-				<div class="dir-viewer-wrapper">
-					<ul class="file-list">
-							{{range $child := .Entries}}
-							<li class="file-list-entry{{if $child.IsDir}} is-directory{{end}}{{if $child.SymlinkTarget}} is-symlink{{end}}">
-								{{if $child.Path}}<a href="{{$child.Path}}">{{$child.Name}}{{if $child.IsDir}}/{{end}}</a>{{else}}{{$child.Name}}{{end}}
-								{{if .SymlinkTarget}}&rarr; (<span class="symlink-target">{{.SymlinkTarget}}</span>){{end}}
-							</li>
-							{{end}}
-					</ul>
-					{{ with .ReadmeContent }}
-						<div style="width:80%;">
-							{{ template "filecontent" . }}
-						</div>
-					{{end}}
-				</div>
+		{{with .DirContent}}
+		<div class="dir-viewer-wrapper">
+			<ul class="file-list">
+				{{range $child := .Entries}}
+				<li
+					class="file-list-entry{{if $child.IsDir}} is-directory{{end}}{{if $child.SymlinkTarget}} is-symlink{{end}}"
+				>
+					{{if $child.Path}}<a href="{{$child.Path}}"
+						>{{$child.Name}}{{if $child.IsDir}}/{{end}}</a
+					>{{else}}{{$child.Name}}{{end}} {{if .SymlinkTarget}}&rarr; (<span
+						class="symlink-target"
+						>{{.SymlinkTarget}}</span
+					>){{end}}
+				</li>
+				{{end}}
+			</ul>
+			{{ with .ReadmeContent }}
+			<div style="width: 80%">{{ template "filecontent" . }}</div>
 			{{end}}
-			{{with .FileContent}}
-				{{ template "filecontent" . }}
-			{{end}}
+		</div>
+		{{end}} {{with .FileContent}} {{ template "filecontent" . }} {{end}}
 	</div>
 
 	<section class="help-screen u-modal-overlay hidden">
@@ -70,15 +82,31 @@
 				<li>Click on a line number to highlight it</li>
 				<li>Shift + click a second line number to highlight a range</li>
 				<li>Press <kbd class="keyboard-shortcut">/</kbd> to start a new search</li>
-				<li>Press <kbd class="keyboard-shortcut">b</kbd> to see which authors wrote which lines</li>
-				<li>Press <kbd class="keyboard-shortcut">v</kbd> to view this file/directory at {{.ExternalDomain}}</li>
-				<li>Select some text and press <kbd class="keyboard-shortcut">/</kbd> to search for that text</li>
-				<li>Select some text and press <kbd class="keyboard-shortcut">enter</kbd> to search for that text in a new tab</li>
-				<li>Select some text and press <kbd class="keyboard-shortcut">p</kbd> for the previous match for that text</li>
-				<li>Select some text and press <kbd class="keyboard-shortcut">n</kbd> for the next match for that text</li>
+				<li>
+					Press <kbd class="keyboard-shortcut">b</kbd> to see which authors wrote which lines
+				</li>
+				<li>
+					Press <kbd class="keyboard-shortcut">v</kbd> to view this file/directory at
+					{{.ExternalDomain}}
+				</li>
+				<li>
+					Select some text and press <kbd class="keyboard-shortcut">/</kbd> to search for that
+					text
+				</li>
+				<li>
+					Select some text and press <kbd class="keyboard-shortcut">enter</kbd> to search for
+					that text in a new tab
+				</li>
+				<li>
+					Select some text and press <kbd class="keyboard-shortcut">p</kbd> for the previous
+					match for that text
+				</li>
+				<li>
+					Select some text and press <kbd class="keyboard-shortcut">n</kbd> for the next match
+					for that text
+				</li>
 			</ul>
 		</div>
 	</section>
 </section>
-{{end}}
-{{end}}
+{{end}} {{end}}

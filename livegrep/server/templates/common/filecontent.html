@@ -13,11 +13,10 @@
 	the line numbers are done. Placing them after the code block and absolutely positioning them
 	to be rendered before seems to work well though.
 	-->
-	<div id="line-numbers" class="line-numbers hide-links" style="display:none">
-	{{range $index, $element := loop .LineCount}}
-		{{$lineNum := toLineNum $index}}
+	<div id="line-numbers" class="line-numbers hide-links" style="display: none">
+		{{range $index, $element := loop .LineCount}} {{$lineNum := toLineNum $index}}
 		<a id="L{{$lineNum}}" href="#L{{$lineNum}}">{{$lineNum}}</a>
-	{{end}}
+		{{end}}
 	</div>
 </div>
 {{end}}

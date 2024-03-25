@@ -4,44 +4,49 @@
 -->
 
 {{define "layout" -}}
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE HTML
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-	<head>
-		<title>{{.Title}}</title>
-		{{linkTag .Nonce "shortcut icon" "/static/favicon.ico" .AssetHashes}}
-		{{if .ScriptData}}
-		<script{{.Nonce}}>
-			window.scriptData = {{.ScriptData}};
-		</script>
-		{{end}}
-		{{ if .JSPath }}
-			{{ scriptTag .Nonce (print "/static/" .JSPath ".js") .AssetHashes}}
-		{{ end }}
-		{{ linkTag .Nonce "stylesheet" (print "/static/" .CSSPath ".css") .AssetHashes}}
-		<link{{.Nonce}} rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Stripe Code Search" />
-	</head>
-	<body>
-		{{if .IncludeHeader}}
-		<div id='header'>
-			{{with .Config.Templates.HeaderHTML}}
-				{{.}}
-			{{else}}
-				<ul>
-					<li><a href="/">search</a></li>
-					<li><a href="/about">about</a></li>
-					<li><a href="https://sgrankin.dev/cs/livegrep">source</a></li>
-					{{with .Config.Templates.Feedback.MailTo}}
-					<li><a id='feedbacklink' href="mailto:{{.}}">feedback</a></li>
-					{{end}}
-					<li class='first'>livegrep is a project by <a href="http://blog.nelhage.com/">Nelson Elhage</a></li>
-				</ul>
-			{{end}}
-		</div>
-		{{end}}
-		{{block "body" .}}{{end}}
-		{{with .Config.Templates.FooterHTML}}
-			{{.}}
-		{{end}}
-	</body>
+
+<head>
+    <title>{{.Title}}</title>
+    {{linkTag .Nonce "shortcut icon" "/static/favicon.ico" .AssetHashes}}
+    {{if .ScriptData}}
+    <script{{.Nonce}}>
+        window.scriptData = {{.ScriptData}};
+    </script>
+        {{end}}
+        {{ if .JSPath }}
+        {{ scriptTag .Nonce (print "/static/" .JSPath ".js") .AssetHashes}}
+        {{ end }}
+        {{ linkTag .Nonce "stylesheet" (print "/static/" .CSSPath ".css") .AssetHashes}}
+        <link{{.Nonce}} rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml"
+            title="Stripe Code Search" />
+</head>
+
+<body>
+    {{if .IncludeHeader}}
+    <div id='header'>
+        {{with .Config.Templates.HeaderHTML}}
+        {{.}}
+        {{else}}
+        <ul>
+            <li><a href="/">search</a></li>
+            <li><a href="/about">about</a></li>
+            <li><a href="https://sgrankin.dev/cs/livegrep">source</a></li>
+            {{with .Config.Templates.Feedback.MailTo}}
+            <li><a id='feedbacklink' href="mailto:{{.}}">feedback</a></li>
+            {{end}}
+            <li class='first'>livegrep is a project by <a href="http://blog.nelhage.com/">Nelson Elhage</a></li>
+        </ul>
+        {{end}}
+    </div>
+    {{end}}
+    {{block "body" .}}{{end}}
+    {{with .Config.Templates.FooterHTML}}
+    {{.}}
+    {{end}}
+</body>
+
 </html>
 {{end}}
