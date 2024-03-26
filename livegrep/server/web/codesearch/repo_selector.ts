@@ -15,10 +15,10 @@ export function init() {
 		liveSearch: true,
 		width: "20em",
 	});
-	jQuery("#repos").on("refreshed.bs.select", function () {
+	jQuery("#repos").on("refreshed.bs.select", () => {
 		var headers = jQuery(this).parent().find(".dropdown-header");
 		headers.css("cursor", "pointer");
-		headers.on("click", function (event) {
+		headers.on("click", (event) => {
 			event.stopPropagation();
 			var optgroup = jQuery('#repos optgroup[label="' + jQuery(this).text() + '"]');
 			var allSelected = !optgroup.children("option:not(:selected)").length;
@@ -26,14 +26,14 @@ export function init() {
 			jQuery("#repos").selectpicker("refresh").trigger("change");
 		});
 	});
-	jQuery(window).on("keyup", ".bootstrap-select .bs-searchbox input", function (event) {
+	jQuery(window).on("keyup", ".bootstrap-select .bs-searchbox input", (event) => {
 		var keycode = event.keyCode ? event.keyCode : event.which;
 		if (keycode == "13") {
 			jQuery(this).val("");
 			jQuery("#repos").selectpicker("refresh");
 		}
 	});
-	jQuery(window).keyup(function (keyevent) {
+	jQuery(window).keyup((keyevent) => {
 		var code = keyevent.keyCode ? keyevent.keyCode : keyevent.which;
 		if (code == 9 && jQuery(".bootstrap-select button:focus").length) {
 			jQuery("#repos").selectpicker("toggle");
@@ -47,7 +47,7 @@ export function updateOptions(newOptions) {
 	var currentOptions = [];
 	jQuery("#repos")
 		.find("option")
-		.each(function () {
+		.each(() => {
 			currentOptions.push(jQuery(this).attr("value"));
 		});
 	if (isEqual(currentOptions, newOptions)) {
@@ -72,7 +72,8 @@ export function updateOptions(newOptions) {
 		}
 		groups.get(group).append(
 			jQuery("<option>")
-				.attr("value", group + option)
+				.attr("value", group + option) // Value is the full path.
+				.attr("data-tokens", group + option) // Search will also include the full path.
 				.text(option),
 		);
 	}
