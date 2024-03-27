@@ -252,7 +252,6 @@ a:hover {
 
 #regex-error {
 	padding-top: 3px;
-	display: none;
 }
 
 #errortext {
@@ -303,10 +302,6 @@ a:hover {
 
 .tooltip-target:hover .tooltip {
 	display: block;
-}
-
-#searchtimebox {
-	display: none;
 }
 
 #resultbox {
@@ -520,10 +515,6 @@ a:hover {
 	margin: 1em auto;
 	width: 40em;
 	text-align: center;
-}
-
-#resultarea {
-	display: none;
 }
 
 /* File viewer */

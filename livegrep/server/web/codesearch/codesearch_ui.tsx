@@ -519,8 +519,12 @@ function MatchesView({ model }: { model: SearchState }) {
 	if (!already_file_limited) {
 		nodes.unshift(...renderExtensionButtons(extension_map));
 	}
+	let classes = "";
+	if (!model.context) {
+		classes = "no-context";
+	}
 	return (
-		<div tabIndex={-1} style={{ outline: "none" }} onKeyDown={handleKey}>
+		<div class={classes} id="results" tabIndex={-1} style={{ outline: "none" }} onKeyDown={handleKey}>
 			{nodes}
 		</div>
 	);
@@ -598,11 +602,13 @@ function ResultView({ model }: { model: SearchState }) {
 	const [last_url, set_last_url] = useState(["", 0] as [string, number]);
 	var browser_url = window.location.pathname + window.location.search;
 
-	// Update history if needed.
+	// Update title and history if needed.
 	useEffect(() => {
 		if (model.error) {
 			return;
 		}
+
+		document.title = model.title();
 
 		var url = model.viewURL();
 		if (browser_url !== url) {
@@ -624,53 +630,129 @@ function ResultView({ model }: { model: SearchState }) {
 		}
 	}, [model, browser_url, last_url]);
 
-	// Update visibilities of various containers based on the results.
-	useEffect(() => {
-		jQuery("#regex-error").toggle(!!model.error);
-		if (model.error) {
-			return;
-		}
-		document.title = model.title();
-		if (!model.displayedSearch || !model.searchMap[model.displayedSearch]?.q) {
-			// No results -- show help.
-			jQuery("#resultarea").hide();
-			jQuery("#helparea").show();
-			return;
-		}
-
-		jQuery("#results").toggleClass("no-context", !model.context);
-		// jQuery("#results").show();
-		jQuery("#resultarea").show();
-		jQuery("#helparea").hide();
-
-		if (model.time) {
-			jQuery("#searchtimebox").show();
-			jQuery("#searchtime").text(model.time + " ms");
-		} else {
-			jQuery("#searchtimebox").hide();
-		}
-
-		var num_results = "";
-		if (model.searchType == "filename_only") {
-			num_results += model.fileMatches.length;
-		} else {
-			num_results += model.matches.numMatches();
-		}
-		if (model.why !== "NONE") {
-			num_results = num_results + "+";
-		}
-		jQuery("#numresults").text(num_results);
-	}, [model]);
-
 	if (model.error) {
-		return <>{createPortal(<span id="errortext">{model.error}</span>, jQuery("#regex-error")[0])}</>;
+		return createPortal(ErrorView(model.error), jQuery("#regex-error")[0]);
 	}
 
 	if (!model.displayedSearch || !model.searchMap[model.displayedSearch]?.q) {
-		return <></>;
+		return <div id="helparea">{HelpView()}</div>;
 	}
 
-	return <>{MatchesView({ model: model })}</>;
+	return (
+		<div id="resultarea">
+			<div id="countarea">{CountView({ model: model })}</div>
+			{MatchesView({ model: model })}
+		</div>
+	);
+}
+
+function CountView({ model }: { model: SearchState }) {
+	var num_results = "";
+	if (model.searchType == "filename_only") {
+		num_results += model.fileMatches.length;
+	} else {
+		num_results += model.matches.numMatches();
+	}
+	if (model.why !== "NONE") {
+		num_results = num_results + "+";
+	}
+
+	let time = model.time ? (
+		<span id="searchtimebox">
+			<span class="label"> in </span>
+			<span id="searchtime">{model.time + " ms"}</span>
+		</span>
+	) : (
+		<></>
+	);
+
+	return (
+		<>
+			<span id="numresults">{num_results}</span> matches
+			{time}
+		</>
+	);
+}
+
+function HelpView() {
+	// TODO: help used to use a real repo in the `repo:` examples.
+	// Restore that by using some repo from the current backend for this view.
+	return (
+		<>
+			<div className="helpsection">
+				<h5>Special query terms</h5>
+			</div>
+			<table>
+				<tr>
+					<td>
+						<code>path:</code>
+					</td>
+					<td>Only include results from matching files.</td>
+					<td>
+						<a href="/search?q=hello+path:test">example</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>-path:</code>
+					</td>
+					<td>Exclude results from matching files.</td>
+					<td>
+						<a href="/search?q=hello+-path:test">example</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>repo:</code>
+					</td>
+					<td>Only include results from matching repositories.</td>
+					<td>
+						<a href="/search?q=hello+repo:example">example</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>-repo:</code>
+					</td>
+					<td>Exclude results from matching repositories.</td>
+					<td>
+						<a href="/search?q=hello+-repo:example">example</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>max_matches:</code>
+					</td>
+					<td>Adjust the limit on number of matching lines returned.</td>
+					<td>
+						<a href="/search?q=hello+max_matches:5">example</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>
+							(<em>special-term</em>:)
+						</code>
+					</td>
+					<td>Escape one of the above terms by wrapping it in parentheses (with regex enabled).</td>
+					<td>
+						<a href="/search?q=(file:)&regex=true">example</a>
+					</td>
+				</tr>
+			</table>
+			<div class="helpsection">
+				<h5>Regular Expressions</h5>
+			</div>
+			<p>
+				See <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a> for a complete
+				listing of supported regex syntax.
+			</p>
+		</>
+	);
+}
+
+function ErrorView(err: string) {
+	return <span id="errortext">{err}</span>;
 }
 
 // TODO: this should be an instance of a singleton... maybe?
@@ -689,7 +771,7 @@ namespace CodesearchUI {
 		const App = () => {
 			return ResultView({ model: state.value });
 		};
-		render(<App />, jQuery("#results")[0]);
+		render(<App />, jQuery("#resultbox")[0]);
 
 		input = jQuery("#searchbox");
 		input_repos = jQuery("#repos");
