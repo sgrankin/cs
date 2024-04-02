@@ -1,6 +1,7 @@
 package cs
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,8 +14,10 @@ type Version = string
 
 type searchIndex struct {
 	*indexSearcher
-	*indexBuilder
-	*repoSyncer
+
+	indexBuilder *indexBuilder
+	repoSyncer   *repoSyncer
+
 	name string
 	done chan bool
 }
@@ -44,7 +47,7 @@ func NewSearchIndex(cfg IndexConfig, pollInterval time.Duration, githubToken str
 	}
 
 	searcher := newIndexSearcher(ix)
-	builder := newIndexBuilder(ix)
+	builder := newIndexBuilder()
 	syncer := newRepoSyncer(gitPath, githubToken, cfg.Repos, cfg.RepoSources)
 
 	done := make(chan bool, 1)
@@ -52,6 +55,8 @@ func NewSearchIndex(cfg IndexConfig, pollInterval time.Duration, githubToken str
 
 	if pollInterval > 0 {
 		go si.refreshLoop(pollInterval)
+	} else {
+		go si.watchLoop()
 	}
 	return si
 }
@@ -70,6 +75,28 @@ func (si *searchIndex) refreshLoop(pollInterval time.Duration) {
 	}
 }
 
+func (si *searchIndex) watchLoop() {
+	path := si.ix.Path
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
+		stat, err := os.Stat(path)
+		if err != nil {
+			log.Printf("Error checking %q: %v", path, err)
+			continue
+		}
+		if stat.ModTime().Equal(si.ix.FileInfo.ModTime()) {
+			continue
+		}
+		log.Printf("Reloading index %q", path)
+		if ix := index.Open(path); ix != nil {
+			ix = si.swapIndex(ix)
+			ix.Close()
+		}
+	}
+}
+
 func (si *searchIndex) refresh() {
 	log.Printf("Refreshing local repositories for %q", si.name)
 	repos, err := si.repoSyncer.Refresh()
@@ -78,7 +105,7 @@ func (si *searchIndex) refresh() {
 		return
 	}
 	log.Printf("Maybe rebuilding index for %q", si.name)
-	if ix := si.indexBuilder.Build(repos); ix != nil {
+	if ix := si.indexBuilder.rebuildIfNeeded(si.indexSearcher.ix, repos); ix != nil {
 		log.Printf("Updating index %q", si.name)
 		ix = si.indexSearcher.swapIndex(ix)
 		if err := ix.Close(); err != nil {
@@ -89,3 +116,34 @@ func (si *searchIndex) refresh() {
 
 func (si *searchIndex) Name() string { return si.name }
 func (si *searchIndex) Close()       { si.done <- true }
+
+func BuildSearchIndex(cfg IndexConfig, githubToken string) error {
+	if cfg.Name == "" {
+		cfg.Name = filepath.Base(cfg.Path)
+	}
+	if err := os.MkdirAll(cfg.Path, 0o777); err != nil {
+		log.Panicf("creating %q: %v", cfg.Path, err)
+	}
+
+	indexName := filepath.Join(cfg.Path, "csindex")
+	if _, err := os.Stat(indexName); err != nil {
+		// Create an empty index as a placeholder.
+		index.Create(indexName).Flush()
+	}
+	ix := index.Open(indexName)
+	defer ix.Close()
+
+	gitPath := filepath.Join(cfg.Path, "git")
+	repoSyncer := newRepoSyncer(gitPath, githubToken, cfg.Repos, cfg.RepoSources)
+	repos, err := repoSyncer.Refresh()
+	if err != nil {
+		log.Printf("Repo sync failed: %v", err)
+		return nil
+	}
+	indexBuilder := newIndexBuilder()
+	ix = indexBuilder.rebuildIfNeeded(ix, repos)
+	if ix == nil {
+		return fmt.Errorf("error updating index")
+	}
+	return nil
+}

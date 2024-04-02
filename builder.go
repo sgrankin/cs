@@ -1,6 +1,7 @@
 package cs
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -34,52 +35,16 @@ type Repo interface {
 	Refresh() (Version, error)
 }
 
-type indexBuilder struct {
-	ix       *index.Index
-	versions map[string]Version
+type indexBuilder struct{}
+
+func newIndexBuilder() *indexBuilder {
+	return &indexBuilder{}
 }
 
-// ix is used to determine what the current versions are.
-func newIndexBuilder(
-	ix *index.Index,
-) *indexBuilder {
-	b := &indexBuilder{
-		ix:       ix,
-		versions: map[string]Version{},
-	}
-	for _, p := range ix.Paths() {
-		repo, version, _ := strings.Cut(p, "@")
-		b.versions[repo] = version
-	}
-	return b
-}
-
-// Build creates a new index in place of the old one if it needs to be updated.
-//
-// Returns nil if no updates are needed.
-// To check if updates are needed, repos are compared by version to what's currently in the index
-// The new index is placed where the existing index resides, but the actual Index is not closed
-// and can continue to be used until the new index is swapped in.
-func (b *indexBuilder) Build(repos []Repo) *index.Index {
-	newVersions := map[string]Version{}
-	for _, repo := range repos {
-		newVersions[repo.Name()] = repo.Version()
-	}
-	if maps.Equal(b.versions, newVersions) {
-		return nil
-	}
-	ix := b.rebuildIndex(repos)
-	if ix != nil {
-		b.ix = ix
-	}
-	return ix
-}
-
-func (b *indexBuilder) rebuildIndex(repos []Repo) *index.Index {
-	log.Printf("Rebuilding index %q", b.ix.Path)
-	tempIndexPath := b.ix.Path + "~"
-	ix := index.Create(tempIndexPath)
-
+// build creates a new index at `path` with the given `repos`.
+func (b *indexBuilder) build(path string, repos []Repo) error {
+	log.Printf("Building index at %q", path)
+	wix := index.Create(path)
 	var paths []string
 	pathToRepo := map[string]Repo{}
 	for _, repo := range repos {
@@ -88,24 +53,55 @@ func (b *indexBuilder) rebuildIndex(repos []Repo) *index.Index {
 		pathToRepo[path] = repo
 	}
 	sort.Strings(paths)
-	ix.AddPaths(paths)
+	wix.AddPaths(paths)
 	for _, path := range paths {
 		repo := pathToRepo[path]
 		prefix := path + "/+/"
 		if err := repo.Files(func(rf RepoFile) error {
 			r := rf.Reader()
 			defer r.Close()
-			ix.Add(prefix+rf.Path(), r)
+			wix.Add(prefix+rf.Path(), r)
 			return nil
 		}); err != nil {
-			log.Printf("Failed to build a new index: %v", err)
-			ix.Close()
-			return nil
+			wix.Close()
+			return fmt.Errorf("failed building index: %w", err)
 		}
 	}
-	ix.Flush()
-	ix.Close()
+	wix.Flush()
+	wix.Close()
+	return nil
+}
 
-	os.Rename(tempIndexPath, b.ix.Path)
-	return index.Open(b.ix.Path)
+// rebuildIfNeeded creates a new index in place of the old one if it needs to be updated.
+//
+// The `paths` are used to check if updates are needed, returning nil if not.
+//
+// To check if updates are needed, repos are compared by version to what's currently in the index
+// The new index is placed where the existing index resides, but the actual Index is not closed
+// and can continue to be used until the new index is swapped in.
+func (b *indexBuilder) rebuildIfNeeded(ix *index.Index, repos []Repo) *index.Index {
+	versions := map[string]Version{}
+	for _, p := range ix.Paths() {
+		repo, version, _ := strings.Cut(p, "@")
+		versions[repo] = version
+	}
+	newVersions := map[string]Version{}
+	for _, repo := range repos {
+		newVersions[repo.Name()] = repo.Version()
+	}
+	if maps.Equal(versions, newVersions) {
+		return nil
+	}
+	return b.rebuild(ix, repos)
+}
+
+func (b *indexBuilder) rebuild(ix *index.Index, repos []Repo) *index.Index {
+	log.Printf("Rebuilding index %q", ix.Path)
+	tempIndexPath := ix.Path + "~"
+	if err := b.build(tempIndexPath, repos); err != nil {
+		log.Printf("Rebuild failed: %v", err)
+		return nil
+	}
+	os.Rename(tempIndexPath, ix.Path)
+	return index.Open(ix.Path)
 }
