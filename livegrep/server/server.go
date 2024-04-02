@@ -23,8 +23,6 @@ import (
 	"sgrankin.dev/cs"
 )
 
-var serveUrlParseError = fmt.Errorf("failed to parse repo and path from URL")
-
 type server struct {
 	http.Handler
 
@@ -109,7 +107,7 @@ func (s *server) loadTemplates() {
 }
 
 func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/search", 303)
+	http.Redirect(w, r, "/search", http.StatusSeeOther)
 }
 
 func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.Request) {

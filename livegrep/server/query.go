@@ -33,7 +33,7 @@ var knownTags = map[string]bool{
 
 func onlyOneSynonym(ops map[string]string, op1 string, op2 string) (string, error) {
 	if ops[op1] != "" && ops[op2] != "" {
-		return "", fmt.Errorf("Cannot provide both %s: and %s:, because they are synonyms", op1, op2)
+		return "", fmt.Errorf("cannot provide both %s: and %s:, because they are synonyms", op1, op2)
 	}
 	if ops[op1] != "" {
 		return ops[op1], nil
@@ -43,7 +43,7 @@ func onlyOneSynonym(ops map[string]string, op1 string, op2 string) (string, erro
 
 func ensureSingleValue(ops map[string][]string, key string) (string, error) {
 	if len(ops[key]) > 1 {
-		return "", fmt.Errorf("multiple values for %s:", key)
+		return "", fmt.Errorf("multiple values for %s", key)
 	}
 	if len(ops[key]) == 1 {
 		return ops[key][0], nil
@@ -86,7 +86,7 @@ func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
 				inRegex = globalRegex
 			}
 		} else if match == "(" || match == "[" {
-			if !(inRegex || justGotSpace) {
+			if !inRegex && !justGotSpace {
 				term += match
 			} else {
 				// A parenthesis or a bracket. Consume
@@ -191,7 +191,7 @@ func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
 	}
 
 	if len(bits) > 1 {
-		return out, errors.New("You cannot provide multiple of case:, lit:, and a bare regex")
+		return out, errors.New("you cannot provide multiple of case:, lit:, and a bare regex")
 	}
 
 	if len(bits) > 0 {
@@ -223,7 +223,7 @@ func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
 	} else if _, ok := ops["lit"]; ok {
 		out.FoldCase = false
 	} else {
-		out.FoldCase = strings.IndexAny(out.Line, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") == -1
+		out.FoldCase = !strings.ContainsAny(out.Line, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	}
 	if v, ok := ops["max_matches"]; ok && v[0] != "" {
 		v := v[0]
@@ -231,7 +231,7 @@ func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
 		if err == nil {
 			out.MaxMatches = i
 		} else {
-			return out, errors.New("Value given to max_matches: must be a valid integer")
+			return out, errors.New("value given to max_matches: must be a valid integer")
 		}
 	} else {
 		out.MaxMatches = 0

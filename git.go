@@ -66,7 +66,8 @@ func ResolveFetchSpecs(client *github.Client, specs []GitHubSourceConfig, auth *
 			for page := 1; page != 0; {
 				repos, response, err := client.Repositories.
 					ListByOrg(ctx, spec.Org, &github.RepositoryListByOrgOptions{
-						ListOptions: github.ListOptions{PerPage: 100, Page: page}})
+						ListOptions: github.ListOptions{PerPage: 100, Page: page},
+					})
 				if err != nil {
 					return nil, err
 				}
@@ -79,7 +80,8 @@ func ResolveFetchSpecs(client *github.Client, specs []GitHubSourceConfig, auth *
 			for page := 1; page != 0; {
 				repos, response, err := client.Repositories.
 					ListByUser(ctx, spec.User, &github.RepositoryListByUserOptions{
-						ListOptions: github.ListOptions{PerPage: 100, Page: page}})
+						ListOptions: github.ListOptions{PerPage: 100, Page: page},
+					})
 				if err != nil {
 					return nil, err
 				}
@@ -208,7 +210,7 @@ func (f gitRepoFile) Reader() io.ReadCloser {
 	r, _ := f.f.Blob.Reader()
 	return r
 }
-func (f gitRepoFile) Size() int { return f.Size() }
+func (f gitRepoFile) Size() int { return int(f.f.Size) }
 
 func (f gitRepoFile) FileMode() fs.FileMode {
 	// Ignoring err.  Submodules will return a zero mode.

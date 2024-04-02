@@ -68,12 +68,13 @@ func extractQuery(r *http.Request) (cs.Query, bool, error) {
 	}
 
 	if fc, ok := params["fold_case"]; ok {
-		if fc[0] == "false" {
+		switch fc[0] {
+		case "false":
 			query.FoldCase = false
-		} else if fc[0] == "true" {
+		case "true":
 			query.FoldCase = true
-		} else {
-			query.FoldCase = strings.IndexAny(query.Line, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") == -1
+		default:
+			query.FoldCase = !strings.ContainsAny(query.Line, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 		}
 	}
 
