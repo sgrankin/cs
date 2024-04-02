@@ -59,7 +59,7 @@ class FileGroup {
 
 	constructor(m: MatchResult) {
 		this.path = { ...m };
-		this.matched = m.lines;
+		this.matched = [...m.lines] as ClippedLineMatch[];
 	}
 
 	viewURL(lno?: number) {
@@ -563,7 +563,7 @@ function renderExtensionButtons(extension_map: Record<string, number>) {
 }
 
 function limitToExtension(e: MouseEvent) {
-	var ext = e.target.textContent;
+	var ext = (e.target as HTMLElement).textContent;
 	var q = CodesearchUI.input.val();
 	if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
 	else q = "file:" + ext + " " + q;
@@ -977,11 +977,9 @@ namespace CodesearchUI {
 			fold_case: inputs_case.filter(":checked").val(),
 			regex: input_regex.is(":checked"),
 			repo: input_repos.val(),
+			backend: input_backend?.val(),
 		};
 
-		if (input_backend) {
-			search.backend = input_backend.val();
-		}
 		const [next, qs] = state.value.OnNewSearch(search);
 		if (qs) {
 			Codesearch.NewSearch(qs);

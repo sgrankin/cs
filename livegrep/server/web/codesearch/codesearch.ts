@@ -2,6 +2,7 @@
  * Copyright 2011-2013 Nelson Elhage
  * SPDX-License-Identifier: BSD-2-Clause
  */
+import jQuery from "jquery";
 
 // TODO: this should be an instance of a singleton... probably?
 export namespace Codesearch {
@@ -25,7 +26,7 @@ export namespace Codesearch {
 		q: string;
 		fold_case: boolean;
 		regex: boolean;
-		repo: string;
+		repo: string[];
 		backend: string;
 	};
 
@@ -62,7 +63,7 @@ export namespace Codesearch {
 				why: data.info.why,
 			});
 		} catch (err) {
-			let xhr = err as JQuery.jqXHR;
+			let xhr = err as jQuery.jqXHR;
 			console.log(xhr);
 			if (xhr.status >= 400 && xhr.status < 500) {
 				delegate.SearchFailed(opts.id, xhr.responseJSON.error.message);
