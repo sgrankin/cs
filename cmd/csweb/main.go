@@ -37,6 +37,8 @@ var (
 		"Create a tailscale service and listen on it.")
 	tailscaleAddr = flag.String("tailscale-addr", ":80",
 		"Listen address to use on tailscale interface.")
+	tailscaleVerbose = flag.Bool("tailscale-verbose", false,
+		"Verbose tailscale logging")
 )
 
 func main() {
@@ -81,8 +83,13 @@ func main() {
 	}
 
 	if *tailscaleHost != "" && *tailscaleAddr != "" {
-		ts := &tsnet.Server{}
-		ts.Hostname = *tailscaleHost
+		ts := &tsnet.Server{
+			Hostname: *tailscaleHost,
+			Logf:     func(format string, args ...any) {},
+		}
+		if *tailscaleVerbose {
+			ts.Logf = log.Printf
+		}
 		defer ts.Close()
 
 		ln, err := ts.Listen("tcp", *tailscaleAddr)
