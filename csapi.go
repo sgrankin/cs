@@ -55,6 +55,11 @@ type Tree struct {
 type File struct {
 	Tree, Version, Path string
 }
+
+func (f File) Less(b File) bool {
+	return f.Tree < b.Tree || f.Tree == b.Tree && (f.Path < b.Path || f.Path == b.Path && f.Version < b.Version)
+}
+
 type Bounds struct {
 	Left, Right int
 }

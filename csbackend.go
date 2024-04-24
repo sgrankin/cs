@@ -170,65 +170,63 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		wg.Wait()
 	}(ctxFileSearch)
 
-	// TODO: handle q.FilenameOnly
-
-	searchChan := make(chan SearchResult)
-	ctxSearch, cancelSearch := context.WithCancel(ctx)
-	go func(ctx context.Context) {
-		defer close(searchChan)
-		wg, ctx := errgroup.WithContext(ctx)
-		wg.SetLimit(runtime.GOMAXPROCS(0))
-		for _, searcher := range searchers {
-			searcher.SearchFiles(ctx, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches, func(f func() *SearchResult) {
-				wg.Go(func() error {
-					result := f()
-					if result != nil {
-						select {
-						case searchChan <- *result:
-						case <-ctx.Done():
-						}
-					}
-					return nil
-				})
-			})
-		}
-		wg.Wait()
-	}(ctxSearch)
-
 	var exitReason ExitReason = ExitReasonNone
+	var searchResults []SearchResult
+	if !q.FilenameOnly {
+		searchChan := make(chan SearchResult)
+		ctxSearch, cancelSearch := context.WithCancel(ctx)
+		go func(ctx context.Context) {
+			defer close(searchChan)
+			wg, ctx := errgroup.WithContext(ctx)
+			wg.SetLimit(runtime.GOMAXPROCS(0))
+			for _, searcher := range searchers {
+				searcher.SearchFiles(ctx, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches, func(f func() *SearchResult) {
+					wg.Go(func() error {
+						result := f()
+						if result != nil {
+							select {
+							case searchChan <- *result:
+							case <-ctx.Done():
+							}
+						}
+						return nil
+					})
+				})
+			}
+			wg.Wait()
+		}(ctxSearch)
+
+		nMatches := 0
+		for r := range searchChan {
+			searchResults = append(searchResults, r)
+			nMatches += len(r.Lines)
+			if nMatches > q.MaxMatches {
+				exitReason = ExitReasonMatchLimit
+				break
+			}
+		}
+		cancelSearch()
+		sort.Slice(searchResults, func(i, j int) bool { return searchResults[i].File.Less(searchResults[j].File) })
+	}
+
 	fileResults := []FileResult{}
 	for r := range fileSearchChan {
 		fileResults = append(fileResults, r...)
 		if len(fileResults) > q.MaxMatches {
-			exitReason = ExitReasonMatchLimit
+			if q.FilenameOnly {
+				exitReason = ExitReasonMatchLimit
+			}
 			break
 		}
 	}
 	cancelFileSearch()
-	sort.Slice(fileResults, func(i, j int) bool { return fileLess(fileResults[i].File, fileResults[j].File) })
-
-	searchResults := []SearchResult{}
-	nMatches := 0
-	for r := range searchChan {
-		searchResults = append(searchResults, r)
-		nMatches += len(r.Lines)
-		if nMatches > q.MaxMatches {
-			exitReason = ExitReasonMatchLimit
-			break
-		}
-	}
-	cancelSearch()
-	sort.Slice(searchResults, func(i, j int) bool { return fileLess(searchResults[i].File, searchResults[j].File) })
+	sort.Slice(fileResults, func(i, j int) bool { return fileResults[i].File.Less(fileResults[j].File) })
 
 	return &CodeSearchResult{
 		Stats:       SearchStats{ExitReason: exitReason},
 		Results:     searchResults,
 		FileResults: fileResults,
 	}, nil
-}
-
-func fileLess(a, b File) bool {
-	return a.Tree < b.Tree || a.Tree == b.Tree && a.Path < b.Path
 }
 
 type treeMeta struct {
