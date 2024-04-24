@@ -35,7 +35,8 @@ type GitHubSourceConfig struct {
 
 	Ref      string `json:"ref"` // Defaults to HEAD.
 	Archived bool   `json:"archived"`
-	Forks    bool   `json:"forks"` // Include archived or forked repos.
+	Forks    bool   `json:"forks"`  // Include archived or forked repos.
+	Reject   string `json:"reject"` // Regexp, if not empty, to filter out repos from the index.
 }
 
 type ServeConfig struct {

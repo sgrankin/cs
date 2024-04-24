@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -52,6 +53,15 @@ func ResolveFetchSpecs(client *github.Client, specs []GitHubSourceConfig, auth *
 		if (repo.Archived != nil && *repo.Archived && !spec.Archived) ||
 			(repo.Fork != nil && *repo.Fork && !spec.Forks) {
 			return
+		}
+		if spec.Reject != "" {
+			match, err := regexp.MatchString(spec.Reject, *repo.FullName)
+			if err != nil {
+				log.Panicf("Failure loading regexp %q: %v", spec.Reject, err)
+			}
+			if match {
+				return
+			}
 		}
 		result = append(result, RepoConfig{
 			Name:      "github.com/" + *repo.FullName,
