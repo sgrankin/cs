@@ -344,7 +344,7 @@ func BuildSearchIndex(cfg IndexConfig, githubToken string) error {
 	}
 	// Now clean up the old indexes.
 	for path := range unusedIndexes {
-		if err := os.Remove(path); err != nil {
+		if err := os.Remove(filepath.Join(cfg.Path, path)); err != nil {
 			return err
 		}
 	}
