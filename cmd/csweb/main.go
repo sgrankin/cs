@@ -22,16 +22,10 @@ import (
 var (
 	listenAddr = flag.String("listen", "127.0.0.1:8910",
 		"The address to listen on.")
-	pollInterval = flag.Duration("poll-interval", 10*time.Minute,
-		"How often to poll git repos for updates.  Set to 0 to disable updates.")
-
 	config = cs.FlagVar[cs.EnvString]("config", "config.yaml",
 		"The config file.")
 	indexPath = cs.FlagVar[cs.StringSet]("index", cs.StringSet{},
 		"The path to the index file(s).  Allows serving an index without a config.")
-
-	githubToken = cs.FlagVar[cs.EnvString]("github-token", "${GITHUB_TOKEN}",
-		"GitHub token for private repo access.")
 
 	tailscaleHost = flag.String("tailscale-host", "",
 		"Create a tailscale service and listen on it.")
@@ -70,10 +64,18 @@ func main() {
 
 	var indexes []cs.SearchIndex
 	for _, icfg := range cfg.Indexes {
-		indexes = append(indexes, cs.NewSearchIndex(icfg, *pollInterval, githubToken.Get()))
+		indexes = append(indexes, cs.NewSearchIndex(icfg))
 	}
 
 	srv := server.New(cfg.Serve, indexes)
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		for range ticker.C {
+			for _, index := range indexes {
+				index.Reload()
+			}
+		}
+	}()
 
 	if *listenAddr != "" {
 		go func() {

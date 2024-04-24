@@ -7,7 +7,6 @@ import (
 	"log"
 	"maps"
 	"os"
-	"sort"
 	"strings"
 
 	"sgrankin.dev/cs/codesearch/index"
@@ -41,26 +40,15 @@ func newIndexBuilder() *indexBuilder {
 	return &indexBuilder{}
 }
 
-// build creates a new index at `path` with the given `repos`.
-func (b *indexBuilder) build(path string, repos []Repo) error {
+// BuildIndex creates a new index at `path` with the given `repos`.
+func BuildIndex(path string, repos []Repo) error {
 	log.Printf("Building index at %q", path)
 	wix := index.Create(path)
-	var paths []string
-	pathToRepo := map[string]Repo{}
 	for _, repo := range repos {
-		path := repo.Name() + "@" + repo.Version()
-		paths = append(paths, path)
-		pathToRepo[path] = repo
-	}
-	sort.Strings(paths)
-	wix.AddPaths(paths)
-	for _, path := range paths {
-		repo := pathToRepo[path]
-		prefix := path + "/+/"
 		if err := repo.Files(func(rf RepoFile) error {
 			r := rf.Reader()
 			defer r.Close()
-			wix.Add(prefix+rf.Path(), r)
+			wix.Add(rf.Path(), r)
 			return nil
 		}); err != nil {
 			wix.Close()
@@ -98,7 +86,7 @@ func (b *indexBuilder) rebuildIfNeeded(ix *index.Index, repos []Repo) *index.Ind
 func (b *indexBuilder) rebuild(ix *index.Index, repos []Repo) *index.Index {
 	log.Printf("Rebuilding index %q", ix.Path)
 	tempIndexPath := ix.Path + "~"
-	if err := b.build(tempIndexPath, repos); err != nil {
+	if err := BuildIndex(tempIndexPath, repos); err != nil {
 		log.Printf("Rebuild failed: %v", err)
 		return nil
 	}

@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"context"
 	"regexp/syntax"
-	"runtime"
-	"strings"
-	"sync"
 	"sync/atomic"
 
 	"sgrankin.dev/cs/codesearch/index"
@@ -14,198 +11,108 @@ import (
 )
 
 type indexSearcher struct {
-	ix *index.Index
-	mu sync.RWMutex
+	// ix contains only the files for a repo at a single version.
+	ix      *index.Index
+	repo    string
+	version string
 }
 
-func newIndexSearcher(ix *index.Index) *indexSearcher {
-	return &indexSearcher{ix: ix}
+func newIndexSearcher(ix *index.Index, repo, version string) *indexSearcher {
+	return &indexSearcher{ix, repo, version}
 }
 
-func (b *indexSearcher) swapIndex(ix *index.Index) *index.Index {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	ix, b.ix = b.ix, ix
-	return ix
-}
-
-func (b *indexSearcher) Info() IndexInfo {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-	res := IndexInfo{
-		IndexTime: b.ix.FileInfo.ModTime(),
+// Data retrieves the data blob for the file at the given repo, version, and path.
+func (b *indexSearcher) Data(path string) string {
+	if b == nil {
+		return ""
 	}
+	return string(b.ix.DataAtName(path))
+}
 
-	for _, p := range b.ix.Paths() {
-		repo, version, _ := strings.Cut(p, "@")
-		res.Trees = append(res.Trees, Tree{Name: repo, Version: version})
+// Paths lists the paths with the given repo, version, and path prefix
+func (b *indexSearcher) Paths(prefix string) []File {
+	if b == nil {
+		return nil
 	}
-	return res
-}
-
-func (b *indexSearcher) Data(repo, version, path string) string {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-	return string(b.ix.DataAtName(repo + "@" + version + "/+/" + path))
-}
-
-func (b *indexSearcher) Paths(repo, version, prefix string) []File {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
 	var res []File
-	for _, name := range b.ix.Names([]byte(repo + "@" + version + "/+/" + prefix)) {
-		repo, version, path := splitname(name)
+	for _, name := range b.ix.Names([]byte(prefix)) {
 		res = append(res, File{
-			Tree:    string(repo),
-			Version: string(version),
-			Path:    string(path),
+			Tree:    string(b.repo),
+			Version: string(b.version),
+			Path:    string(name),
 		})
 	}
 	return res
 }
 
-// Search will execute the query using up to GOMAXPROCS threads.
-func (b *indexSearcher) Search(ctx context.Context, req Query) (*CodeSearchResult, error) {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
-	pat := req.Line
-
-	var flags syntax.Flags
-	if req.FoldCase {
-		flags |= syntax.FoldCase
-	}
-	re, err := regexp.Compile(pat, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	repoFilter, err := newRegexpFilter(req.Repo, req.NotRepo)
-	if err != nil {
-		return nil, err
-	}
-	var fixedRepoFilter *setFilter
-	if req.RepoFilter != nil {
-		fixedRepoFilter = newSetFilter(req.RepoFilter)
-	}
-	fileFilter, err := newRegexpFilter(strings.Join(req.File, "|"), strings.Join(req.NotFile, "|"))
-	if err != nil {
-		return nil, err
-	}
-
-	syn, err := syntax.Parse(pat, syntax.PerlX|flags)
-	if err != nil {
-		return nil, err
-	}
-
-	// Find filename matches.
-	fresults := make(chan []FileResult, 1)
-	defer close(fresults)
-	go func(re *regexp.Regexp, repoFilter, fileFilter *regexpFilter) {
-		res := []FileResult{}
-		for _, fileid := range b.ix.PostingQuery(&index.Query{Op: index.QAll}) {
-			postName := b.ix.NameBytes(fileid)
-			repo, version, path := splitname(postName)
-			if !fixedRepoFilter.Accept(repo) || !repoFilter.Accept(repo) || !fileFilter.Accept(path) {
-				continue
-			}
-			m := regexp.Match(re, path)
-			if m == nil {
-				continue
-			}
-			res = append(res, FileResult{
-				File: File{
-					Tree:    string(repo),
-					Version: string(version),
-					Path:    string(path),
-				},
-				Bounds: Bounds{Left: m.Start, Right: m.End},
-			})
-			if len(res) >= req.MaxMatches {
-				break
-			}
+func (b *indexSearcher) SearchFileNames(
+	ctx context.Context,
+	re *regexp.Regexp, fileFilter *regexpFilter,
+	maxMatches int,
+) []FileResult {
+	res := []FileResult{}
+	for _, fileid := range b.ix.PostingQuery(&index.Query{Op: index.QAll}) {
+		if ctx.Err() != nil {
+			return nil // Cancelled!
 		}
-		fresults <- res
-	}(re.Clone(), repoFilter.Clone(), fileFilter.Clone())
-
-	csResult := CodeSearchResult{
-		Stats: SearchStats{
-			ExitReason: ExitReasonNone,
-		},
-	}
-
-	if !req.FilenameOnly {
-		q := index.RegexpQuery(syn)
-		post := b.ix.PostingQuery(q)
-
-		results := make([]SearchResult, 0, min(req.MaxMatches, len(post)))
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		var idx atomic.Int64 // Each worker will claim a posting atomically.
-		idx.Store(-1)
-
-		numWorkers := min(runtime.GOMAXPROCS(0), len(post))
-		perFileResults := make(chan SearchResult, numWorkers)
-		var wg sync.WaitGroup
-		for range numWorkers {
-			wg.Add(1)
-			go func(re *regexp.Regexp, repoFilter *regexpFilter, fileFilter *regexpFilter) {
-				defer wg.Done()
-				for ctx.Err() == nil { // Cancelled?
-					i := idx.Add(1)
-					if int(i) >= len(post) {
-						return // No more work.
-					}
-					postName := b.ix.NameBytes(post[i])
-					repo, version, name := splitname(postName)
-					if !fixedRepoFilter.Accept(repo) || !repoFilter.Accept(repo) || !fileFilter.Accept(name) {
-						continue
-					}
-					blob := b.ix.Data(post[i])
-					results := searchBlob(re, blob, repo, version, name, req.ContextLines, req.MaxMatches)
-					if results == nil || len(results.Lines) == 0 {
-						continue
-					}
-					select {
-					case perFileResults <- *results:
-					case <-ctx.Done():
-						return // Cancelled
-					}
-				}
-			}(re.Clone(), repoFilter.Clone(), fileFilter.Clone())
+		path := b.ix.NameBytes(fileid)
+		if !fileFilter.Accept(path) {
+			continue
 		}
-		go func() {
-			// When all workers are done (either due to running out of files or cancellation) we're done searching.
-			wg.Wait()
-			close(perFileResults)
-		}()
-
-		count := 0
-		for perFileResults := range perFileResults {
-			results = append(results, perFileResults)
-			count += len(perFileResults.Lines)
-			if count >= req.MaxMatches {
-				cancel()
-				break
-			}
+		m := regexp.Match(re, path)
+		if m == nil {
+			continue
 		}
-		if count >= req.MaxMatches {
-			csResult.Stats.ExitReason = ExitReasonMatchLimit
+		res = append(res, FileResult{
+			File: File{
+				Tree:    string(b.repo),
+				Version: string(b.version),
+				Path:    string(path),
+			},
+			Bounds: Bounds{Left: m.Start, Right: m.End},
+		})
+		if len(res) >= maxMatches {
+			break
 		}
-		csResult.Results = results
 	}
-
-	fileResults := <-fresults
-	if len(fileResults) >= req.MaxMatches {
-		fileResults = fileResults[:req.MaxMatches]
-		csResult.Stats.ExitReason = ExitReasonMatchLimit
-	}
-	csResult.FileResults = fileResults
-	return &csResult, nil
+	return res
 }
 
-func searchBlob(re *regexp.Regexp, blob, repo, version, name []byte, contextLines, maxMatches int) *SearchResult {
+// Searchfiles will search the index for files matching the regexp.
+// It yields functions that perform the search on individual files, and result any matches found.
+func (b *indexSearcher) SearchFiles(
+	ctx context.Context,
+	re *regexp.Regexp, fileFilter *regexpFilter,
+	contextLines, maxMatches int,
+	yield func(func() *SearchResult),
+) {
+	postings := b.ix.PostingQuery(index.RegexpQuery(re.Syn()))
+	var idx atomic.Int64 // Each worker will claim a posting atomically.
+	idx.Store(-1)
+	for i := 0; i < len(postings); i++ {
+		if ctx.Err() != nil {
+			return // Cancelled!
+		}
+		name := b.ix.NameBytes(postings[i])
+		if !fileFilter.Accept(name) {
+			continue
+		}
+		yield(func() *SearchResult {
+			re := re.Clone()
+			blob := b.ix.Data(postings[i])
+			lines := searchBlob(re, blob, contextLines, maxMatches)
+			if len(lines) == 0 {
+				return nil
+			}
+			return &SearchResult{
+				File:  File{Tree: b.repo, Version: b.version, Path: string(name)},
+				Lines: lines,
+			}
+		})
+	}
+}
+
+func searchBlob(re *regexp.Regexp, blob []byte, contextLines, maxMatches int) []LineResult {
 	var results []LineResult
 	m := regexp.Match(re, blob)
 	if m == nil {
@@ -250,14 +157,7 @@ func searchBlob(re *regexp.Regexp, blob, repo, version, name []byte, contextLine
 		}
 		m = regexp.Match(re, blob[lineEnd+1:]).Add(lineEnd + 1)
 	}
-	return &SearchResult{
-		File: File{
-			Tree:    string(repo),
-			Version: string(version),
-			Path:    string(name),
-		},
-		Lines: results,
-	}
+	return results
 }
 
 func splitname(b []byte) (repo, version, name []byte) {

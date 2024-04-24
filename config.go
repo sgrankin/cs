@@ -10,8 +10,8 @@ type Config struct {
 }
 
 type IndexConfig struct {
-	Name string `json:"name"` // Optional, defaults to path base.
-	Path string `json:"path"` // Path to the index.  A directory fully owned by the index.
+	Name string `json:"name"` // The name of this grouping of repos.  Defaults to path basename.
+	Path string `json:"path"` // A directory holding all of the indexes and git data.
 
 	Repos       []RepoConfig     `json:"repos"`       // Repositories to fetch.
 	RepoSources RepoSourceConfig `json:"reposources"` // Sources that expand into more repos.

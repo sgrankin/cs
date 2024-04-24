@@ -24,6 +24,9 @@ type SearchIndex interface {
 	// Errors will be returned if the query is invalid.
 	// The context may be used to cancel the search.
 	Search(ctx context.Context, q Query) (*CodeSearchResult, error)
+
+	// Reload will refresh the index if it has been changed on disk.
+	Reload()
 }
 
 type Query struct {

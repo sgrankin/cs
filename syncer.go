@@ -56,6 +56,7 @@ func (s *repoSyncer) Refresh() ([]Repo, error) {
 			localRef:  rc.Name,
 		})
 	}
+	// We could parallelize this... but go-git storage isn't thread safe.
 	for _, repo := range res {
 		if _, err := repo.Refresh(); err != nil {
 			return nil, err

@@ -31,9 +31,9 @@ type Regexp struct {
 }
 
 // String returns the source text used to compile the regular expression.
-func (re *Regexp) String() string {
-	return re.expr
-}
+func (re *Regexp) String() string { return re.expr }
+
+func (re *Regexp) Syn() *syntax.Regexp { return re.syn }
 
 // Compile parses a regular expression and returns, if successful,
 // a Regexp object that can be used to match against lines of text.
