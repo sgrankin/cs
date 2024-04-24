@@ -94,11 +94,6 @@ var supportedReadmeExtensions = []string{
 var supportedReadmeRegex = buildReadmeRegex(supportedReadmeExtensions)
 
 func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	if len(s.repos) == 0 {
-		http.Error(w, "File browsing not enabled", 404)
-		return
-	}
-
 	backend := r.PathValue("backend")
 	path := r.PathValue("path")
 	repoName, path, _ := strings.Cut(path, "@")

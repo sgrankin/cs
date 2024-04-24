@@ -8,9 +8,8 @@ import (
 )
 
 type searchScriptData struct {
-	BackendRepos       map[string][]string `json:"backend_repos"`
-	DefaultSearchRepos []string            `json:"default_search_repos"`
-	LinkConfigs        []cs.LinkConfig     `json:"link_configs"`
+	BackendRepos map[string][]string `json:"backend_repos"`
+	LinkConfigs  []cs.LinkConfig     `json:"link_configs"`
 }
 
 func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []cs.SearchIndex, sampleRepo string) {
@@ -31,7 +30,7 @@ func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends
 		repos[bk.Name()] = trees
 	}
 
-	script_data = &searchScriptData{repos, s.repos, s.config.Templates.Links}
+	script_data = &searchScriptData{repos, s.config.Templates.Links}
 	return script_data, backends, sampleRepo
 }
 

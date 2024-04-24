@@ -29,7 +29,6 @@ type server struct {
 	config  cs.ServeConfig
 	bk      map[string]cs.SearchIndex
 	bkOrder []string
-	repos   []string
 
 	Templates   map[string]*template.Template
 	OpenSearch  *texttemplate.Template
@@ -47,10 +46,6 @@ func New(cfg cs.ServeConfig, indexes []cs.SearchIndex) *server {
 	for _, idx := range indexes {
 		srv.bk[idx.Name()] = idx
 		srv.bkOrder = append(srv.bkOrder, idx.Name())
-		info := idx.Info()
-		for _, t := range info.Trees {
-			srv.repos = append(srv.repos, t.Name)
-		}
 	}
 
 	for ext, lang := range srv.config.Languages.FileExtToLang {

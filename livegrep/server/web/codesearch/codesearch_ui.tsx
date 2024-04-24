@@ -348,11 +348,7 @@ function MatchView({ path, match }: { path: FilePath; match: ClippedLineMatch })
 	}
 	var line = match.line;
 	var bounds = match.bounds;
-	var pieces = [
-		line.substring(0, bounds[0]),
-		line.substring(bounds[0], bounds[1]),
-		line.substring(bounds[1]),
-	];
+	var pieces = [line.substring(0, bounds[0]), line.substring(bounds[0], bounds[1]), line.substring(bounds[1])];
 
 	var classes = ["match"];
 	if (match.clip_before !== undefined) classes.push("clip-before");
@@ -734,7 +730,10 @@ function HelpView() {
 							(<em>special-term</em>:)
 						</code>
 					</td>
-					<td>Escape one of the above terms by wrapping it in parentheses (with regex enabled).</td>
+					<td>
+						Escape one of the above terms by wrapping it in parentheses (with regex
+						enabled).
+					</td>
 					<td>
 						<a href="/search?q=(file:)&regex=true">example</a>
 					</td>
@@ -744,8 +743,8 @@ function HelpView() {
 				<h5>Regular Expressions</h5>
 			</div>
 			<p>
-				See <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a> for a complete
-				listing of supported regex syntax.
+				See <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a> for a
+				complete listing of supported regex syntax.
 			</p>
 		</>
 	);
@@ -1005,7 +1004,6 @@ namespace CodesearchUI {
 
 function init(initData) {
 	CodesearchUI.backend_repos = initData.backend_repos;
-	CodesearchUI.defaultSearchRepos = initData.default_search_repos;
 	CodesearchUI.linkConfigs = (initData.link_configs || []).map(function (link_config) {
 		if (link_config.match_regexp) {
 			link_config.match_regexp = new RegExp(link_config.match_regexp);

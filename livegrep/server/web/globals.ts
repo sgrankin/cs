@@ -10,7 +10,6 @@ globalThis.jQuery = jquery;
 declare global {
 	var scriptData: {
 		backend_repos: {};
-		default_search_repos: string[];
 		link_configs: {
 			match_regexp: string;
 			label: string;
