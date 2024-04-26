@@ -785,9 +785,8 @@ namespace CodesearchUI {
 		}
 
 		_init();
-		updateRepoOptions();
-
 		initQuery();
+		updateRepoOptions();
 
 		input.keydown(onKeypress);
 		input.bind("paste", onKeypress);
@@ -917,6 +916,9 @@ namespace CodesearchUI {
 		if (prefs["context"] !== undefined) {
 			input_context.prop("checked", prefs["context"]);
 		}
+		if (prefs["backend"] !== undefined && input_backend) {
+			input_backend.val(prefs["backend"]);
+		}
 	}
 
 	function setPref(key: string, value: any) {
@@ -961,6 +963,7 @@ namespace CodesearchUI {
 	function updateRepoOptions() {
 		if (!input_backend) return;
 		var backend = input_backend.val();
+		setPref("backend", backend);
 		updateOptions(backend_repos[backend]);
 	}
 

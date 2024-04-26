@@ -25,8 +25,9 @@
 </head>
 
 <body>
+    {{block "body" .}}{{end}}
     {{if .IncludeHeader}}
-    <div id='header'>
+    <footer id='header'>
         {{with .Config.Templates.HeaderHTML}}
         {{.}}
         {{else}}
@@ -39,9 +40,8 @@
             {{end}}
         </ul>
         {{end}}
-    </div>
+    </footer>
     {{end}}
-    {{block "body" .}}{{end}}
     {{with .Config.Templates.FooterHTML}}
     {{.}}
     {{end}}

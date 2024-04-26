@@ -35,6 +35,7 @@ func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends
 }
 
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	backend := r.PathValue("backend")
 	script_data, backends, sampleRepo := s.makeSearchScriptData()
 
 	s.renderPage(w, "index.html", &page{
@@ -44,9 +45,11 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 		ScriptData:    script_data,
 		IncludeHeader: true,
 		Data: struct {
+			Backend    string
 			Backends   []cs.SearchIndex
 			SampleRepo string
 		}{
+			Backend:    backend,
 			Backends:   backends,
 			SampleRepo: sampleRepo,
 		},

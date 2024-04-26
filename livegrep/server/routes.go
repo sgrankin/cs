@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"expvar"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -13,7 +14,7 @@ import (
 
 func addRoutes(mux *http.ServeMux, srv *server) {
 	// TODO? pass dependencies explicitly instead of just `srv`
-	mux.Handle("GET /", ctxHandlerFunc(srv.ServeRoot))
+	mux.Handle("GET /{$}", ctxHandlerFunc(srv.ServeRoot))
 	mux.Handle("GET /about", ctxHandlerFunc(srv.ServeAbout))
 	mux.Handle("GET /opensearch.xml", ctxHandlerFunc(srv.ServeOpensearch))
 	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSearch))
@@ -25,6 +26,7 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 
 	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
 	mux.Handle("GET /debug/stats", ctxHandlerFunc(srv.ServeStats))
+	mux.Handle("GET /debug/vars", expvar.Handler())
 	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
 	mux.HandleFunc("GET /debug/pprof/cmdline", pprof.Cmdline)
 	mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
