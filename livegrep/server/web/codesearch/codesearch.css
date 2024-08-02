@@ -243,6 +243,7 @@ a:hover {
 	font-size: 12px;
 	line-height: 20px;
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: end;
 	align-items: center;
 	gap: 10pt;
