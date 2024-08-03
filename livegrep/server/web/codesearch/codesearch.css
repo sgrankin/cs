@@ -532,7 +532,7 @@ a:hover {
 }
 
 .file-viewer .header {
-	position: fixed;
+	position: sticky;
 	top: 0;
 	width: 100%;
 	z-index: 1;
@@ -568,7 +568,6 @@ a:hover {
 .file-viewer .content-wrapper {
 	/* Offset the content so that the overlapping header doesn't occlude it. */
 	position: relative;
-	margin-top: 5em;
 }
 
 .file-viewer .dir-viewer-wrapper {
