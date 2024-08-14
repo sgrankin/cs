@@ -32,7 +32,7 @@ func scriptTag(nonce template.HTMLAttr, s string, m map[string]string) template.
 	href := s + "?v=" + hash
 	integrity := "sha256-" + hash
 	return template.HTML(fmt.Sprintf(
-		`<script%s src="%s" integrity="%s"></script>`,
+		`<script%s src="%s" integrity="%s" type="module"></script>`,
 		nonce, href, integrity,
 	))
 }
