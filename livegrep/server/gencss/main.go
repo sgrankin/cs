@@ -5,8 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/alecthomas/chroma/v2/styles"
-
 	"sgrankin.dev/cs/livegrep/server/chroma"
 )
 
@@ -26,5 +24,7 @@ func main() {
 		}
 		defer w.Close()
 	}
-	chroma.HTMLFormatter.WriteCSS(w, styles.Get(*style))
+	if err := chroma.WriteCSS(w, *style); err != nil {
+		log.Panicf("WriteCSS failed: %v", err)
+	}
 }

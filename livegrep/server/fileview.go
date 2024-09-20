@@ -7,17 +7,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html"
 	"html/template"
-	"log"
 	"net/http"
 	"os/exec"
 	"path"
 	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/alecthomas/chroma/v2/styles"
 
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/chroma"
@@ -227,22 +223,9 @@ func mkPathSegments(backend cs.SearchIndex, repoName, commit, p string) []breadC
 
 func mkFileContent(backend cs.SearchIndex, file cs.File) *sourceFileContent {
 	content := backend.Data(file.Tree, file.Version, file.Path)
-	lex := chroma.Lexer(path.Base(file.Path), content)
-	toks, err := lex.Tokenise(nil, content)
-	if err != nil {
-		log.Printf("Lexer failed tokenizing: %v", err)
-		return &sourceFileContent{
-			FormattedContent: template.HTML(
-				fmt.Sprintf(`<pre><code id="source-code">%s</code></pre>`,
-					html.EscapeString(content))),
-		}
+	return &sourceFileContent{
+		FormattedContent: chroma.FormatHTML(path.Base(file.Path), content),
 	}
-	result := sourceFileContent{}
-
-	buf := &strings.Builder{}
-	chroma.HTMLFormatter.Format(buf, styles.Get("vs"), toks)
-	result.FormattedContent = template.HTML(buf.String())
-	return &result
 }
 
 func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pathPrefix string) *directoryContent {
