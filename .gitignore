@@ -1,3 +1,4 @@
 /go.work*
 /data*/
 /node_modules/
+config.yaml
