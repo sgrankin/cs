@@ -1,5 +1,3 @@
-//go:build tools
-
 package main
 
 import (
@@ -46,8 +44,8 @@ func main() {
 func buildOpts(debug bool) api.BuildOptions {
 	opts := api.BuildOptions{
 		EntryPoints: []string{
-			"web/codesearch/codesearch_ui.tsx",
-			"web/fileview/fileview.ts",
+			"web/codesearch_ui.tsx",
+			"web/fileview.ts",
 		},
 		Outdir:    "static",
 		Bundle:    true,

@@ -1,0 +1,2 @@
+@import "syntax-light.css";
+@import "syntax-dark.css"(prefers-color-scheme: dark);

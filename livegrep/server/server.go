@@ -14,7 +14,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"regexp"
 	texttemplate "text/template"
 	"time"
 
@@ -46,15 +45,6 @@ func New(cfg cs.ServeConfig, indexes []cs.SearchIndex) *server {
 	for _, idx := range indexes {
 		srv.bk[idx.Name()] = idx
 		srv.bkOrder = append(srv.bkOrder, idx.Name())
-	}
-
-	for ext, lang := range srv.config.Languages.FileExtToLang {
-		extToLangMap[ext] = lang
-	}
-
-	for regexStr, lang := range srv.config.Languages.FileFirstLineRegexToLang {
-		regex := regexp.MustCompile(regexStr)
-		fileFirstLineToLangMap[regex] = lang
 	}
 
 	mux := http.NewServeMux()
@@ -109,7 +99,7 @@ func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.
 	s.renderPage(w, "about.html", &page{
 		Title:         "about",
 		IncludeHeader: true,
-		CSSPath:       "codesearch/codesearch_ui",
+		CSSPath:       "codesearch_ui",
 	})
 }
 

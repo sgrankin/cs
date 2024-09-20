@@ -53,15 +53,6 @@ type ServeConfig struct {
 
 		Links []LinkConfig `json:"file_links"` // Add extra links to files.
 	} `json:"templates"`
-
-	Languages struct {
-		FileExtToLang map[string]string `json:"file_ext_to_lang"` // Additional file extensions to highlight in the built-in fileview.
-
-		// Regular expression to match the first line of a file to determine its
-		// language.  This is used to override the language detection for files that
-		// don't have a recognized extension.
-		FileFirstLineRegexToLang map[string]string `json:"file_first_line_regex_to_lang"`
-	} `json:"languages"`
 }
 
 type LinkConfig struct {

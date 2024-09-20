@@ -7,91 +7,27 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html"
+	"html/template"
+	"log"
 	"net/http"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2/styles"
+
 	"sgrankin.dev/cs"
+	"sgrankin.dev/cs/livegrep/server/chroma"
 )
 
-// Mapping from known file extensions to filetype hinting.
-var filenameToLangMap map[string]string = map[string]string{
-	"BUILD":       "python",
-	"BUILD.bazel": "python",
-	"WORKSPACE":   "python",
-}
-
-var extToLangMap map[string]string = map[string]string{
-	".adoc":        "AsciiDoc",
-	".asc":         "AsciiDoc",
-	".asciidoc":    "AsciiDoc",
-	".AppleScript": "applescript",
-	".bzl":         "python",
-	".c":           "c",
-	".coffee":      "coffeescript",
-	".cpp":         "cpp",
-	".css":         "css",
-	".ex":          "elixir",
-	".exs":         "elixir",
-	".erl":         "erlang",
-	".go":          "go",
-	".h":           "cpp",
-	".hs":          "haskell",
-	".html":        "markup",
-	".java":        "java",
-	".js":          "javascript",
-	".json":        "json",
-	".jsx":         "jsx",
-	".m":           "objectivec",
-	".markdown":    "markdown",
-	".md":          "markdown",
-	".mdown":       "markdown",
-	".mkdn":        "markdown",
-	".mediawiki":   "markdown",
-	".nix":         "nix",
-	".php":         "php",
-	".pl":          "perl",
-	".proto":       "go",
-	".py":          "python",
-	".pyst":        "python",
-	".rb":          "ruby",
-	".rdoc":        "markdown",
-	".rs":          "rust",
-	".scala":       "scala",
-	".scpt":        "applescript",
-	".scss":        "scss",
-	".sh":          "bash",
-	".sky":         "python",
-	".sql":         "sql",
-	".swift":       "swift",
-	".textile":     "markdown",
-	".ts":          "typescript",
-	".tsx":         "tsx",
-	".wiki":        "markdown",
-	".xml":         "markup",
-	".yaml":        "yaml",
-	".yml":         "yaml",
-}
-
-var fileFirstLineToLangMap map[*regexp.Regexp]string = map[*regexp.Regexp]string{
-	regexp.MustCompile(`^#!.*\bpython[23]?\b`): "python",
-	regexp.MustCompile(`^#!.*\bbash\b`):        "bash",
-	regexp.MustCompile(`^#!.*\bsh\b`):          "bash",
-	regexp.MustCompile(`^#!.*\bruby\b`):        "ruby",
-	regexp.MustCompile(`^#!.*\bperl\b`):        "perl",
-}
-
 // Grabbed from the extensions GitHub supports here - https://github.com/github/markup
-var supportedReadmeExtensions = []string{
+var supportedReadmeRegex = buildReadmeRegex([]string{
 	"markdown", "mdown", "mkdn", "md", "textile", "rdoc", "org", "creole", "mediawiki", "wiki",
 	"rst", "asciidoc", "adoc", "asc", "pod",
-}
-
-var supportedReadmeRegex = buildReadmeRegex(supportedReadmeExtensions)
+})
 
 func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	backend := r.PathValue("backend")
@@ -120,8 +56,8 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 
 	s.renderPage(w, "fileview.html", &page{
 		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
-		JSPath:        "fileview/fileview",
-		CSSPath:       "fileview/fileview",
+		JSPath:        "fileview",
+		CSSPath:       "fileview",
 		ScriptData:    script_data,
 		IncludeHeader: false,
 		Data:          fileData,
@@ -165,9 +101,7 @@ type fileViewerContext struct {
 }
 
 type sourceFileContent struct {
-	Content   string
-	LineCount int
-	Language  string
+	FormattedContent template.HTML
 }
 
 type directoryContent struct {
@@ -190,32 +124,6 @@ func (s DirListingSort) Less(i, j int) bool {
 		return s[i].IsDir
 	}
 	return s[i].Name < s[j].Name
-}
-
-func gitCommitHash(ref string, repoPath string) (string, error) {
-	out, err := exec.Command(
-		"git", "-C", repoPath, "rev-parse", ref,
-	).Output()
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-func gitObjectType(obj string, repoPath string) (string, error) {
-	out, err := exec.Command("git", "-C", repoPath, "cat-file", "-t", obj).Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(out)), nil
-}
-
-func gitCatBlob(obj string, repoPath string) (string, error) {
-	out, err := exec.Command("git", "-C", repoPath, "cat-file", "blob", obj).Output()
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
 }
 
 type gitTreeEntry struct {
@@ -275,114 +183,20 @@ func buildReadmeRegex(supportedReadmeExtensions []string) *regexp.Regexp {
 	return repoFileRegex
 }
 
-func languageFromFirstLine(line string) string {
-	for regex, lang := range fileFirstLineToLangMap {
-		if regex.MatchString(line) {
-			return lang
-		}
-	}
-	return ""
-}
-
-func buildFileData(backend cs.SearchIndex, repoName, commit, backendPrefix string) (*fileViewerContext, error) {
-	paths := backend.Paths(repoName, commit, backendPrefix)
-	if len(paths) == 0 {
-		return nil, fmt.Errorf("not found: %q", backendPrefix)
+func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*fileViewerContext, error) {
+	files := backend.Paths(repoName, commit, path)
+	if len(files) == 0 {
+		return nil, fmt.Errorf("not found: %q", path)
 	}
 	var fileContent *sourceFileContent
 	var dirContent *directoryContent
-	if len(paths) == 1 && paths[0].Path == backendPrefix {
+	if len(files) == 1 && files[0].Path == path {
 		// This is a blob.
-		content := backend.Data(paths[0].Tree, paths[0].Version, paths[0].Path)
-		language := filenameToLangMap[filepath.Base(backendPrefix)]
-		if language == "" {
-			language = extToLangMap[filepath.Ext(backendPrefix)]
-		}
-		if language == "" {
-			firstLine, _, found := strings.Cut(string(content), "\n")
-			if found {
-				language = languageFromFirstLine(firstLine)
-			}
-		}
-		fileContent = &sourceFileContent{
-			Content:   content,
-			LineCount: strings.Count(string(content), "\n"),
-			Language:  language,
-		}
+		fileContent = mkFileContent(backend, files[0])
 	} else {
-		// This is a directory listing.
-		if backendPrefix != "" && !strings.HasSuffix(backendPrefix, "/") {
-			backendPrefix += "/"
-		}
-		dirEntries := make([]directoryListEntry, 0, len(paths))
-		var readmePath, readmeLang string
-		for _, p := range paths {
-			relPath, found := strings.CutPrefix(p.Path, backendPrefix)
-			if !found {
-				continue
-			}
-			base, _, isdir := strings.Cut(relPath, "/")
-			if len(dirEntries) > 0 && dirEntries[len(dirEntries)-1].Name == base {
-				// Subdirectory, and already handled.
-				continue
-			}
-			viewURL := viewPath(backend.Name(), repoName, commit, backendPrefix, base)
-			if isdir {
-				viewURL += "/"
-			}
-
-			de := directoryListEntry{
-				Name:  base,
-				Path:  viewURL,
-				IsDir: isdir,
-			}
-			dirEntries = append(dirEntries, de)
-
-			// Git supports case sensitive files, so README.md & readme.md in the same tree is possible
-			// so in this case we just grab the first matching file
-			if readmePath != "" {
-				continue
-			}
-
-			parts := supportedReadmeRegex.FindStringSubmatch(de.Name)
-			if len(parts) != 3 {
-				continue
-			}
-			readmePath = p.Path + parts[0]
-			readmeLang = parts[2]
-		}
-
-		sort.Sort(DirListingSort(dirEntries))
-
-		var readmeContent *sourceFileContent
-		if readmePath != "" {
-			content := backend.Data(repoName, commit, readmePath)
-			readmeContent = &sourceFileContent{
-				Content:   content,
-				LineCount: strings.Count(content, "\n"),
-				Language:  extToLangMap["."+readmeLang],
-			}
-		}
-		dirContent = &directoryContent{
-			Entries:       dirEntries,
-			ReadmeContent: readmeContent,
-		}
+		dirContent = mkDirContent(backend, files, repoName, commit, path)
 	}
-
-	pathSplits := strings.Split(backendPrefix, "/")
-	segments := make([]breadCrumbEntry, len(pathSplits))
-	for i, name := range pathSplits {
-		parentPath := path.Clean(strings.Join(pathSplits[0:i], "/"))
-		slash := "/"
-		if i == len(pathSplits)-1 {
-			slash = ""
-		}
-		segments[i] = breadCrumbEntry{
-			Name: name,
-			Path: viewPath(backend.Name(), repoName, commit, parentPath, name) + slash,
-		}
-	}
-
+	segments := mkPathSegments(backend, repoName, commit, path)
 	return &fileViewerContext{
 		Backend:      backend.Name(),
 		PathSegments: segments,
@@ -392,4 +206,95 @@ func buildFileData(backend cs.SearchIndex, repoName, commit, backendPrefix strin
 		DirContent:   dirContent,
 		FileContent:  fileContent,
 	}, nil
+}
+
+func mkPathSegments(backend cs.SearchIndex, repoName, commit, p string) []breadCrumbEntry {
+	splits := strings.Split(p, "/")
+	segments := make([]breadCrumbEntry, len(splits))
+	for i, name := range splits {
+		parentPath := path.Clean(strings.Join(splits[0:i], "/"))
+		slash := "/"
+		if i == len(splits)-1 {
+			slash = ""
+		}
+		segments[i] = breadCrumbEntry{
+			Name: name,
+			Path: viewPath(backend.Name(), repoName, commit, parentPath, name) + slash,
+		}
+	}
+	return segments
+}
+
+func mkFileContent(backend cs.SearchIndex, file cs.File) *sourceFileContent {
+	content := backend.Data(file.Tree, file.Version, file.Path)
+	lex := chroma.Lexer(path.Base(file.Path), content)
+	toks, err := lex.Tokenise(nil, content)
+	if err != nil {
+		log.Printf("Lexer failed tokenizing: %v", err)
+		return &sourceFileContent{
+			FormattedContent: template.HTML(
+				fmt.Sprintf(`<pre><code id="source-code">%s</code></pre>`,
+					html.EscapeString(content))),
+		}
+	}
+	result := sourceFileContent{}
+
+	buf := &strings.Builder{}
+	chroma.HTMLFormatter.Format(buf, styles.Get("vs"), toks)
+	result.FormattedContent = template.HTML(buf.String())
+	return &result
+}
+
+func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pathPrefix string) *directoryContent {
+	// This is a directory listing.
+	if pathPrefix != "" && !strings.HasSuffix(pathPrefix, "/") {
+		pathPrefix += "/"
+	}
+	dirEntries := make([]directoryListEntry, 0, len(files))
+	var readmePath string
+	for _, p := range files {
+		relPath, found := strings.CutPrefix(p.Path, pathPrefix)
+		if !found {
+			continue
+		}
+		base, _, isdir := strings.Cut(relPath, "/")
+		if len(dirEntries) > 0 && dirEntries[len(dirEntries)-1].Name == base {
+			// Subdirectory, and already handled.
+			continue
+		}
+		viewURL := viewPath(backend.Name(), repoName, commit, pathPrefix, base)
+		if isdir {
+			viewURL += "/"
+		}
+
+		de := directoryListEntry{
+			Name:  base,
+			Path:  viewURL,
+			IsDir: isdir,
+		}
+		dirEntries = append(dirEntries, de)
+
+		// Git supports case-sensitive files, so README.md & readme.md in the same tree is possible
+		// so in this case we just grab the first matching file
+		if readmePath != "" {
+			continue
+		}
+
+		parts := supportedReadmeRegex.FindStringSubmatch(de.Name)
+		if len(parts) != 3 {
+			continue
+		}
+		readmePath = p.Path + parts[0]
+	}
+
+	sort.Sort(DirListingSort(dirEntries))
+
+	var readmeContent *sourceFileContent
+	if readmePath != "" {
+		readmeContent = mkFileContent(backend, cs.File{repoName, commit, readmePath})
+	}
+	return &directoryContent{
+		Entries:       dirEntries,
+		ReadmeContent: readmeContent,
+	}
 }
