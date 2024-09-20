@@ -1,6 +1,8 @@
 module sgrankin.dev/cs
 
-go 1.22.0
+go 1.23
+
+toolchain go1.23.1
 
 require (
 	github.com/evanw/esbuild v0.20.0
