@@ -1,47 +1,12 @@
-/* Background */ .bg { background-color: #ffffff; }
-/* PreWrapper */ .chroma { background-color: #ffffff; }
-/* LineTableTD */ .chroma .lntd:last-child { width: 100%; }/* LineNumbers targeted by URL anchor */ .chroma .ln:target { background-color: #e5e5e5 }
-/* LineNumbersTable targeted by URL anchor */ .chroma .lnt:target { background-color: #e5e5e5 }
-/* Error */ .chroma .err {  }
-/* LineLink */ .chroma .lnlinks { outline: none; text-decoration: none; color: inherit }
-/* LineTableTD */ .chroma .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
-/* LineTable */ .chroma .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
-/* LineHighlight */ .chroma .hl { background-color: #e5e5e5 }
-/* LineNumbersTable */ .chroma .lnt { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #7f7f7f }
-/* LineNumbers */ .chroma .ln { white-space: pre; -webkit-user-select: none; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em;color: #7f7f7f }
-/* Line */ .chroma .line { display: flex; }
-/* Keyword */ .chroma .k { color: #0000ff }
-/* KeywordConstant */ .chroma .kc { color: #0000ff }
-/* KeywordDeclaration */ .chroma .kd { color: #0000ff }
-/* KeywordNamespace */ .chroma .kn { color: #0000ff }
-/* KeywordPseudo */ .chroma .kp { color: #0000ff }
-/* KeywordReserved */ .chroma .kr { color: #0000ff }
-/* KeywordType */ .chroma .kt { color: #2b91af }
-/* NameClass */ .chroma .nc { color: #2b91af }
-/* LiteralString */ .chroma .s { color: #a31515 }
-/* LiteralStringAffix */ .chroma .sa { color: #a31515 }
-/* LiteralStringBacktick */ .chroma .sb { color: #a31515 }
-/* LiteralStringChar */ .chroma .sc { color: #a31515 }
-/* LiteralStringDelimiter */ .chroma .dl { color: #a31515 }
-/* LiteralStringDoc */ .chroma .sd { color: #a31515 }
-/* LiteralStringDouble */ .chroma .s2 { color: #a31515 }
-/* LiteralStringEscape */ .chroma .se { color: #a31515 }
-/* LiteralStringHeredoc */ .chroma .sh { color: #a31515 }
-/* LiteralStringInterpol */ .chroma .si { color: #a31515 }
-/* LiteralStringOther */ .chroma .sx { color: #a31515 }
-/* LiteralStringRegex */ .chroma .sr { color: #a31515 }
-/* LiteralStringSingle */ .chroma .s1 { color: #a31515 }
-/* LiteralStringSymbol */ .chroma .ss { color: #a31515 }
-/* OperatorWord */ .chroma .ow { color: #0000ff }
-/* Comment */ .chroma .c { color: #008000 }
-/* CommentHashbang */ .chroma .ch { color: #008000 }
-/* CommentMultiline */ .chroma .cm { color: #008000 }
-/* CommentSingle */ .chroma .c1 { color: #008000 }
-/* CommentSpecial */ .chroma .cs { color: #008000 }
-/* CommentPreproc */ .chroma .cp { color: #0000ff }
-/* CommentPreprocFile */ .chroma .cpf { color: #0000ff }
-/* GenericEmph */ .chroma .ge { font-style: italic }
-/* GenericHeading */ .chroma .gh { font-weight: bold }
-/* GenericPrompt */ .chroma .gp { font-weight: bold }
-/* GenericStrong */ .chroma .gs { font-weight: bold }
-/* GenericSubheading */ .chroma .gu { font-weight: bold }
+/* PreWrapper */ .chroma-chroma { -moz-tab-size: 0; -o-tab-size: 0; display: grid; tab-size: 0; }
+/* LineTableTD */ .chroma-lntd:last-child { width: 100%; }
+/* LineNumbers targeted by URL anchor */ .chroma-ln:target { background-color: var(--chroma-hl-background-color); color: var(--chroma-hl-color); font-style: var(--chroma-hl-font-style); font-weight: var(--chroma-hl-font-weight); text-decoration: var(--chroma-hl-text-decoration); }
+/* LineNumbersTable targeted by URL anchor */ .chroma-lnt:target { background-color: var(--chroma-hl-background-color); color: var(--chroma-hl-color); font-style: var(--chroma-hl-font-style); font-weight: var(--chroma-hl-font-weight); text-decoration: var(--chroma-hl-text-decoration); }
+/* LineLink */ .chroma-lnlinks { color: inherit; outline: none; text-decoration: none; }
+/* LineTableTD */ .chroma-lntd { border: 0; margin: 0; padding: 0; vertical-align: top; }
+/* LineTable */ .chroma-lntable { border: 0; border-spacing: 0; margin: 0; padding: 0; }
+/* LineNumbersTable */ .chroma-lnt { -webkit-user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em; user-select: none; white-space: pre; }
+/* LineNumbers */ .chroma-ln { -webkit-user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em; user-select: none; white-space: pre; }
+/* Line */ .chroma-line { display: flex; }
+/* Background */ .chroma-bg { -moz-tab-size: 0; -o-tab-size: 0; tab-size: 0; }
+/* EOFType */ .chroma { --chroma-bg-background-color: #ffffff; --chroma-c-color: #008000; --chroma-c1-color: #008000; --chroma-ch-color: #008000; --chroma-cm-color: #008000; --chroma-cp-color: #0000ff; --chroma-cpf-color: #0000ff; --chroma-cs-color: #008000; --chroma-dl-color: #a31515; --chroma-ge-font-style: italic; --chroma-gh-font-weight: bold; --chroma-gp-font-weight: bold; --chroma-gs-font-weight: bold; --chroma-gu-font-weight: bold; --chroma-hl-background-color: #e5e5e5; --chroma-k-color: #0000ff; --chroma-kc-color: #0000ff; --chroma-kd-color: #0000ff; --chroma-kn-color: #0000ff; --chroma-kp-color: #0000ff; --chroma-kr-color: #0000ff; --chroma-kt-color: #2b91af; --chroma-ln-color: #7f7f7f; --chroma-lnt-color: #7f7f7f; --chroma-nc-color: #2b91af; --chroma-ow-color: #0000ff; --chroma-s-color: #a31515; --chroma-s1-color: #a31515; --chroma-s2-color: #a31515; --chroma-sa-color: #a31515; --chroma-sb-color: #a31515; --chroma-sc-color: #a31515; --chroma-sd-color: #a31515; --chroma-se-color: #a31515; --chroma-sh-color: #a31515; --chroma-si-color: #a31515; --chroma-sr-color: #a31515; --chroma-ss-color: #a31515; --chroma-sx-color: #a31515; }
