@@ -1,11 +1,13 @@
 module sgrankin.dev/cs
 
-go 1.23
+go 1.23.0
 
 toolchain go1.23.1
 
 require (
+	github.com/alecthomas/assert/v2 v2.7.0
 	github.com/alecthomas/chroma/v2 v2.14.0
+	github.com/crawshaw/httpts v0.0.0-20240917165501-a752d32068fe
 	github.com/evanw/esbuild v0.23.1
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/goccy/go-yaml v1.12.0
@@ -13,7 +15,6 @@ require (
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/handlers v1.5.2
 	golang.org/x/sync v0.8.0
-	tailscale.com v1.74.1
 )
 
 require (
@@ -22,6 +23,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
+	github.com/alecthomas/repr v0.4.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
 	github.com/aws/aws-sdk-go-v2 v1.24.1 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.26.5 // indirect
@@ -63,6 +65,7 @@ require (
 	github.com/gorilla/csrf v1.7.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/hdevalence/ed25519consensus v0.2.0 // indirect
+	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/illarion/gonotify/v2 v2.0.3 // indirect
 	github.com/insomniacslk/dhcp v0.0.0-20231206064809-8c70d406f6d2 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -116,4 +119,5 @@ require (
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gvisor.dev/gvisor v0.0.0-20240722211153-64c016c92987 // indirect
+	tailscale.com v1.74.1 // indirect
 )
