@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/crawshaw/httpts"
 	"github.com/goccy/go-yaml"
 
 	"sgrankin.dev/cs"
@@ -81,7 +80,7 @@ func main() {
 	}
 
 	if *tailscaleHost != "" {
-		s := httpts.Server{Handler: srv}
+		s := HTTPTSServer{Handler: srv}
 		go func() {
 			log.Fatal(s.Serve(*tailscaleHost))
 		}()

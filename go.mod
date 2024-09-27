@@ -7,7 +7,6 @@ toolchain go1.23.1
 require (
 	github.com/alecthomas/assert/v2 v2.11.0
 	github.com/alecthomas/chroma/v2 v2.14.0
-	github.com/crawshaw/httpts v0.0.0-20240917165501-a752d32068fe
 	github.com/evanw/esbuild v0.24.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/goccy/go-yaml v1.12.0
@@ -15,6 +14,7 @@ require (
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/handlers v1.5.2
 	golang.org/x/sync v0.8.0
+	tailscale.com v1.74.1
 )
 
 require (
@@ -119,5 +119,4 @@ require (
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gvisor.dev/gvisor v0.0.0-20240722211153-64c016c92987 // indirect
-	tailscale.com v1.74.1 // indirect
 )
