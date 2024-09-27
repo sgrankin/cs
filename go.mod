@@ -5,10 +5,10 @@ go 1.23.0
 toolchain go1.23.1
 
 require (
-	github.com/alecthomas/assert/v2 v2.7.0
+	github.com/alecthomas/assert/v2 v2.11.0
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/crawshaw/httpts v0.0.0-20240917165501-a752d32068fe
-	github.com/evanw/esbuild v0.23.1
+	github.com/evanw/esbuild v0.24.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/goccy/go-yaml v1.12.0
 	github.com/google/go-cmp v0.6.0
