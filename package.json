@@ -4,6 +4,7 @@
   "devDependencies": {
     "@preact/signals": "1.2.3",
     "@types/hyperscript": "0.0.7",
+    "@types/jquery": "3.5.31",
     "@types/js-cookie": "2.1.0",
     "@types/node": "20.11.8",
     "bootstrap-select": "1.13.18",
