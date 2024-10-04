@@ -4,48 +4,45 @@
 -->
 
 {{define "layout" -}}
-<!DOCTYPE HTML
-    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+    <!DOCTYPE HTML
+            PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
 
-<head>
-    <title>{{.Title}}</title>
-    {{linkTag .Nonce "shortcut icon" "/static/favicon.ico" .AssetHashes}}
-    {{if .ScriptData}}
-    <script{{.Nonce}}>
-        window.scriptData = {{.ScriptData}};
-    </script>
-        {{end}}
+    <head>
+        <title>{{.Title}}</title>
+        {{linkTag "shortcut icon" "/static/favicon.ico" .AssetHashes}}
         {{ if .JSPath }}
-        {{ scriptTag .Nonce (print "/static/" .JSPath ".js") .AssetHashes}}
+            {{ scriptTag (print "/static/" .JSPath ".js") .AssetHashes}}
         {{ end }}
-        {{ linkTag .Nonce "stylesheet" (print "/static/" .CSSPath ".css") .AssetHashes}}
-        <link{{.Nonce}} rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml"
-            title="Stripe Code Search" />
-</head>
+        {{ linkTag "stylesheet" (print "/static/" .CSSPath ".css") .AssetHashes}}
+        <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml"
+              title="Stripe Code Search"/>
+    </head>
 
-<body>
+    <body>
     {{block "body" .}}{{end}}
     {{if .IncludeHeader}}
-    <footer id='header'>
-        {{with .Config.Templates.HeaderHTML}}
-        {{.}}
-        {{else}}
-        <ul>
-            <li><a href="/">search</a></li>
-            <li><a href="/about">about</a></li>
-            <li><a href="https://github.com/sgrankin/cs">source</a></li>
-            {{with .Config.Templates.Feedback.MailTo}}
-            <li><a id='feedbacklink' href="mailto:{{.}}">feedback</a></li>
+        <footer id='header'>
+            {{with .Config.Templates.HeaderHTML}}
+                {{.}}
+            {{else}}
+                <ul>
+                    <li><a href="/">search</a></li>
+                    <li><a href="/about">about</a></li>
+                    <li><a href="https://github.com/sgrankin/cs">source</a></li>
+                    {{with .Config.Templates.Feedback.MailTo}}
+                        <li><a id='feedbacklink' href="mailto:{{.}}">feedback</a></li>
+                    {{end}}
+                </ul>
             {{end}}
-        </ul>
-        {{end}}
-    </footer>
+        </footer>
     {{end}}
     {{with .Config.Templates.FooterHTML}}
-    {{.}}
+        {{.}}
     {{end}}
-</body>
-
-</html>
+    {{if .ScriptData}}
+        <script id="data" type="application/json">{{.ScriptData}}</script>
+    {{end}}
+    </body>
+    </html>
 {{end}}

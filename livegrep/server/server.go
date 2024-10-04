@@ -164,11 +164,6 @@ func (s *server) renderPage(w http.ResponseWriter, templateName string, pageData
 	pageData.Config = s.config
 	pageData.AssetHashes = s.AssetHashes
 
-	nonce := "" // custom nonce computation can go here
-	if nonce != "" {
-		pageData.Nonce = template.HTMLAttr(fmt.Sprintf(` nonce="%s"`, nonce))
-	}
-
 	buf := bytes.Buffer{}
 	err := t.ExecuteTemplate(&buf, templateName, pageData)
 	if err != nil {
@@ -193,5 +188,4 @@ type page struct {
 	Data          interface{}
 	Config        cs.ServeConfig
 	AssetHashes   map[string]string
-	Nonce         template.HTMLAttr // either `` or ` nonce="..."`
 }

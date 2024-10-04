@@ -17,23 +17,23 @@ import (
 //go:embed templates
 var templatesFS embed.FS
 
-func linkTag(nonce template.HTMLAttr, rel string, s string, m map[string]string) template.HTML {
+func linkTag(rel string, s string, m map[string]string) template.HTML {
 	hash := m[strings.TrimPrefix(s, "/")]
 	href := s + "?v=" + hash
 	integrity := "sha256-" + hash
 	return template.HTML(fmt.Sprintf(
-		`<link%s rel="%s" href="%s" integrity="%s" />`,
-		nonce, rel, href, integrity,
+		`<link rel="%s" href="%s" integrity="%s" />`,
+		rel, href, integrity,
 	))
 }
 
-func scriptTag(nonce template.HTMLAttr, s string, m map[string]string) template.HTML {
+func scriptTag(s string, m map[string]string) template.HTML {
 	hash := m[strings.TrimPrefix(s, "/")]
 	href := s + "?v=" + hash
 	integrity := "sha256-" + hash
 	return template.HTML(fmt.Sprintf(
-		`<script%s src="%s" integrity="%s" type="module"></script>`,
-		nonce, href, integrity,
+		`<script src="%s" integrity="%s" type="module" defer></script>`,
+		href, integrity,
 	))
 }
 

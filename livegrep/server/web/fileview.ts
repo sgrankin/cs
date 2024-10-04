@@ -344,5 +344,5 @@ function init(initData) {
 }
 
 jQuery(() => {
-    init(window.scriptData);
+    init(JSON.parse(document.getElementById("data").text));
 });
