@@ -144,13 +144,8 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 	}
 
 	reply.Info = &api.Stats{
-		RE2Time:     search.Stats.RE2Time,
-		GitTime:     search.Stats.GitTime,
-		SortTime:    search.Stats.SortTime,
-		IndexTime:   search.Stats.IndexTime,
-		AnalyzeTime: search.Stats.AnalyzeTime,
-		TotalTime:   int64(time.Since(start) / time.Millisecond),
-		ExitReason:  search.Stats.ExitReason.String(),
+		TotalTime:  int64(time.Since(start) / time.Millisecond),
+		ExitReason: search.Stats.ExitReason.String(),
 	}
 	return reply, nil
 }
@@ -202,29 +197,6 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 	}
 
 	// TODO: send an event span
-	// e := s.honey.NewEvent()
-	// reqid, ok := reqid.FromContext(ctx)
-	// if ok {
-	// 	e.AddField("request_id", reqid)
-	// }
-	// e.AddField("backend", backend.Id)
-	// e.AddField("query_line", q.Line)
-	// e.AddField("query_file", q.File)
-	// e.AddField("query_repo", q.Repo)
-	// e.AddField("query_foldcase", q.FoldCase)
-	// e.AddField("query_not_file", q.NotFile)
-	// e.AddField("query_not_repo", q.NotRepo)
-	// e.AddField("max_matches", q.MaxMatches)
-
-	// e.AddField("result_count", len(reply.Results))
-	// e.AddField("re2_time", reply.Info.RE2Time)
-	// e.AddField("git_time", reply.Info.GitTime)
-	// e.AddField("sort_time", reply.Info.SortTime)
-	// e.AddField("index_time", reply.Info.IndexTime)
-	// e.AddField("analyze_time", reply.Info.AnalyzeTime)
-
-	// e.AddField("exit_reason", reply.Info.ExitReason)
-	// e.Send()
 
 	log.Printf("responding success results=%d why=%s stats=%s",
 		len(reply.Results),

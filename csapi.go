@@ -90,7 +90,7 @@ const (
 )
 
 type SearchStats struct {
-	RE2Time, GitTime, SortTime, IndexTime, AnalyzeTime, TotalTime int64
+	TotalTime int64
 
 	ExitReason ExitReason
 }
