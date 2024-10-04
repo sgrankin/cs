@@ -6,12 +6,9 @@ package server
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
-	"io/fs"
 	"log"
 	"net/http"
 	texttemplate "text/template"
@@ -29,10 +26,9 @@ type server struct {
 	bk      map[string]cs.SearchIndex
 	bkOrder []string
 
-	Templates   map[string]*template.Template
-	OpenSearch  *texttemplate.Template
-	AssetHashes map[string]string
-	Layout      *template.Template
+	Templates  map[string]*template.Template
+	OpenSearch *texttemplate.Template
+	Layout     *template.Template
 }
 
 func New(cfg cs.ServeConfig, indexes []cs.SearchIndex) *server {
@@ -72,23 +68,6 @@ func (s *server) loadTemplates() {
 
 	p := "templates/opensearch.xml"
 	s.OpenSearch = texttemplate.Must(texttemplate.ParseFS(templatesFS, p))
-
-	s.AssetHashes = map[string]string{}
-	fs.WalkDir(staticFS, "static", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			panic(err) // TODO: log.fatal or something
-		}
-		if d.IsDir() {
-			return nil
-		}
-		bytes, err := staticFS.ReadFile(path)
-		if err != nil {
-			panic(err)
-		}
-		hash := sha256.Sum256(bytes)
-		s.AssetHashes[path] = base64.URLEncoding.EncodeToString(hash[:])
-		return nil
-	})
 }
 
 func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -99,7 +78,7 @@ func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.
 	s.renderPage(w, "about.html", &page{
 		Title:         "about",
 		IncludeHeader: true,
-		CSSPath:       "codesearch_ui",
+		CSSPath:       entrypointMeta["web/codesearch_ui.tsx"].CSS,
 	})
 }
 
@@ -162,7 +141,6 @@ func (s *server) renderPage(w http.ResponseWriter, templateName string, pageData
 	}
 
 	pageData.Config = s.config
-	pageData.AssetHashes = s.AssetHashes
 
 	buf := bytes.Buffer{}
 	err := t.ExecuteTemplate(&buf, templateName, pageData)
@@ -187,5 +165,11 @@ type page struct {
 	IncludeHeader bool
 	Data          interface{}
 	Config        cs.ServeConfig
-	AssetHashes   map[string]string
+	Nonce         template.HTMLAttr // either `` or ` nonce="..."`
 }
+
+type EntrypointMeta struct {
+	JS, CSS string
+}
+
+type EntrypointMetaFile map[string]EntrypointMeta

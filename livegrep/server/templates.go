@@ -4,12 +4,10 @@
 package server
 
 import (
-	"bufio"
 	"embed"
 	"fmt"
 	"html/template"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -17,13 +15,10 @@ import (
 //go:embed templates
 var templatesFS embed.FS
 
-func linkTag(rel string, s string, m map[string]string) template.HTML {
-	hash := m[strings.TrimPrefix(s, "/")]
-	href := s + "?v=" + hash
-	integrity := "sha256-" + hash
+func linkTag(rel string, href string) template.HTML {
 	return template.HTML(fmt.Sprintf(
-		`<link rel="%s" href="%s" integrity="%s" />`,
-		rel, href, integrity,
+		`<link rel="%s" href="%s" >`,
+		rel, href,
 	))
 }
 
@@ -61,29 +56,5 @@ func LoadTemplates(templates map[string]*template.Template) error {
 		t = template.Must(t.ParseFS(templatesFS, path))
 		templates[filepath.Base(path)] = t
 	}
-	return nil
-}
-
-func LoadAssetHashes(assetHashFile string, assetHashMap map[string]string) error {
-	// XXX do we want this?
-	file, err := os.Open(assetHashFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	for k := range assetHashMap {
-		delete(assetHashMap, k)
-	}
-
-	for scanner.Scan() {
-		pieces := strings.SplitN(scanner.Text(), "  ", 2)
-		hash := pieces[0]
-		asset := pieces[1]
-		(assetHashMap)[asset] = hash
-	}
-
 	return nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -34,11 +35,48 @@ func main() {
 	if len(res.Errors) > 0 {
 		os.Exit(1)
 	}
+	if err := writeMeta(res.Metafile); err != nil {
+		log.Fatalf("Failed writing metafile: %v", err)
+	}
+
 	if *analyze {
 		fmt.Print(api.AnalyzeMetafile(res.Metafile, api.AnalyzeMetafileOptions{
 			Color: true,
 		}))
 	}
+}
+
+type EntrypointMeta struct {
+	JS, CSS string
+}
+
+type EntrypointMetaFile map[string]EntrypointMeta
+
+func writeMeta(esMetafile string) error {
+	var metafile struct {
+		Outputs map[string]struct {
+			EntryPoint string `json:"entryPoint"`
+			CSSBundle  string `json:"cssBundle"`
+		} `json:"outputs"`
+	}
+	if err := json.Unmarshal([]byte(esMetafile), &metafile); err != nil {
+		return err
+	}
+
+	entryMap := EntrypointMetaFile{}
+	for path, out := range metafile.Outputs {
+		if len(out.EntryPoint) > 0 {
+			entryMap[out.EntryPoint] = EntrypointMeta{
+				JS:  path,
+				CSS: out.CSSBundle,
+			}
+		}
+	}
+	data, err := json.Marshal(entryMap)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile("static/meta.json", data, 0o666)
 }
 
 func buildOpts(debug bool) api.BuildOptions {
@@ -47,12 +85,13 @@ func buildOpts(debug bool) api.BuildOptions {
 			"web/codesearch_ui.tsx",
 			"web/fileview.ts",
 		},
-		Outdir:    "static",
-		Bundle:    true,
-		Write:     true,
-		Format:    api.FormatESModule,
-		Platform:  api.PlatformBrowser,
-		Splitting: true,
+		EntryNames: "[dir]/[name]-[hash]",
+		Outdir:     "static",
+		Bundle:     true,
+		Write:      true,
+		Format:     api.FormatESModule,
+		Platform:   api.PlatformBrowser,
+		Splitting:  true,
 		Loader: map[string]api.Loader{
 			".eot":   api.LoaderDataURL,
 			".svg":   api.LoaderDataURL,

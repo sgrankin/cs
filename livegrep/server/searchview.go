@@ -36,13 +36,13 @@ func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends
 
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	backend := r.PathValue("backend")
-	script_data, backends, sampleRepo := s.makeSearchScriptData()
+	scriptData, backends, sampleRepo := s.makeSearchScriptData()
 
 	s.renderPage(w, "index.html", &page{
 		Title:         "code search",
-		JSPath:        "codesearch_ui",
-		CSSPath:       "codesearch_ui",
-		ScriptData:    script_data,
+		JSPath:        entrypointMeta["web/codesearch_ui.tsx"].JS,
+		CSSPath:       entrypointMeta["web/codesearch_ui.tsx"].CSS,
+		ScriptData:    scriptData,
 		IncludeHeader: true,
 		Data: struct {
 			Backend    string

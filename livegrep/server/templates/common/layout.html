@@ -1,22 +1,23 @@
-<!--
- Copyright 2011-2013 Nelson Elhage
- SPDX-License-Identifier: BSD-2-Clause
--->
+{{/*
+Copyright (C) 2024 Sergey Grankin
+Copyright 2011-2013 Nelson Elhage
+SPDX-License-Identifier: BSD-2-Clause
+*/}}
 
 {{define "layout" -}}
+    {{- /*gotype: sgrankin.dev/cs/livegrep/server.page*/ -}}
     <!DOCTYPE HTML
             PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml">
-
     <head>
         <title>{{.Title}}</title>
-        {{linkTag "shortcut icon" "/static/favicon.ico" .AssetHashes}}
+        <link rel="search" type="application/opensearchdescription+xml"
+              href="/opensearch.xml" title="Code Search"/>
+        <link rel="shortcut icon" href="/static/favicon.ico"/>
         {{ if .JSPath }}
-            {{ scriptTag (print "/static/" .JSPath ".js") .AssetHashes}}
+            <script src="/{{.JSPath}}" type="module" defer></script>
         {{ end }}
-        {{ linkTag "stylesheet" (print "/static/" .CSSPath ".css") .AssetHashes}}
-        <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml"
-              title="Stripe Code Search"/>
+        <link rel="stylesheet" href="/{{.CSSPath}}"/>
     </head>
 
     <body>
