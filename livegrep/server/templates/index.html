@@ -2,81 +2,156 @@
  Copyright 2011-2013 Nelson Elhage
  SPDX-License-Identifier: BSD-2-Clause
 -->
+{{- /*gotype: sgrankin.dev/cs/livegrep/server.page*/ -}}
 {{- template "layout" .}} {{define "body"}}
-<div id="searcharea">
-	<div class="search-inputs">
-		<div class="prefixed-input filter-code">
-			<label class="prefix-label" for="searchbox">Query:</label>
-			<input type="text" id="searchbox" tabindex="1" required="required" />
-		</div>
-		<div id="regex-error">
-			<span id="errortext"></span>
-		</div>
+    {{with .Data}}
+        {{- /*gotype: sgrankin.dev/cs/livegrep/server.searchPageData*/ -}}
+        <div id="searcharea">
+            <div class="search-inputs">
+                <div class="prefixed-input filter-code">
+                    <label class="prefix-label" for="searchbox">Query:</label>
+                    <input type="text" id="searchbox" tabindex="1" required="required"/>
+                </div>
+                <div id="regex-error">
+                    {{with .SearchErr -}}
+                        <span id="errortext">{{.Error}}</span>
+                    {{- end}}
+                </div>
 
-		<div class="query-hint">
-			Special terms:
-			<code>path:</code>
-			<code>-path:</code>
-			<code>repo:</code>
-			<code>-repo:</code>
-			<code>max_matches:</code>
-		</div>
-	</div>
+                <div class="query-hint">
+                    Special terms:
+                    <code>path:</code>
+                    <code>-path:</code>
+                    <code>repo:</code>
+                    <code>-repo:</code>
+                    <code>max_matches:</code>
+                </div>
+            </div>
 
-	<div class="search-options">
-		<div class="search-option">
-			<span class="label">Case:</span>
-			<input type="radio" name="fold_case" value="false" id="case-match" tabindex="3" />
-			<label for="case-match">match</label>
-			<input type="radio" name="fold_case" value="auto" id="case-auto" tabindex="4" />
-			<label for="case-auto">auto</label>
-			[<span class="tooltip-target"
-				>?
-				<div class="tooltip">Case-sensitive if the query contains capital letters</div></span
-			>]
-			<input type="radio" name="fold_case" value="true" id="case-ignore" tabindex="5" />
-			<label for="case-ignore">ignore</label>
-		</div>
+            <div class="search-options">
+                <div class="search-option">
+                    <span class="label">Case:</span>
+                    <input type="radio" name="fold_case" value="false" id="case-match" tabindex="3"/>
+                    <label for="case-match">match</label>
+                    <input type="radio" name="fold_case" value="auto" id="case-auto" tabindex="4"/>
+                    <label for="case-auto">auto</label>
+                    [<span class="tooltip-target">?
+                        <div class="tooltip">Case-sensitive if the query contains capital letters</div>
+                    </span>]
+                    <input type="radio" name="fold_case" value="true" id="case-ignore" tabindex="5"/>
+                    <label for="case-ignore">ignore</label>
+                </div>
 
-		<div class="search-option">
-			<span class="label">Regex:</span>
-			<input type="checkbox" name="regex" id="regex" tabindex="6" />
-			<label for="regex">on</label>
-		</div>
+                <div class="search-option">
+                    <span class="label">Regex:</span>
+                    <input type="checkbox" name="regex" id="regex" tabindex="6"/>
+                    <label for="regex">on</label>
+                </div>
 
-		{{if gt (.Data.Backends | len) 1 }}
-		<div class="search-option">
-			<span class="label">Search:</span>
-			<select id="backend" tabindex="7">
-				{{- $current := .Data.Backend }}
-				{{- range .Data.Backends -}}
-					<option value="{{.Name}}" {{if eq .Name $current}}selected{{end}}>{{.Name}}</option>
-				{{- end -}}
-			</select>
-		</div>
-		{{else}} {{with index .Data.Backends 0}}
-		<select id="backend" style="display: none">
-			<option value="{{.Name}}">{{.Name}}</option>
-		</select>
-		{{if ne (.Name) "-"}}
-		<div class="search-option">
-			<span class="label">Searching:</span>
-			{{.Name}}
-		</div>
-		{{end}} {{end}} {{end}}
+                {{if gt (.Backends | len) 1 }}
+                    <div class="search-option">
+                        <span class="label">Search:</span>
+                        <select id="backend" tabindex="7">
+                            {{- $currentBackend := .Backend }}
+                            {{- range .Backends -}}
+                                <option value="{{.Name}}" {{if eq .Name $currentBackend}}selected{{end}}>{{.Name}}</option>
+                            {{- end -}}
+                        </select>
+                    </div>
+                {{else}} {{with index .Backends 0}}
+                    <select id="backend" style="display: none">
+                        <option value="{{.Name}}">{{.Name}}</option>
+                    </select>
+                    {{if ne (.Name) "-"}}
+                        <div class="search-option">
+                            <span class="label">Searching:</span>
+                            {{.Name}}
+                        </div>
+                    {{end}} {{end}} {{end}}
 
-		<div class="search-option">
-			<span class="label">Repo:</span>
-			<select id="repos" multiple></select>
-		</div>
+                <div class="search-option">
+                    <span class="label">Repo:</span>
+                    <select id="repos" multiple></select>
+                </div>
 
-		<div class="search-option">
-			<span class="label">Context:</span>
-			<input type="checkbox" name="context" id="context" tabindex="8" checked="CHECKED" />
-			<label for="context">on</label>
-		</div>
-	</div>
-</div>
+                <div class="search-option">
+                    <span class="label">Context:</span>
+                    <input type="checkbox" name="context" id="context" tabindex="8" checked="CHECKED"/>
+                    <label for="context">on</label>
+                </div>
+            </div>
+        </div>
 
-<div id="resultbox"></div>
+        <div id="resultbox">
+            <div id="resultarea">
+                {{- $backend := .Backend }}
+                {{with .SearchData }}
+                    <div id="countarea">
+                        {{$count := len .FileResults | printf "%d"}}
+                        {{if not .Query.FilenameOnly }}
+                            {{ $count = len .Results | printf "%d"}}
+                        {{end}}
+                        {{if ne .Info.ExitReason "NONE"}}
+                            $count = $count + "+"
+                        {{end}}
+
+                        <span id="numresults">{{.ResultCount}}</span> matches
+                        <span id="searchtimebox">
+                        <span class="label"> in </span>
+                        <span id="searchtime">{{.Info.TotalTime}} ms</span>
+                    </span>
+                    </div>
+                    {{$classes := ""}}
+                    {{if le .Query.ContextLines 0}}
+                        {{$classes = "no-context"}}
+                    {{end}}
+                    <div class="{{$classes}}" id="results" tabIndex=-1 style="outline: none" onKeyDown="handleKey()">
+                        {{if and (len .Extensions | lt 0) (not .Query.File)}}
+                            <div class="file-extensions">
+                                Narrow to:
+                                {{- range .Extensions -}}
+                                    <button className="file-extension" onClick="limitToExtension()">{{- . -}}</button>
+                                {{- end -}}
+                            </div>
+                        {{end}}
+                        <div class="path-results">
+                            {{ $files := .ReplySearch.FileResults}}
+                            {{ if not .Query.FilenameOnly }}
+                                {{ $files = slice $files 0 (min (len $files) 10) }}
+                            {{ end }}
+                            {{ range $files }}
+                                <div class="filename-match">
+                                    <a className="label header result-path" href={{viewURL $backend .Tree .Version .Path -1}}>
+                                        <span className="repo">{{- .Tree -}}:</span>
+                                        <span className="version">{{- slice .Version 0 8 -}}:</span>
+                                        {{- slice .Path 0 (index .Bounds 0) -}}
+                                        <span className="matchstr">{{- slice .Path (index .Bounds 0) (index .Bounds 1) -}}</span>
+                                        {{- slice .Path (index .Bounds 1) -}}
+                                    </a>
+                                </div>
+                            {{ end }}
+                        </div>
+                        {{range .ReplySearch.Results}}
+                            <div className="file-group">
+                                <div className="header">
+                                <span className="header-path">
+                                <a className="result-path" href={{viewURL $backend .Tree .Version .Path -1}}>
+                                    <span className="repo">{{.Tree}}:</span>
+                                    <span className="version">{{slice .Version 0 8}}:</span>
+                                    {{dir .Path}}
+                                    <span className="filename">{{base .Path}}</span>
+                                </a>
+                                <div className="header-links">
+            {{/*						{renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path)}*/}}
+                                </div>
+                            </span>
+                                </div>
+                                {{/*                            {group.matched.map((match) => MatchView({path: group.path, match}))}*/}}
+                            </div>
+                        {{end}}
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    {{end}}
 {{end}}

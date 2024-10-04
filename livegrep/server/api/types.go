@@ -22,13 +22,8 @@ type ReplySearch struct {
 }
 
 type Stats struct {
-	RE2Time     int64  `json:"re2_time"`
-	GitTime     int64  `json:"git_time"`
-	SortTime    int64  `json:"sort_time"`
-	IndexTime   int64  `json:"index_time"`
-	AnalyzeTime int64  `json:"analyze_time"`
-	TotalTime   int64  `json:"total_time"`
-	ExitReason  string `json:"why"`
+	TotalTime  int64  `json:"total_time"`
+	ExitReason string `json:"why"`
 }
 
 type Result struct {

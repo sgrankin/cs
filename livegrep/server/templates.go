@@ -4,14 +4,17 @@
 package server
 
 import (
-	"bufio"
 	"embed"
 	"fmt"
 	"html/template"
 	"io/fs"
-	"os"
+	"log"
+	"maps"
+	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/Masterminds/sprig"
 )
 
 //go:embed templates
@@ -37,19 +40,35 @@ func scriptTag(nonce template.HTMLAttr, s string, m map[string]string) template.
 	))
 }
 
-func getFuncs() map[string]interface{} {
+func viewURL(backend, tree, version, p string, lno int) string {
+	p = path.Clean(p)
+	url := fmt.Sprintf("/view/%s/%s@%s/+/%s", backend, tree, version, p)
+	if lno >= 0 {
+		url += fmt.Sprintf("#L%d", lno)
+	}
+	return url
+}
+
+func templateFns() map[string]interface{} {
 	return map[string]interface{}{
 		"loop":      func(n int) []struct{} { return make([]struct{}, n) },
 		"toLineNum": func(n int) int { return n + 1 },
 		"linkTag":   linkTag,
 		"scriptTag": scriptTag,
+		"viewURL":   viewURL,
+		//"min":       func(xs ...int) int { return slices.Min(xs) },
 	}
 }
 
 func LoadTemplates(templates map[string]*template.Template) error {
 	pattern := "templates/common/*.html"
-	common := template.New("").Funcs(getFuncs())
-	common = template.Must(common.ParseFS(templatesFS, pattern))
+	fns := sprig.FuncMap()
+	delete(fns, "slice") // Sprig slice can't handle strings :shrug:
+	maps.Copy(fns, templateFns())
+	common := template.Must(template.
+		New("").
+		Funcs(fns).
+		ParseFS(templatesFS, pattern))
 
 	pattern = "templates/*.html"
 	paths, err := fs.Glob(templatesFS, pattern)
@@ -58,32 +77,9 @@ func LoadTemplates(templates map[string]*template.Template) error {
 	}
 	for _, path := range paths {
 		t := template.Must(common.Clone())
+		log.Printf("loading %s", path)
 		t = template.Must(t.ParseFS(templatesFS, path))
 		templates[filepath.Base(path)] = t
 	}
-	return nil
-}
-
-func LoadAssetHashes(assetHashFile string, assetHashMap map[string]string) error {
-	// XXX do we want this?
-	file, err := os.Open(assetHashFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	for k := range assetHashMap {
-		delete(assetHashMap, k)
-	}
-
-	for scanner.Scan() {
-		pieces := strings.SplitN(scanner.Text(), "  ", 2)
-		hash := pieces[0]
-		asset := pieces[1]
-		(assetHashMap)[asset] = hash
-	}
-
 	return nil
 }

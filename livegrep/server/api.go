@@ -78,6 +78,10 @@ func extractQuery(r *http.Request) (cs.Query, bool, error) {
 		}
 	}
 
+	if context, ok := params["context"]; ok && context[0] == "false" {
+		query.ContextLines = -1
+	}
+
 	return query, regex, err
 }
 
@@ -144,13 +148,8 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 	}
 
 	reply.Info = &api.Stats{
-		RE2Time:     search.Stats.RE2Time,
-		GitTime:     search.Stats.GitTime,
-		SortTime:    search.Stats.SortTime,
-		IndexTime:   search.Stats.IndexTime,
-		AnalyzeTime: search.Stats.AnalyzeTime,
-		TotalTime:   int64(time.Since(start) / time.Millisecond),
-		ExitReason:  search.Stats.ExitReason.String(),
+		TotalTime:  int64(time.Since(start) / time.Millisecond),
+		ExitReason: search.Stats.ExitReason.String(),
 	}
 	return reply, nil
 }
