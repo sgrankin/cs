@@ -8,7 +8,7 @@ import jQuery from "jquery";
 export namespace Codesearch {
     interface Delegate {
         OnConnect: () => void;
-        SearchDone: (id: number, file_matches, matches, {time, search_type, why}) => void;
+        SearchDone: (id: number, reply: any) => void;
         SearchFailed: (arg0: any, arg1: string) => void;
     }
 
@@ -56,12 +56,7 @@ export namespace Codesearch {
                 },
                 dataType: "json",
             });
-            const elapsed = Date.now() - start;
-            delegate.SearchDone(opts.id, data.file_results, data.results, {
-                time: elapsed,
-                search_type: data.search_type,
-                why: data.info.why,
-            });
+            delegate.SearchDone(opts.id, data);
         } catch (err) {
             let xhr = err as jQuery.jqXHR;
             console.log(xhr);

@@ -201,9 +201,9 @@ class SearchState {
 
     readonly context: boolean = true;
     readonly error: string | undefined;
-    readonly searchType: string = "";
     readonly time: number | undefined;
     readonly why: string | undefined;
+    readonly filenameOnly: boolean | undefined;
 
     viewURL() {
         var current = this.searchMap[this.displayedSearch];
@@ -239,6 +239,7 @@ class SearchState {
         draft.error = undefined;
         draft.time = undefined;
         draft.why = undefined;
+        draft.filenameOnly = undefined;
         draft.matches = new SearchResultSet();
         draft.fileMatches = [];
         for (let k in draft.searchMap) {
@@ -287,30 +288,25 @@ class SearchState {
         return this;
     }
 
-    OnSearchDone(
-        search: number,
-        file_matches: FileMatchResult[],
-        matches: MatchResult[],
-        {time, search_type, why}: { time: number; search_type: string; why: string },
-    ): SearchState {
-        if (search < this.displayedSearch) {
+    OnSearchDone(searchID: number, reply: any): SearchState {
+        if (searchID < this.displayedSearch) {
             return this;
         }
         return produce(this, (next) => {
-            if (next.displayedSearch < search) {
-                next.displayedSearch = search;
+            if (next.displayedSearch < searchID) {
+                next.displayedSearch = searchID;
                 SearchState.reset(next);
             }
-            const backend = next.searchMap[search].backend;
-            for (const fm of file_matches) {
+            const backend = next.searchMap[searchID].backend;
+            for (const fm of reply.file_results) {
                 next.fileMatches.push(new FileMatch({...fm, backend}));
             }
-            for (const m of matches) {
+            for (const m of reply.results) {
                 next.matches.addMatch({...m, backend});
             }
-            next.time = time;
-            next.searchType = search_type;
-            next.why = why;
+            next.time = reply.info.total_time;
+            next.why = reply.info.why;
+            next.filenameOnly = reply.query.FilenameOnly;
         });
     }
 }
@@ -493,7 +489,7 @@ function MatchesView({model}: { model: SearchState }) {
     var count = 0;
     let pathResults: JSX.Element[] = [];
     for (const match of model.fileMatches) {
-        if (model.searchType == "filename_only" || count < 10) {
+        if (model.filenameOnly || count < 10) {
             pathResults.push(FileMatchView({match}));
         }
         countExtension(match.m.path);
@@ -644,7 +640,7 @@ function ResultView({model}: { model: SearchState }) {
 
 function CountView({model}: { model: SearchState }) {
     var num_results = "";
-    if (model.searchType == "filename_only") {
+    if (model.filenameOnly) {
         num_results += model.fileMatches.length;
     } else {
         num_results += model.matches.numMatches();
@@ -1000,8 +996,8 @@ namespace CodesearchUI {
         state.value = state.value.OnSearchError(search, error);
     }
 
-    export function SearchDone(search, file_matches, matches, meta: { time; search_type; why }) {
-        state.value = state.value.OnSearchDone(search, file_matches, matches, meta);
+    export function SearchDone(search, reply) {
+        state.value = state.value.OnSearchDone(search, reply);
     }
 }
 

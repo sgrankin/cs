@@ -3,6 +3,8 @@
 
 package api
 
+import "sgrankin.dev/cs"
+
 type InnerError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -19,6 +21,7 @@ type ReplySearch struct {
 	Results     []*Result     `json:"results"`
 	FileResults []*FileResult `json:"file_results"`
 	SearchType  string        `json:"search_type"`
+	Query       cs.Query      `json:"query"`
 }
 
 type Stats struct {

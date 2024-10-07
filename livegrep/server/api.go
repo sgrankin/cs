@@ -91,15 +91,12 @@ func stringSlice(ss []string) []string {
 }
 
 func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Query) (*api.ReplySearch, error) {
-	var search *cs.CodeSearchResult
-	var err error
-
 	start := time.Now()
 
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	search, err = backend.Search(ctx, *q)
+	search, err := backend.Search(ctx, *q)
 	if err != nil {
 		log.Printf("error talking to backend err=%s", err)
 		return nil, err
@@ -195,6 +192,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		writeQueryError(w, err)
 		return
 	}
+	reply.Query = q
 
 	// TODO: send an event span
 
