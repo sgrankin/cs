@@ -44,7 +44,7 @@ func New(cfg cs.ServeConfig, indexes []cs.SearchIndex) *server {
 	}
 
 	mux := http.NewServeMux()
-	addRoutes(mux, srv)
+	addRoutes(mux, srv, srv)
 
 	var h http.Handler = mux
 	h = handlers.CompressHandler(h)

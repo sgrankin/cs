@@ -33,8 +33,8 @@ type Query struct {
 	Line string // Freeform regexp
 
 	// File & Repo inclusion/exclusion regexps:
-	File, NotFile                []string
-	Repo, NotRepo, Tags, NotTags string
+	File, NotFile []string
+	Repo, NotRepo []string
 
 	RepoFilter []string // Additional exact-match repository filter
 

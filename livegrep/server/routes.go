@@ -10,9 +10,10 @@ import (
 
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/reqid"
+	"sgrankin.dev/cs/livegrep/server/serverconnect"
 )
 
-func addRoutes(mux *http.ServeMux, srv *server) {
+func addRoutes(mux *http.ServeMux, srv *server, svc serverconnect.SearchServiceHandler) {
 	// TODO? pass dependencies explicitly instead of just `srv`
 	mux.Handle("GET /{$}", ctxHandlerFunc(srv.ServeRoot))
 	mux.Handle("GET /about", ctxHandlerFunc(srv.ServeAbout))
@@ -32,6 +33,10 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
 	mux.HandleFunc("GET /debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("GET /debug/pprof/trace", pprof.Trace)
+
+	apiMux := http.NewServeMux()
+	apiMux.Handle(serverconnect.NewSearchServiceHandler(svc))
+	mux.Handle("/api/v2", apiMux)
 }
 
 // Handler is an http.HandlerFunc with an additional Context param.

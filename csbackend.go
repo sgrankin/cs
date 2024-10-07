@@ -118,7 +118,7 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 	// - limiting parallelism
 	// - canceling the search once we have sufficient results.
 
-	repoFilter, err := newRegexpFilter(q.Repo, q.NotRepo)
+	repoFilter, err := newRegexpFilter(strings.Join(q.Repo, "|"), strings.Join(q.NotRepo, "|"))
 	if err != nil {
 		return nil, err
 	}

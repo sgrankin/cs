@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+message Query {
+  string index = 1; // Which index to search.
+  string line = 2; // Query line.  May include special keywords.
+  bool regex = 12;// Use regex matching for query text.
+
+  repeated string select_files = 3; // Include files (regex).
+  repeated string reject_files = 4; // Exclude files (regex).
+  repeated string select_repos = 5; // Include repos (regex).
+  repeated string reject_repos = 6; // Exclude repos (regex)
+
+  repeated string only_repos = 7; // Include only these repositories (exact-match).
+
+  optional bool fold_case = 8; // If set, override automatic case folding.
+
+  int32 max_matches = 9; // Max matches to return.
+  bool only_filename = 10; // Only search (and return) filename matches.
+  int32 context_lines = 11; // Include this many context lines before & after the match.
+}
+
+message SearchResponse {
+  Query query = 1;
+  SearchInfo info = 2;
+  repeated Match matches = 3;
+  repeated FileMatch file_matches = 4;
+}
+
+message SearchInfo {
+  int64 total_time = 1;
+  string exit_reason = 2;
+}
+
+message Match {
+  File file = 1;
+  repeated LineMatch lines = 2;
+}
+
+message File {
+  string tree = 1;
+  string version = 2;
+  string path = 3;
+}
+
+message Bounds {
+  uint32 start = 1;
+  uint32 end = 2;
+}
+
+message LineMatch {
+  int32 line_number = 1;
+  string line = 2;
+  // Match bounds.  Context lines will have none.
+  repeated Bounds bounds = 3;
+}
+
+message FileMatch {
+  File file = 1;
+  // Match bounds within file.path.
+  repeated Bounds bounds = 2;
+}
+
+service SearchService {
+  rpc Search(Query) returns (SearchResponse){}
+}

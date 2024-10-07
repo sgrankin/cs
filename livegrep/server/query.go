@@ -8,11 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
-	"sgrankin.dev/cs"
+	"google.golang.org/protobuf/proto"
 )
 
 var pieceRE = regexp.MustCompile(`\[|\(|(?:^([a-zA-Z0-9-_]+):|\\.)| `)
@@ -24,43 +25,20 @@ var knownTags = map[string]bool{
 	"-path":       true,
 	"repo":        true,
 	"-repo":       true,
-	"tags":        true,
-	"-tags":       true,
 	"case":        true,
 	"lit":         true,
 	"max_matches": true,
 }
 
-func onlyOneSynonym(ops map[string]string, op1 string, op2 string) (string, error) {
-	if ops[op1] != "" && ops[op2] != "" {
-		return "", fmt.Errorf("cannot provide both %s: and %s:, because they are synonyms", op1, op2)
-	}
-	if ops[op1] != "" {
-		return ops[op1], nil
-	}
-	return ops[op2], nil
-}
+func parseQueryString(q string, regex bool) map[string][]string {
+	q = strings.TrimSpace(q)
 
-func ensureSingleValue(ops map[string][]string, key string) (string, error) {
-	if len(ops[key]) > 1 {
-		return "", fmt.Errorf("multiple values for %s", key)
-	}
-	if len(ops[key]) == 1 {
-		return ops[key][0], nil
-	}
-	return "", nil
-}
-
-func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
-	var out cs.Query
-
-	ops := make(map[string][]string)
+	ops := map[string][]string{}
 	key := ""
 	term := ""
-	q := strings.TrimSpace(query)
+	globalRegex := regex
 	inRegex := globalRegex
 	justGotSpace := true
-
 	for {
 		m := pieceRE.FindStringSubmatchIndex(q)
 		if m == nil {
@@ -148,34 +126,27 @@ func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
 		}
 		justGotSpace = (match == " ")
 	}
+	return ops
+}
+
+// expandQueryParams scans the query text for special keywords and updates the rest of the query attributes accordingly.
+func expandQueryParams(query *Query) error {
+	globalRegex := query.Regex
+	ops := parseQueryString(query.Line, query.Regex)
 
 	// This is a special case to provide a better error message,
 	// since the main search term is represented by the "" op.
 	if len(ops[""]) > 1 {
-		return out, fmt.Errorf("main search term must be contiguous")
+		return fmt.Errorf("main search term must be contiguous")
 	}
 
 	// Handle synonyms
-	out.File = append(ops["file"], ops["path"]...)
-	out.NotFile = append(ops["-file"], ops["-path"]...)
+	query.SelectFiles = slices.Concat(query.SelectFiles, ops["file"], ops["path"])
+	query.RejectFiles = slices.Concat(query.RejectFiles, ops["-file"], ops["-path"])
 
-	var err error
-	out.Repo, err = ensureSingleValue(ops, "repo")
-	if err != nil {
-		return out, err
-	}
-	out.Tags, err = ensureSingleValue(ops, "tags")
-	if err != nil {
-		return out, err
-	}
-	out.NotRepo, err = ensureSingleValue(ops, "-repo")
-	if err != nil {
-		return out, err
-	}
-	out.NotTags, err = ensureSingleValue(ops, "-tags")
-	if err != nil {
-		return out, err
-	}
+	query.SelectRepos = slices.Concat(query.SelectRepos, ops["repo"])
+	query.RejectRepos = slices.Concat(query.SelectRepos, ops["-repo"])
+
 	var bits []string
 	for _, k := range []string{"", "case", "lit"} {
 		if _, ok := ops[k]; !ok {
@@ -191,51 +162,49 @@ func ParseQuery(query string, globalRegex bool) (cs.Query, error) {
 	}
 
 	if len(bits) > 1 {
-		return out, errors.New("you cannot provide multiple of case:, lit:, and a bare regex")
+		return fmt.Errorf("you cannot provide multiple of case:, lit:, and a bare regex")
 	}
 
 	if len(bits) > 0 {
-		out.Line = bits[0]
+		query.Line = bits[0]
 	}
 
 	if !globalRegex {
-		for i, f := range out.File {
-			out.File[i] = regexp.QuoteMeta(f)
+		quoteSlice := func(xs []string) {
+			for i, x := range xs {
+				xs[i] = regexp.QuoteMeta(x)
+			}
 		}
-		for i, f := range out.NotFile {
-			out.NotFile[i] = regexp.QuoteMeta(f)
-		}
-		out.Repo = regexp.QuoteMeta(out.Repo)
-		out.NotRepo = regexp.QuoteMeta(out.NotRepo)
+		quoteSlice(query.SelectFiles)
+		quoteSlice(query.RejectFiles)
+		quoteSlice(query.SelectRepos)
+		quoteSlice(query.RejectRepos)
 	}
 
-	if len(out.Line) == 0 && len(out.File) != 0 {
+	if len(query.Line) == 0 && len(query.SelectFiles) != 0 {
 		// setting Line for a FilenameOnly search is a slight hack.
 		// it has compatibility with older backend code that expects a
 		// single filename regex, but a newer backend will use it to
 		// determine which match is highlighted.
-		out.Line = out.File[0]
-		out.FilenameOnly = true
+		query.Line = query.SelectFiles[0]
+		query.OnlyFilename = true
 	}
 
 	if _, ok := ops["case"]; ok {
-		out.FoldCase = false
+		query.FoldCase = proto.Bool(true)
 	} else if _, ok := ops["lit"]; ok {
-		out.FoldCase = false
-	} else {
-		out.FoldCase = !strings.ContainsAny(out.Line, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		query.FoldCase = proto.Bool(true)
+	} else if query.FoldCase == nil {
+		query.FoldCase = proto.Bool(!strings.ContainsAny(query.Line, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
 	}
 	if v, ok := ops["max_matches"]; ok && v[0] != "" {
 		v := v[0]
 		i, err := strconv.Atoi(v)
 		if err == nil {
-			out.MaxMatches = i
+			query.MaxMatches = int32(i)
 		} else {
-			return out, errors.New("value given to max_matches: must be a valid integer")
+			return errors.New("value given to max_matches: must be a valid integer")
 		}
-	} else {
-		out.MaxMatches = 0
 	}
-
-	return out, nil
+	return nil
 }

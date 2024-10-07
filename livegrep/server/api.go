@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"connectrpc.com/connect"
+
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/api"
 )
@@ -90,64 +92,10 @@ func stringSlice(ss []string) []string {
 	return []string{}
 }
 
-func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Query) (*api.ReplySearch, error) {
-	start := time.Now()
-
+func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	search, err := backend.Search(ctx, *q)
-	if err != nil {
-		log.Printf("error talking to backend err=%s", err)
-		return nil, err
-	}
-
-	reply := &api.ReplySearch{
-		Results:     make([]*api.Result, 0),
-		FileResults: make([]*api.FileResult, 0),
-		SearchType:  "normal",
-	}
-
-	if q.FilenameOnly {
-		reply.SearchType = "filename_only"
-	}
-
-	for _, r := range search.Results {
-		lines := []api.LineResult{}
-		for _, r := range r.Lines {
-			lines = append(lines, api.LineResult{
-				LineNumber:    int(r.LineNumber),
-				ContextBefore: stringSlice(r.ContextBefore),
-				ContextAfter:  stringSlice(r.ContextAfter),
-				Bounds:        [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
-				Line:          r.Line,
-			})
-		}
-		reply.Results = append(reply.Results, &api.Result{
-			Tree:    r.File.Tree,
-			Version: r.File.Version,
-			Path:    r.File.Path,
-			Lines:   lines,
-		})
-	}
-
-	for _, r := range search.FileResults {
-		reply.FileResults = append(reply.FileResults, &api.FileResult{
-			Tree:    r.File.Tree,
-			Version: r.File.Version,
-			Path:    r.File.Path,
-			Bounds:  [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
-		})
-	}
-
-	reply.Info = &api.Stats{
-		TotalTime:  int64(time.Since(start) / time.Millisecond),
-		ExitReason: search.Stats.ExitReason.String(),
-	}
-	return reply, nil
-}
-
-func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	backendName := r.PathValue("backend")
 	var backend cs.SearchIndex
 	if backendName != "" {
@@ -202,4 +150,119 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		asJSON{reply.Info})
 
 	replyJSON(w, 200, reply)
+}
+
+func (s *server) Search(ctx context.Context, query *connect.Request[Query]) (*connect.Response[SearchResponse], error) {
+	q := query.Msg
+	backendName := q.Index
+	var backend cs.SearchIndex
+	if backendName != "" {
+		backend = s.bk[backendName]
+		if backend == nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unknown backend: %s", backendName))
+		}
+	} else {
+		for _, backend = range s.bk {
+			break // Pick a random one.
+		}
+	}
+
+	if err := expandQueryParams(q); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
+	if q.Line == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("match string not specified"))
+	}
+
+	if q.MaxMatches == 0 {
+		q.MaxMatches = int32(s.config.DefaultMaxMatches)
+	}
+	if q.ContextLines == 0 {
+		q.ContextLines = 3
+	}
+
+	reply, err := s.doSearch(ctx, backend, q)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	reply.Query = q
+
+	// TODO: send an event span
+
+	log.Printf("responding success results=%d why=%s stats=%s",
+		len(reply.Results),
+		reply.Info.ExitReason,
+		asJSON{reply.Info})
+
+	replyJSON(w, 200, reply)
+	res := connect.NewResponse(&SearchResponse{
+		Query:       nil,
+		Info:        nil,
+		Matches:     nil,
+		FileMatches: nil,
+	})
+	return res, nil
+}
+
+func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *Query) (*SearchResponse, error) {
+	start := time.Now()
+
+	res, err := backend.Search(ctx, cs.Query{
+		Line:         q.Line,
+		File:         q.SelectFiles,
+		NotFile:      q.RejectFiles,
+		Repo:         q.SelectRepos,
+		NotRepo:      q.RejectRepos,
+		RepoFilter:   q.OnlyRepos,
+		FoldCase:     q.GetFoldCase(),
+		MaxMatches:   int(q.MaxMatches),
+		FilenameOnly: q.OnlyFilename,
+		ContextLines: int(q.ContextLines),
+	})
+	if err != nil {
+		log.Printf("error talking to backend err=%s", err)
+		return nil, err
+	}
+
+	out := &SearchResponse{
+		Query: q,
+		Info: &SearchInfo{
+			TotalTime:  res.Stats.TotalTime,
+			ExitReason: res.Stats.ExitReason.String(),
+		},
+	}
+
+	for _, r := range res.Results {
+		lines := []LineMatch{}
+		for _, r := range r.Lines {
+			// TODO: simply skip the context lines if they're not larger than the previous line number...
+			// XXX you are here XXX...
+
+			lines = append(lines, LineMatch{
+				LineNumber:    int32(int(r.LineNumber)),
+				ContextBefore: stringSlice(r.ContextBefore),
+				ContextAfter:  stringSlice(r.ContextAfter),
+				Bounds:        [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
+				Line:          r.Line,
+			})
+		}
+		reply.Results = append(reply.Results, &api.Result{
+			Tree:    r.File.Tree,
+			Version: r.File.Version,
+			Path:    r.File.Path,
+			Lines:   lines,
+		})
+	}
+
+	for _, r := range res.FileResults {
+		reply.FileResults = append(reply.FileResults, &api.FileResult{
+			Tree:    r.File.Tree,
+			Version: r.File.Version,
+			Path:    r.File.Path,
+			Bounds:  [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
+		})
+	}
+
+	return reply, nil
 }
