@@ -78,7 +78,7 @@ func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.
 	s.renderPage(w, "about.html", &page{
 		Title:         "about",
 		IncludeHeader: true,
-		CSSPath:       entrypointMeta["web/codesearch_ui.tsx"].CSS,
+		CSSPath:       meta.EntrypointMap["web/codesearch_ui.tsx"].CSS,
 	})
 }
 
@@ -168,8 +168,11 @@ type page struct {
 	Nonce         template.HTMLAttr // either `` or ` nonce="..."`
 }
 
-type EntrypointMeta struct {
+type EntryPoint struct {
 	JS, CSS string
 }
 
-type EntrypointMetaFile map[string]EntrypointMeta
+type Meta struct {
+	BuildOutputs  []string
+	EntrypointMap map[string]EntryPoint
+}

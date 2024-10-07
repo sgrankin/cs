@@ -17,12 +17,11 @@ import (
 var staticFS embed.FS
 
 //go:embed static/meta.json
-var entrypointMetaJSON []byte
-var entrypointMeta EntrypointMetaFile
+var metaJSON []byte
+var meta Meta
 
 func init() {
-	if err := json.Unmarshal(entrypointMetaJSON, &entrypointMeta); err != nil {
+	if err := json.Unmarshal(metaJSON, &meta); err != nil {
 		log.Panic(err)
 	}
-	log.Print(entrypointMeta)
 }

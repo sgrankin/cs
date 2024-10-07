@@ -52,8 +52,8 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 
 	s.renderPage(w, "fileview.html", &page{
 		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
-		JSPath:        entrypointMeta["web/fileview.ts"].JS,
-		CSSPath:       entrypointMeta["web/fileview.ts"].CSS,
+		JSPath:        meta.EntrypointMap["web/fileview.ts"].JS,
+		CSSPath:       meta.EntrypointMap["web/fileview.ts"].CSS,
 		ScriptData:    script_data,
 		IncludeHeader: false,
 		Data:          fileData,
