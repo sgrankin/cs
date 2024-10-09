@@ -16,7 +16,7 @@ import (
 	"github.com/alecthomas/chroma/v2"
 )
 
-// New HTML formatter.
+// NewHTMLFormatter configures an HTML formatter.
 func NewHTMLFormatter() *Formatter {
 	f := &Formatter{
 		BaseLineNumber:      1,
