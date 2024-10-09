@@ -1,0 +1,106 @@
+package views
+
+import "sgrankin.dev/cs"
+
+type IndexPageData struct {
+	Backend    string
+	Backends   []cs.SearchIndex
+	SampleRepo string
+}
+
+type Backend struct {
+	cs.SearchIndex
+	ID string
+}
+
+type EntryPoint struct {
+	JS, CSS string
+}
+
+type Meta struct {
+	BuildOutputs  []string
+	EntrypointMap map[string]EntryPoint
+}
+
+templ Index(p Page, d IndexPageData) {
+	@layout(p) {
+		<div id="searcharea">
+			@searchInputs()
+			@searchOptions(d.Backend, d.Backends)
+		</div>
+		<div id="resultbox"></div>
+	}
+}
+
+templ searchInputs() {
+	<div class="search-inputs">
+		<div class="prefixed-input filter-code">
+			<label class="prefix-label" for="searchbox">Query:</label>
+			<input type="text" id="searchbox" tabindex="1" required="required"/>
+		</div>
+		<div id="regex-error">
+			<span id="errortext"></span>
+		</div>
+		<div class="query-hint">
+			Special terms:
+			<code>path:</code>
+			<code>-path:</code>
+			<code>repo:</code>
+			<code>-repo:</code>
+			<code>max_matches:</code>
+		</div>
+	</div>
+}
+
+templ searchOptions(currentIndex string, indexes []cs.SearchIndex) {
+	<div class="search-options">
+		<div class="search-option">
+			<span class="label">Case:</span>
+			<input type="radio" name="fold_case" value="false" id="case-match" tabindex="3"/>
+			<label for="case-match">match</label>
+			<input type="radio" name="fold_case" value="auto" id="case-auto" tabindex="4"/>
+			<label for="case-auto">auto</label>
+			[<span class="tooltip-target">?<div class="tooltip">Case-sensitive if the query contains capital letters</div></span>]
+			<input type="radio" name="fold_case" value="true" id="case-ignore" tabindex="5"/>
+			<label for="case-ignore">ignore</label>
+		</div>
+		<div class="search-option">
+			<span class="label">Regex:</span>
+			<input type="checkbox" name="regex" id="regex" tabindex="6"/>
+			<label for="regex">on</label>
+		</div>
+		if len(indexes) > 1 {
+			<div class="search-option">
+				<span class="label">Search:</span>
+				<select id="backend" tabindex="7">
+					for _, b := range indexes {
+						<option
+							value={ b.Name() }
+							if b.Name() == currentIndex {
+								selected
+							}
+						>{ b.Name() } </option>
+					}
+				</select>
+			</div>
+		} else if len(indexes) > 0 {
+			<select id="backend" style="display: none">
+				<option value={ indexes[0].Name() }>{ indexes[0].Name() }</option>
+			</select>
+			if indexes[0].Name() != "-" {
+				<div class="search-option">
+					<span class="label">Searching:</span>{ indexes[0].Name() }
+				</div>
+			}
+		}
+		<div class="search-option">
+			<span class="label">Repo:</span>
+			<select id="repos" multiple></select>
+		</div>
+		<div class="search-option">
+			<span class="label">Context:</span>
+			<input type="checkbox" name="context" id="context" tabindex="8" checked="CHECKED"/>
+			<label for="context">on</label>
+		</div>
+	</div>
+}

@@ -1,0 +1,162 @@
+package views
+
+type SourceFileContent struct {
+	FormattedContent templ.Component
+}
+
+type DirectoryContent struct {
+	Entries       []DirectoryListEntry
+	ReadmeContent *SourceFileContent
+}
+
+type FileViewerContext struct {
+	Backend        string
+	PathSegments   []BreadCrumbEntry
+	RepoName       string
+	RepoURL        string
+	Commit         string
+	DirContent     *DirectoryContent
+	FileContent    *SourceFileContent
+	ExternalDomain string
+	Headlink       string
+}
+
+type BreadCrumbEntry struct {
+	Name string
+	Path string
+}
+
+type DirectoryListEntry struct {
+	Name          string
+	Path          string
+	IsDir         bool
+	SymlinkTarget string
+}
+
+templ fileContent(c SourceFileContent) {
+	<div class="file-content">
+		@c.FormattedContent
+	</div>
+}
+
+templ fileHeader(d FileViewerContext) {
+	<header class="header">
+		<nav class="header-title">
+			<a href={ templ.URL(d.RepoURL) } class="path-segment repo" title={ "Repository: " + d.RepoName }>
+				{ d.RepoName }
+			</a>:
+			for i, e := range d.PathSegments {
+				if (i != 0) {
+					/<a href={ templ.URL(e.Path) } class="path-segment">{ e.Name }</a>
+				} else {
+					<a href={ templ.URL(e.Path) } class="path-segment">{ e.Name }</a>
+				}
+			}
+		</nav>
+		<ul class="header-actions without-selection">
+			<li class="header-action">
+				<a data-action-name="search" title="Perform a new search. Keyboard shortcut: /" href="#">
+					new search [<span class="shortcut">/</span>]
+				</a>
+			</li>,
+			if d.ExternalDomain != "" {
+				<li class="header-action">
+					<a
+						id="external-link"
+						data-action-name=""
+						title={ "View at " + d.ExternalDomain + ". Keyboard shortcut: v" }
+						href="#"
+					>
+						view at { d.ExternalDomain } [<span class="shortcut">v</span>]
+					</a>
+				</li>,
+			}
+			<li class="header-action">
+				<a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#">
+					help [<span class="shortcut">?</span>]
+				</a>
+			</li>
+		</ul>
+		<ul class="header-actions with-selection" style="display: none">
+			<li class="header-action">search for selected text [/]</li>,
+			<li class="header-action">previous match [p]</li>,
+			<li class="header-action">next match [n]</li>,
+			<li class="header-action">
+				<a data-action-name="help" title="View the help screen. Keyboard shortcut: ?" href="#">
+					help [<span class="shortcut">?</span>]
+				</a>
+			</li>
+		</ul>
+	</header>
+}
+
+templ FileView(p Page, d FileViewerContext) {
+	@layout(p) {
+		<section class="file-viewer">
+			@fileHeader(d)
+			<div class="content-wrapper">
+				if d.DirContent != nil {
+					@dirContent(*d.DirContent)
+				}
+				if d.FileContent != nil {
+					@fileContent(*d.FileContent)
+				}
+			</div>
+			@helpScreen(d)
+		</section>
+	}
+}
+
+templ dirContent(d DirectoryContent) {
+	<div class="dir-viewer-wrapper">
+		<ul class="file-list">
+			for _, child := range d.Entries {
+				<li
+					class={
+						"file-list-entry",
+						templ.KV("is-directory", child.IsDir),
+						templ.KV("is-symlink", child.SymlinkTarget),
+					}
+				>
+					if child.Path != "" {
+						<a href={ templ.URL(child.Path) }>
+							if child.IsDir {
+								{ child.Name }/
+							} else {
+								{ child.Name }
+							}
+						</a>
+					} else {
+						{ child.Name }
+					}
+					if child.SymlinkTarget != "" {
+						→ (<span class="symlink-target">{ child.SymlinkTarget }</span>)
+					}
+				</li>
+			}
+		</ul>
+		if d.ReadmeContent != nil {
+			<div style="width: 80%">
+				@fileContent(*d.ReadmeContent)
+			</div>
+		}
+	</div>
+}
+
+templ helpScreen(d FileViewerContext) {
+	<section class="help-screen u-modal-overlay hidden">
+		<div class="help-screen-card u-modal-content">
+			<ul>
+				<li>Click on a line number to highlight it</li>
+				<li>Shift + click a second line number to highlight a range</li>
+				<li>Press <kbd class="keyboard-shortcut">/</kbd> to start a new search</li>
+				<li>Press <kbd class="keyboard-shortcut">b</kbd> to see which authors wrote which lines </li>
+				<li>Press <kbd class="keyboard-shortcut">v</kbd> to view this file/directory at { d.ExternalDomain } </li>
+				<li>Select some text and press <kbd class="keyboard-shortcut">/</kbd> to search for the selected text </li>
+				<li>Select some text and press <kbd class="keyboard-shortcut">enter</kbd> to search for the selected text in a new tab </li>
+				<li>Select some text and press <kbd class="keyboard-shortcut">p</kbd> to go to the previous match </li>
+				<li>Select some text and press <kbd class="keyboard-shortcut">n</kbd> to go to the next match </li>
+			</ul>
+		</div>
+	</section>
+}

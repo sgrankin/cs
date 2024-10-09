@@ -3,6 +3,7 @@ module sgrankin.dev/cs
 go 1.25.3
 
 require (
+	github.com/a-h/templ v0.3.960
 	github.com/alecthomas/chroma/v2 v2.20.0
 	github.com/evanw/esbuild v0.25.11
 	github.com/go-git/go-git/v5 v5.16.3
@@ -22,7 +23,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
-	github.com/a-h/templ v0.3.960 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect

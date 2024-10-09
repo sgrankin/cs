@@ -14,26 +14,11 @@ func TestReadmeRegex(t *testing.T) {
 		in  string
 		out []string
 	}{
-		{
-			"README.md",
-			[]string{"README.md", "README", "md"},
-		},
-		{
-			"readme.md",
-			[]string{"readme.md", "readme", "md"},
-		},
-		{
-			"readme.rst",
-			[]string{"readme.rst", "readme", "rst"},
-		},
-		{
-			"readme.unknown",
-			nil,
-		},
-		{
-			"what.md",
-			nil,
-		},
+		{"README.md", []string{"README.md", "README", "md"}},
+		{"readme.md", []string{"readme.md", "readme", "md"}},
+		{"readme.rst", []string{"readme.rst", "readme", "rst"}},
+		{"readme.unknown", nil},
+		{"what.md", nil},
 	}
 
 	for _, tc := range cases {
