@@ -4,12 +4,16 @@
 package server
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"net/http"
+	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -159,14 +163,21 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 }
 
 func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	reply, err := s.searchForRequest(ctx, r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "bad_query", err.Error())
+		return
+	}
+	replyJSON(w, 200, reply)
+}
+
+func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.ReplySearch, error) {
 	backendName := r.PathValue("backend")
 	var backend cs.SearchIndex
 	if backendName != "" {
 		backend = s.bk[backendName]
 		if backend == nil {
-			writeError(w, 400, "bad_backend",
-				fmt.Sprintf("Unknown backend: %s", backendName))
-			return
+			return nil, fmt.Errorf("unknown backend: %s", backendName)
 		}
 	} else {
 		for _, backend = range s.bk {
@@ -176,8 +187,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 
 	q, isRegex, err := extractQuery(r)
 	if err != nil {
-		writeError(w, 400, "bad_query", err.Error())
-		return
+		return nil, err
 	}
 
 	if q.Line == "" {
@@ -185,9 +195,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		if isRegex {
 			kind = "regex"
 		}
-		msg := fmt.Sprintf("You must specify a %s to match", kind)
-		writeError(w, 400, "bad_query", msg)
-		return
+		return nil, fmt.Errorf("you must specify a %s to match", kind)
 	}
 
 	if q.MaxMatches == 0 {
@@ -200,17 +208,38 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 	reply, err := s.doSearch(ctx, backend, &q)
 	if err != nil {
 		log.Printf("error in search err=%s", err)
-		writeQueryError(w, err)
-		return
+		return nil, err
 	}
 	reply.Query = q
-
-	// TODO: send an event span
-
+	reply.Info.QueryTime = time.Duration(reply.Info.TotalTime * int64(time.Millisecond))
+	reply.Info.HasMore = reply.Info.ExitReason != "NONE"
+	if q.FilenameOnly {
+		reply.Info.ResultsCount = len(reply.FileResults)
+	} else {
+		for _, r := range reply.Results {
+			reply.Info.ResultsCount += len(r.Lines)
+		}
+	}
+	extensionsCount := map[string]int{}
+	for _, r := range reply.Results {
+		extensionsCount[path.Ext(r.Path)] += len(r.Lines)
+	}
+	extensions := slices.Collect(maps.Keys(extensionsCount))
+	extensions = slices.DeleteFunc(extensions, func(e string) bool {
+		return e == "" || extensionsCount[e] < 2
+	})
+	slices.SortFunc(extensions, func(e1, e2 string) int {
+		return cmp.Or(
+			-cmp.Compare(extensionsCount[e1], extensionsCount[e2]),
+			cmp.Compare(e1, e2),
+		)
+	})
+	reply.TopExtensions = extensions
+	reply.Backend = backendName
 	log.Printf("responding success results=%d why=%s stats=%s",
 		len(reply.Results),
 		reply.Info.ExitReason,
 		asJSON{reply.Info})
 
-	replyJSON(w, 200, reply)
+	return reply, nil
 }

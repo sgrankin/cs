@@ -1,11 +1,18 @@
 package views
 
-import "sgrankin.dev/cs"
+import (
+	"fmt"
+	"path"
+	"sgrankin.dev/cs"
+	"sgrankin.dev/cs/livegrep/server/api"
+)
 
 type IndexPageData struct {
-	Backend    string
-	Backends   []cs.SearchIndex
-	SampleRepo string
+	Backend         string
+	Backends        []cs.SearchIndex
+	SampleRepo      string
+	SearchResult    *api.ReplySearch
+	SearchResultErr error
 }
 
 type Backend struct {
@@ -25,21 +32,221 @@ type Meta struct {
 templ Index(p Page, d IndexPageData) {
 	@layout(p) {
 		<div id="searcharea">
-			@searchInputs()
-			@searchOptions(d.Backend, d.Backends)
+			<form
+				method="get"
+				hx-get=""
+				hx-params="*"
+				hx-trigger="input from:input changed delay:100ms throttle:100ms consume, change from:input consume, change from:select consume, search"
+				hx-select="#resultbox"
+				hx-target="#resultbox"
+				hx-swap="outerHTML settle:0ms"
+				hx-select-oob="#regex-error"
+				hx-sync="this:replace"
+			>
+				// hx-push-url="true"
+				@searchInputs(d.SearchResultErr)
+				@searchOptions(d.Backend, d.Backends)
+			</form>
 		</div>
-		<div id="resultbox"></div>
+		<div id="resultbox">
+			if d.SearchResult != nil {
+				<div id="resultarea">
+					<div id="countarea">
+						@countView(d.SearchResult)
+					</div>
+					@matchesView(d.SearchResult)
+				</div>
+			} else {
+				@help()
+			}
+		</div>
 	}
 }
 
-templ searchInputs() {
+templ countView(d *api.ReplySearch) {
+	<span id="numresults">
+		if d.Info.HasMore {
+			{ fmt.Sprintf("%d+", d.Info.ResultsCount) }
+		} else {
+			{ fmt.Sprintf("%d", d.Info.ResultsCount) }
+		}
+	</span> matches
+	<span id="searchtimebox">
+		<span class="label">in </span>
+		<span id="searchtime">{ fmt.Sprintf("%dms", d.Info.QueryTime.Milliseconds()) }</span>
+	</span>
+}
+
+templ matchesView(d *api.ReplySearch) {
+	<div
+		id="results"
+		tabIndex="-1"
+		style="outline: none"
+		class={ templ.KV("no-context", d.Query.ContextLines <= 0) }
+	>
+		if len(d.Query.File) == 0 {
+			@extensionsButtons(d.TopExtensions)
+		}
+		<div class="path-results">
+			for _, r := range limitedFileResults(d) {
+				@filenameMatch(d.Backend, r)
+			}
+		</div>
+		for _, r := range d.Results {
+			@fileContentMatch(d.Backend, r)
+		}
+	</div>
+}
+
+func limitedFileResults(d *api.ReplySearch) []*api.FileResult {
+	if d.Query.FilenameOnly {
+		return d.FileResults
+	}
+	return limitSlice(d.FileResults, 10)
+}
+
+func limitSlice[S ~[]E, E any](s S, limit int) S {
+	if len(s) <= limit {
+		return s
+	}
+	return s[:limit]
+}
+
+func viewURL(backend, tree, version, p string, lno int) templ.SafeURL {
+	url := path.Join("/view", backend, tree+"@"+version, "+", p)
+	if lno >= 0 {
+		url += "#L" + fmt.Sprintf("%d", lno)
+	}
+	return templ.URL(url)
+}
+
+templ matchStr(s string, bounds [2]int) {
+	{ s[0:bounds[0]] }<span class="matchstr">{ s[bounds[0]:bounds[1]] }</span>{ s[bounds[1]:] }
+}
+
+templ filenameMatch(backend string, r *api.FileResult) {
+	<div class="filename-match">
+		<a class="label header result-path" href={ viewURL(backend, r.Tree, r.Version, r.Path, -1) }>
+			<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>@matchStr(r.Path, r.Bounds)
+		</a>
+	</div>
+}
+
+templ fileContentMatch(backend string, r *api.Result) {
+	<div class="file-group">
+		<div class="header">
+			<span class="header-path">
+				<a class="result-path" href={ viewURL(backend, r.Tree, r.Version, r.Path, -1) }>
+					<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>{ path.Dir(r.Path) }<span class="filename">{ path.Base(r.Path) }</span>
+				</a>
+				<div class="header-links"></div>
+			</span>
+		</div>
+		for _, match := range r.Lines {
+			// TODO: fix handling of overlapping contexts.
+			@matchView(backend, r, match)
+		}
+	</div>
+}
+
+templ lineNumber(backend string, r *api.Result, match api.LineResult, lno int) {
+	<a
+		class={
+			"lno-link",
+			templ.KV("matchlno", match.LineNumber == lno),
+		}
+		href={ viewURL(backend, r.Tree, r.Version, r.Path, lno) }
+	>
+		<span class="lno">{ fmt.Sprintf("%d", lno) }</span>
+	</a>
+}
+
+templ matchView(backend string, r *api.Result, match api.LineResult) {
+	<div class="match">
+		<div class="contents">
+			for i, line := range match.ContextBefore {
+				@lineNumber(backend, r, match, match.LineNumber-len(match.ContextBefore)+i)
+				<span>{ line }</span><span></span>
+			}
+			@lineNumber(backend, r, match, match.LineNumber)
+			<span class="matchline">
+				@matchStr(match.Line, match.Bounds)
+			</span>
+			<span class="matchlinks"></span>
+			for i, line := range match.ContextAfter {
+				@lineNumber(backend, r, match, match.LineNumber+1+i)
+				<span>{ line }</span><span></span>
+			}
+		</div>
+	</div>
+}
+
+templ extensionsButtons(extensions []string) {
+	<div class="file-extensions">
+		Narrow to:
+		for _, ex := range limitSlice(extensions, 5) {
+			<button class="file-extension" onClick="limitToExtension">{ ex } </button>
+		}
+	</div>
+}
+
+templ help() {
+	<div id="helparea">
+		<div class="helpsection"><h5>Special query terms</h5> </div>
+		<table>
+			<tr>
+				<td><code>path:</code> </td>
+				<td>Only include results from matching files.</td>
+				<td><a href="/search?q=hello+path:test">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>-path:</code> </td>
+				<td>Exclude results from matching files.</td>
+				<td><a href="/search?q=hello+-path:test">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>repo:</code> </td>
+				<td>Only include results from matching repositories.</td>
+				<td><a href="/search?q=hello+repo:example">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>-repo:</code> </td>
+				<td>Exclude results from matching repositories.</td>
+				<td><a href="/search?q=hello+-repo:example">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>max_matches:</code> </td>
+				<td>Adjust the limit on number of matching lines returned.</td>
+				<td><a href="/search?q=hello+max_matches:5">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>(<em>special-term</em>:) </code> </td>
+				<td>Escape one of the above terms by wrapping it in parentheses (with regex enabled). </td>
+				<td><a href="/search?q=(file:)®ex=true">example</a> </td>
+			</tr>
+		</table>
+		<div class="helpsection"><h5>Regular Expressions</h5> </div>
+		<p>
+			See the complete supported regex syntax in <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a>.
+		</p>
+	</div>
+}
+
+templ searchInputs(err error) {
 	<div class="search-inputs">
 		<div class="prefixed-input filter-code">
 			<label class="prefix-label" for="searchbox">Query:</label>
-			<input type="text" id="searchbox" tabindex="1" required="required"/>
+			<input
+				name="q"
+				type="text"
+				id="searchbox"
+				tabindex="1"
+			/>
 		</div>
 		<div id="regex-error">
-			<span id="errortext"></span>
+			if err != nil {
+				<span id="errortext">{ err.Error() }</span>
+			}
 		</div>
 		<div class="query-hint">
 			Special terms:
@@ -72,7 +279,7 @@ templ searchOptions(currentIndex string, indexes []cs.SearchIndex) {
 		if len(indexes) > 1 {
 			<div class="search-option">
 				<span class="label">Search:</span>
-				<select id="backend" tabindex="7">
+				<select name="backend" id="backend" tabindex="7">
 					for _, b := range indexes {
 						<option
 							value={ b.Name() }
@@ -84,7 +291,7 @@ templ searchOptions(currentIndex string, indexes []cs.SearchIndex) {
 				</select>
 			</div>
 		} else if len(indexes) > 0 {
-			<select id="backend" style="display: none">
+			<select name="backend" id="backend" style="display: none">
 				<option value={ indexes[0].Name() }>{ indexes[0].Name() }</option>
 			</select>
 			if indexes[0].Name() != "-" {
@@ -95,7 +302,7 @@ templ searchOptions(currentIndex string, indexes []cs.SearchIndex) {
 		}
 		<div class="search-option">
 			<span class="label">Repo:</span>
-			<select id="repos" multiple></select>
+			<select name="repo[]" id="repos" multiple></select>
 		</div>
 		<div class="search-option">
 			<span class="label">Context:</span>

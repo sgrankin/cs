@@ -52,6 +52,9 @@ export interface Result {
 export interface Stats {
     total_time: number;
     why: string;
+    ResultsCount: number;
+    HasMore: boolean;
+    QueryTime: number;
 }
 export interface ReplySearch {
     info?: Stats;

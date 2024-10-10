@@ -14,6 +14,7 @@ import "./bootstrap/js/bootstrap";
 
 import "./codesearch.css";
 
+import "htmx.org";
 import jQuery from "jquery";
 import {signal} from "@preact/signals";
 import {createDraft, Draft, finishDraft, immerable, produce} from "immer";
@@ -196,7 +197,7 @@ class SearchState {
     [immerable] = true;
     readonly matches = new SearchResultSet();
     readonly fileMatches: FileMatch[] = [];
-    readonly facets: (api.Facet & { backend: string })[] = [];
+    readonly facets: (api.Facet & {backend: string})[] = [];
 
     // searchMap holds all the pending search queries.
     // The query info is used for display when the search completes.
@@ -307,14 +308,14 @@ class SearchState {
                 SearchState.reset(next);
             }
             const backend = next.searchMap[searchID].backend;
-            for (const fm of (reply.file_results || [])) {
+            for (const fm of reply.file_results || []) {
                 next.fileMatches.push(new FileMatch({...fm, backend}));
             }
-            for (const m of (reply.results || [])) {
+            for (const m of reply.results || []) {
                 next.matches.addMatch({...m, backend});
             }
-            for (const f of (reply.facets || [])) {
-                next.facets.push({...f, backend})
+            for (const f of reply.facets || []) {
+                next.facets.push({...f, backend});
             }
             next.time = reply.info?.total_time;
             next.why = reply.info?.why;
@@ -323,7 +324,7 @@ class SearchState {
     }
 }
 
-function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
+function MatchView({path, match}: {path: FilePath; match: ClippedLineMatch}) {
     const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
         let lnoStr = n.toString() + (isMatch ? ":" : "-");
         let classes = ["lno-link"];
@@ -346,7 +347,7 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
         ctxBefore.unshift(
             _renderLno(match.lno - i - 1, false),
             <span>{match.context_before[i]}</span>,
-            <span/>,
+            <span />,
         );
     }
     let ctxAfter: JSX.Element[] = [];
@@ -355,7 +356,7 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
         ctxAfter.push(
             _renderLno(match.lno + i + 1, false),
             <span>{match.context_after[i]}</span>,
-            <span/>,
+            <span />,
         );
     }
     let line = match.line;
@@ -371,7 +372,7 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
     if (match.clip_after !== undefined) classes.push("clip-after");
 
     let links = renderLinkConfigs(
-        CodesearchUI.linkConfigs.filter((c: { url_template: string }) =>
+        CodesearchUI.linkConfigs.filter((c: {url_template: string}) =>
             c.url_template.includes("{lno}"),
         ),
         path.tree,
@@ -406,7 +407,8 @@ function renderLinkConfigs(
 ): JSX.Element[] {
     linkConfigs = linkConfigs.filter(function (linkConfig) {
         return (
-            !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path)
+            !linkConfig.match_regexp ||
+            linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path)
         );
     });
 
@@ -431,7 +433,13 @@ function renderLinkConfigs(
     return out;
 }
 
-function externalURL(url: string, tree: string, version: string, path: string, lno: number | undefined) {
+function externalURL(
+    url: string,
+    tree: string,
+    version: string,
+    path: string,
+    lno: number | undefined,
+) {
     if (lno === undefined) {
         lno = 1;
     }
@@ -451,7 +459,7 @@ function externalURL(url: string, tree: string, version: string, path: string, l
     return url;
 }
 
-function FileMatchView({match}: { match: FileMatch }) {
+function FileMatchView({match}: {match: FileMatch}) {
     let path_info = match.m;
     let pieces = [
         path_info.path.substring(0, path_info.bounds[0]),
@@ -472,7 +480,7 @@ function FileMatchView({match}: { match: FileMatch }) {
     );
 }
 
-function FileGroupView({group}: { group: FileGroup }) {
+function FileGroupView({group}: {group: FileGroup}) {
     const {tree, version, path} = group.path;
 
     let basename = path;
@@ -503,8 +511,20 @@ function FileGroupView({group}: { group: FileGroup }) {
     );
 }
 
-function MatchesView({model}: { model: SearchState }) {
-    let count = 0;
+function MatchesView({model}: {model: SearchState}) {
+    // Collate which file extensions (.py, .go, etc) are most common.
+    // countExtension() is called for file_search_results and search_results
+    var extension_map: Record<string, number> = {};
+    var countExtension = (path) => {
+        var r = /[^\/](\.[a-z.]{1,6})$/i;
+        var match = path.match(r);
+        if (match) {
+            var ext = match[1];
+            extension_map[ext] = extension_map[ext] ? extension_map[ext] + 1 : 1;
+        }
+    };
+
+    var count = 0;
     let pathResults: JSX.Element[] = [];
     for (const match of model.fileMatches) {
         if (model.filenameOnly || count < 10) {
@@ -525,8 +545,10 @@ function MatchesView({model}: { model: SearchState }) {
     let query = model.searchMap[id].q;
     let already_file_limited = /\bfile:/.test(query);
     if (!already_file_limited && model.facets) {
-        let extensions = model.facets.find((f) => f.key == "ext")?.values.map((f) => [f.value, f.count]);
-        nodes.unshift(ExtensionButtons(extensions))
+        let extensions = model.facets
+            .find((f) => f.key == "ext")
+            ?.values.map((f) => [f.value, f.count]);
+        nodes.unshift(ExtensionButtons(extensions));
     }
     let classes = "";
     if (!model.context) {
@@ -550,16 +572,18 @@ function ExtensionButtons(extensions: [string, number][]) {
     // among the current search results, that each narrow the search to
     // files matching that extension.
     if (!extensions || extensions.length < 2) return <></>;
-    let popular = extensions.toSorted((a, b) => b[1] - a[1]).slice(0, 5)
+    let popular = extensions.toSorted((a, b) => b[1] - a[1]).slice(0, 5);
 
-    return <div class="file-extensions">
-        Narrow to:
-        {popular.map(([ext, count]) => (
-            <button class="file-extension" onClick={limitToExtension} data-ext={ext}>
-                {ext} ({count})
-            </button>
-        ))}
-    </div>;
+    return (
+        <div class="file-extensions">
+            Narrow to:
+            {popular.map(([ext, count]) => (
+                <button class="file-extension" onClick={limitToExtension} data-ext={ext}>
+                    {ext} ({count})
+                </button>
+            ))}
+        </div>
+    );
 }
 
 function limitToExtension(e: MouseEvent) {
@@ -568,7 +592,7 @@ function limitToExtension(e: MouseEvent) {
     if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
     else q = "file:" + ext + " " + q;
     CodesearchUI.input.val(q);
-    CodesearchUI.NewSearch();
+    // CodesearchUI.NewSearch();
 }
 
 function handleKey(event: KeyboardEvent) {
@@ -590,7 +614,7 @@ function handleKey(event: KeyboardEvent) {
         // last_url_update = 0;
 
         CodesearchUI.input.val(t);
-        CodesearchUI.NewSearch();
+        // CodesearchUI.NewSearch();
     }
 }
 
@@ -598,7 +622,7 @@ function getSelectedText() {
     return window.getSelection ? window.getSelection()?.toString() : null;
 }
 
-function ResultView({model}: { model: SearchState }) {
+function ResultView({model}: {model: SearchState}) {
     const [last_url, set_last_url] = useState(["", 0] as [string, number]);
     let browser_url = window.location.pathname + window.location.search;
 
@@ -646,7 +670,7 @@ function ResultView({model}: { model: SearchState }) {
     );
 }
 
-function CountView({model}: { model: SearchState }) {
+function CountView({model}: {model: SearchState}) {
     let num_results = "";
     if (model.filenameOnly) {
         num_results += model.fileMatches.length;
@@ -735,7 +759,8 @@ function HelpView() {
                         </code>
                     </td>
                     <td>
-                        Escape one of the above terms by wrapping it in parentheses (with regex enabled).
+                        Escape one of the above terms by wrapping it in parentheses (with regex
+                        enabled).
                     </td>
                     <td>
                         <a href="/search?q=(file:)&regex=true">example</a>
@@ -746,8 +771,8 @@ function HelpView() {
                 <h5>Regular Expressions</h5>
             </div>
             <p>
-                See <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a> for a
-                complete listing of supported regex syntax.
+                See <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a>
+                for a complete listing of supported regex syntax.
             </p>
         </>
     );
@@ -759,7 +784,7 @@ function ErrorView(err: string) {
 
 // TODO: this should be an instance of a singleton... maybe?
 namespace CodesearchUI {
-    export let backend_repos: { [x: string]: any };
+    export let backend_repos: {[x: string]: any};
     export let linkConfigs: api.LinkConfig[];
     let state = signal(new SearchState());
     export let input: JQuery<HTMLInputElement>;
@@ -776,7 +801,7 @@ namespace CodesearchUI {
         const App = () => {
             return ResultView({model: state.value});
         };
-        render(<App/>, jQuery("#resultbox")[0]);
+        // render(<App />, jQuery("#resultbox")[0]);
 
         input = jQuery("#searchbox");
         input_repos = jQuery("#repos");
@@ -830,7 +855,7 @@ namespace CodesearchUI {
         window.onpopstate = (_event: any) => {
             let parms = parseQueryParams();
             initQueryFromParams(parms);
-            NewSearch();
+            // NewSearch();
         };
     }
 
@@ -928,7 +953,7 @@ namespace CodesearchUI {
             prefs = {};
         }
         prefs[key] = value;
-        localStorage.setItem("prefs", JSON.stringify(prefs))
+        localStorage.setItem("prefs", JSON.stringify(prefs));
     }
 
     function parseQueryParams(): Map<string, string[]> {
@@ -950,7 +975,7 @@ namespace CodesearchUI {
     }
 
     export function OnConnect() {
-        NewSearch();
+        // NewSearch();
     }
 
     function selectBackend() {
@@ -968,7 +993,7 @@ namespace CodesearchUI {
 
     function onKeypress() {
         clearTimer();
-        timer = setTimeout(NewSearch, 100);
+        // timer = setTimeout(NewSearch, 100);
     }
 
     export function NewSearch() {
@@ -1013,5 +1038,9 @@ function init(initData: api.SearchScriptData) {
 }
 
 jQuery(() => {
-    init(JSON.parse((document.getElementById("data") as HTMLScriptElement).text) as api.SearchScriptData);
+    init(
+        JSON.parse(
+            (document.getElementById("data") as HTMLScriptElement).text,
+        ) as api.SearchScriptData,
+    );
 });
