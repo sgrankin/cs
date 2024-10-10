@@ -26,6 +26,38 @@ func main() {
 	flag.Parse()
 
 	opts := buildOpts(*debug)
+	opts.Plugins = append(opts.Plugins, api.Plugin{
+		Name: "Buildah",
+		Setup: func(pb api.PluginBuild) {
+			pb.OnStart(func() (api.OnStartResult, error) {
+				var out api.OnStartResult
+				if *clean {
+					meta, err := readMeta()
+					if err != nil && !errors.Is(err, os.ErrNotExist) {
+						return out, fmt.Errorf("ReadMeta failed: %v", err)
+					} else if meta != nil {
+						for _, fname := range meta.BuildOutputs {
+							os.Remove(fname)
+						}
+					}
+				}
+				return out, nil
+			})
+			pb.OnEnd(func(res *api.BuildResult) (api.OnEndResult, error) {
+				var out api.OnEndResult
+				if err := writeMeta(res.Metafile); err != nil {
+					return out, fmt.Errorf("Failed writing metafile: %v", err)
+				}
+
+				if *analyze {
+					fmt.Print(api.AnalyzeMetafile(res.Metafile, api.AnalyzeMetafileOptions{
+						Color: true,
+					}))
+				}
+				return out, nil
+			})
+		},
+	})
 
 	if *watch {
 		ctx, err := api.Context(opts)
@@ -39,29 +71,9 @@ func main() {
 		select {} // Wait forever.
 	}
 
-	if *clean {
-		meta, err := readMeta()
-		if err != nil && !errors.Is(err, os.ErrNotExist) {
-			log.Fatalf("ReadMeta failed: %v", err)
-		} else if meta != nil {
-			for _, fname := range meta.BuildOutputs {
-				os.Remove(fname)
-			}
-		}
-	}
-
 	res := api.Build(opts)
 	if len(res.Errors) > 0 {
 		os.Exit(1)
-	}
-	if err := writeMeta(res.Metafile); err != nil {
-		log.Fatalf("Failed writing metafile: %v", err)
-	}
-
-	if *analyze {
-		fmt.Print(api.AnalyzeMetafile(res.Metafile, api.AnalyzeMetafileOptions{
-			Color: true,
-		}))
 	}
 }
 
