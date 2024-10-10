@@ -14,6 +14,7 @@ import "./bootstrap/js/bootstrap";
 
 import "./codesearch.css";
 
+import "htmx.org";
 import jQuery from "jquery";
 import {signal} from "@preact/signals";
 import {createDraft, Draft, finishDraft, immerable, produce} from "immer";
@@ -311,7 +312,7 @@ class SearchState {
     }
 }
 
-function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
+function MatchView({path, match}: {path: FilePath; match: ClippedLineMatch}) {
     const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
         var lnoStr = n.toString() + (isMatch ? ":" : "-");
         var classes = ["lno-link"];
@@ -321,9 +322,9 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
                 className={classes.join(" ")}
                 href={viewURL(path.backend, path.tree, path.version, path.path, n)}
             >
-				<span className="lno" aria-label={lnoStr}>
-					{lnoStr}
-				</span>
+                <span className="lno" aria-label={lnoStr}>
+                    {lnoStr}
+                </span>
             </a>
         );
     };
@@ -334,17 +335,25 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
         ctxBefore.unshift(
             _renderLno(match.lno - i - 1, false),
             <span>{match.context_before[i]}</span>,
-            <span/>,
+            <span />,
         );
     }
     let ctxAfter: JSX.Element[] = [];
     var linesAfter = Math.max(0, match.context_after.length - (match.clip_after || 0));
     for (let i = 0; i < linesAfter; i++) {
-        ctxAfter.push(_renderLno(match.lno + i + 1, false), <span>{match.context_after[i]}</span>, <span/>);
+        ctxAfter.push(
+            _renderLno(match.lno + i + 1, false),
+            <span>{match.context_after[i]}</span>,
+            <span />,
+        );
     }
     var line = match.line;
     var bounds = match.bounds;
-    var pieces = [line.substring(0, bounds[0]), line.substring(bounds[0], bounds[1]), line.substring(bounds[1])];
+    var pieces = [
+        line.substring(0, bounds[0]),
+        line.substring(bounds[0], bounds[1]),
+        line.substring(bounds[1]),
+    ];
 
     var classes = ["match"];
     if (match.clip_before !== undefined) classes.push("clip-before");
@@ -364,10 +373,10 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
                 {ctxBefore}
                 {_renderLno(match.lno, true)}
                 <span className="matchline">
-					{pieces[0]}
+                    {pieces[0]}
                     <span className="matchstr">{pieces[1]}</span>
                     {pieces[2]}
-				</span>
+                </span>
                 <span className="matchlinks">{links}</span>
                 {ctxAfter}
             </div>
@@ -377,7 +386,10 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
 
 function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[] {
     linkConfigs = linkConfigs.filter(function (linkConfig) {
-        return !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path);
+        return (
+            !linkConfig.match_regexp ||
+            linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path)
+        );
     });
 
     var links = linkConfigs.map(function (linkConfig) {
@@ -421,7 +433,7 @@ function externalURL(url, tree, version, path, lno) {
     return url;
 }
 
-function FileMatchView({match}: { match: FileMatch }) {
+function FileMatchView({match}: {match: FileMatch}) {
     var path_info = match.m;
     var pieces = [
         path_info.path.substring(0, path_info.bounds[0]),
@@ -442,7 +454,7 @@ function FileMatchView({match}: { match: FileMatch }) {
     );
 }
 
-function FileGroupView({group}: { group: FileGroup }) {
+function FileGroupView({group}: {group: FileGroup}) {
     const {tree, version, path} = group.path;
 
     let basename = path;
@@ -456,24 +468,24 @@ function FileGroupView({group}: { group: FileGroup }) {
     return (
         <div className="file-group">
             <div className="header">
-				<span className="header-path">
-					<a className="result-path" href={group.viewURL()}>
-						<span className="repo">{tree}:</span>
-						<span className="version">{shorten(version)}:</span>
+                <span className="header-path">
+                    <a className="result-path" href={group.viewURL()}>
+                        <span className="repo">{tree}:</span>
+                        <span className="version">{shorten(version)}:</span>
                         {dirname}
                         <span className="filename">{basename}</span>
-					</a>
-					<div className="header-links">
-						{renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path)}
-					</div>
-				</span>
+                    </a>
+                    <div className="header-links">
+                        {renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path)}
+                    </div>
+                </span>
             </div>
             {group.matched.map((match) => MatchView({path: group.path, match}))}
         </div>
     );
 }
 
-function MatchesView({model}: { model: SearchState }) {
+function MatchesView({model}: {model: SearchState}) {
     // Collate which file extensions (.py, .go, etc) are most common.
     // countExtension() is called for file_search_results and search_results
     var extension_map: Record<string, number> = {};
@@ -516,7 +528,13 @@ function MatchesView({model}: { model: SearchState }) {
         classes = "no-context";
     }
     return (
-        <div class={classes} id="results" tabIndex={-1} style={{outline: "none"}} onKeyDown={handleKey}>
+        <div
+            class={classes}
+            id="results"
+            tabIndex={-1}
+            style={{outline: "none"}}
+            onKeyDown={handleKey}
+        >
             {nodes}
         </div>
     );
@@ -560,7 +578,7 @@ function limitToExtension(e: MouseEvent) {
     if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
     else q = "file:" + ext + " " + q;
     CodesearchUI.input.val(q);
-    CodesearchUI.NewSearch();
+    // CodesearchUI.NewSearch();
 }
 
 function handleKey(event: KeyboardEvent) {
@@ -582,7 +600,7 @@ function handleKey(event: KeyboardEvent) {
         // last_url_update = 0;
 
         CodesearchUI.input.val(t);
-        CodesearchUI.NewSearch();
+        // CodesearchUI.NewSearch();
     }
 }
 
@@ -590,7 +608,7 @@ function getSelectedText() {
     return window.getSelection ? window.getSelection()?.toString() : null;
 }
 
-function ResultView({model}: { model: SearchState }) {
+function ResultView({model}: {model: SearchState}) {
     const [last_url, set_last_url] = useState(["", 0] as [string, number]);
     var browser_url = window.location.pathname + window.location.search;
 
@@ -638,7 +656,7 @@ function ResultView({model}: { model: SearchState }) {
     );
 }
 
-function CountView({model}: { model: SearchState }) {
+function CountView({model}: {model: SearchState}) {
     var num_results = "";
     if (model.filenameOnly) {
         num_results += model.fileMatches.length;
@@ -651,9 +669,9 @@ function CountView({model}: { model: SearchState }) {
 
     let time = model.time ? (
         <span id="searchtimebox">
-			<span class="label"> in </span>
-			<span id="searchtime">{model.time + " ms"}</span>
-		</span>
+            <span class="label"> in </span>
+            <span id="searchtime">{model.time + " ms"}</span>
+        </span>
     ) : (
         <></>
     );
@@ -739,8 +757,8 @@ function HelpView() {
                 <h5>Regular Expressions</h5>
             </div>
             <p>
-                See <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a> for a
-                complete listing of supported regex syntax.
+                See <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a>
+                for a complete listing of supported regex syntax.
             </p>
         </>
     );
@@ -766,7 +784,7 @@ namespace CodesearchUI {
         const App = () => {
             return ResultView({model: state.value});
         };
-        render(<App/>, jQuery("#resultbox")[0]);
+        // render(<App />, jQuery("#resultbox")[0]);
 
         input = jQuery("#searchbox");
         input_repos = jQuery("#repos");
@@ -825,7 +843,7 @@ namespace CodesearchUI {
         window.onpopstate = (event) => {
             var parms = parseQueryParams();
             initQueryFromParams(parms);
-            NewSearch();
+            // NewSearch();
         };
     }
 
@@ -947,7 +965,7 @@ namespace CodesearchUI {
     }
 
     export function OnConnect() {
-        NewSearch();
+        // NewSearch();
     }
 
     function selectBackend() {
@@ -965,7 +983,7 @@ namespace CodesearchUI {
 
     function onKeypress() {
         clearTimer();
-        timer = setTimeout(NewSearch, 100);
+        // timer = setTimeout(NewSearch, 100);
     }
 
     export function NewSearch() {

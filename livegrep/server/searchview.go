@@ -38,6 +38,7 @@ func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	backend := r.PathValue("backend")
 	scriptData, backends, sampleRepo := s.makeSearchScriptData()
+	result, resultErr := s.searchForRequest(ctx, r)
 	views.Index(
 		views.Page{
 			Title:         "code search",
@@ -47,9 +48,11 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 			IncludeHeader: true,
 		},
 		views.IndexPageData{
-			Backend:    backend,
-			Backends:   backends,
-			SampleRepo: sampleRepo,
+			Backend:         backend,
+			Backends:        backends,
+			SampleRepo:      sampleRepo,
+			SearchResult:    result,
+			SearchResultErr: resultErr,
 		},
 	).Render(r.Context(), w)
 }

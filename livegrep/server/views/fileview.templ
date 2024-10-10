@@ -41,8 +41,8 @@ templ fileContent(c SourceFileContent) {
 
 templ fileHeader(d FileViewerContext) {
 	<header class="header">
-        <nav class="header-title">
-            <a href={ templ.URL(d.RepoURL) } class="path-segment repo" title={ "Repository: " + d.RepoName }>
+		<nav class="header-title">
+			<a href={ templ.URL(d.RepoURL) } class="path-segment repo" title={ "Repository: " + d.RepoName }>
 				{ d.RepoName }
 			</a>:
 			for i, e := range d.PathSegments {
