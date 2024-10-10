@@ -14,7 +14,7 @@ import "./bootstrap/js/bootstrap";
 
 import "./codesearch.css";
 
-import "htmx.org";
+import "htmx.org/dist/htmx";
 import jQuery from "jquery";
 import {signal} from "@preact/signals";
 import {createDraft, Draft, finishDraft, immerable, produce} from "immer";
