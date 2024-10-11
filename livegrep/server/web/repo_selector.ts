@@ -4,7 +4,6 @@
  */
 
 import jQuery from "jquery";
-
 function repoSelector(): JQuery<HTMLSelectElement> {
     return jQuery("#repos");
 }

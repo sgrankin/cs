@@ -1,16 +1,11 @@
 {
   "name": "com_github_livegrep_livegrep_web",
   "devDependencies": {
-    "@preact/signals": "1.2.3",
-    "@types/hyperscript": "0.0.7",
     "@types/jquery": "3.5.31",
-    "@types/js-cookie": "2.1.0",
     "@types/node": "20.11.8",
     "bootstrap-select": "1.13.18",
     "htmx.org": "2.0.7",
-    "immer": "10.0.4",
-    "jquery": "3.7.1",
-    "preact": "10.20.0"
+    "jquery": "3.7.1"
   },
   "private": "true"
 }

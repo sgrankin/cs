@@ -139,7 +139,9 @@ templ fileContentMatch(backend string, r *api.Result) {
 				<a class="result-path" href={ viewURL(backend, r.Tree, r.Version, r.Path, -1) }>
 					<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>{ path.Dir(r.Path) }/<span class="filename">{ path.Base(r.Path) }</span>
 				</a>
-				<div class="header-links"></div>
+				<div class="header-links">
+					<!-- renderLinkConfigs -->
+				</div>
 			</span>
 		</div>
 		for _, match := range r.Lines {
@@ -148,6 +150,65 @@ templ fileContentMatch(backend string, r *api.Result) {
 		}
 	</div>
 }
+
+/*
+
+    title() {
+        var current = this.searchMap[this.displayedSearch];
+        if (!current || !current.q) {
+            return "code search";
+        }
+        return current.q + " ⋅ search";
+    }
+function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[] {
+    linkConfigs = linkConfigs.filter(function (linkConfig) {
+        return (
+            !linkConfig.match_regexp ||
+            linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path)
+        );
+    });
+
+    var links = linkConfigs.map(function (linkConfig) {
+        return (
+            <a
+                className="file-action-link"
+                href={externalURL(linkConfig.url_template, tree, version, path, lno)}
+                target={linkConfig.target}
+            >
+                {linkConfig.label}
+            </a>
+        );
+    });
+    let out: JSX.Element[] = [];
+    for (let i = 0; i < links.length; i++) {
+        if (i > 0) {
+            out.push(<span className="file-action-link-separator">\u00B7</span>);
+        }
+        out.push(links[i]);
+    }
+    return out;
+}
+function externalURL(url, tree, version, path, lno) {
+    if (lno === undefined) {
+        lno = 1;
+    }
+
+    // If {path} already has a slash in front of it, trim extra leading
+    // slashes from `path` to avoid a double-slash in the URL.
+    if (url.indexOf("/{path}") !== -1) {
+        path = path.replace(/^\/+/, "");
+    }
+
+    // the order of these replacements is used to minimize conflicts
+    url = url.replace(/{lno}/g, lno);
+    url = url.replace(/{version}/g, shorten(version));
+    url = url.replace(/{name}/g, tree);
+    url = url.replace(/{basename}/g, tree.split("/")[1]); // E.g. "foo" in "username/foo"
+    url = url.replace(/{path}/g, path);
+    return url;
+}
+
+*/
 
 templ lineNumber(backend string, r *api.Result, match api.LineResult, lno int) {
 	<a
@@ -178,7 +239,9 @@ templ matchView(backend string, r *api.Result, match api.LineResult) {
 			<span class="matchline">
 				@matchStr(match.Line, match.Bounds)
 			</span>
-			<span class="matchlinks"></span>
+			<span class="matchlinks">
+				<!--renderLinkConfigs-->
+			</span>
 			for i, line := range match.ContextAfter {
 				@lineNumber(backend, r, match, match.LineNumber+1+i)
 				<span>{ line }</span><span></span>
