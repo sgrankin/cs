@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"maps"
+	"math"
 	"net/http"
 	"path"
 	"slices"
@@ -212,6 +213,8 @@ func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.Re
 	}
 	reply.Query = q
 	reply.Info.QueryTime = time.Duration(reply.Info.TotalTime * int64(time.Millisecond))
+
+	// Count results:
 	reply.Info.HasMore = reply.Info.ExitReason != "NONE"
 	if q.FilenameOnly {
 		reply.Info.ResultsCount = len(reply.FileResults)
@@ -220,6 +223,8 @@ func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.Re
 			reply.Info.ResultsCount += len(r.Lines)
 		}
 	}
+
+	// What extensions should we propose filtering for?
 	extensionsCount := map[string]int{}
 	for _, r := range reply.Results {
 		extensionsCount[path.Ext(r.Path)] += len(r.Lines)
@@ -236,6 +241,36 @@ func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.Re
 	})
 	reply.TopExtensions = extensions
 	reply.Backend = backendName
+
+	// Remove overlapping context lines:
+	for _, r := range reply.Results {
+		for i := 1; i < len(r.Lines); i++ {
+			left := &r.Lines[i-1]
+			right := &r.Lines[i]
+			leftLastLine := left.LineNumber + len(left.ContextAfter)
+			rightFirstline := right.LineNumber - len(right.ContextBefore)
+			overlap := leftLastLine - rightFirstline + 1
+			if overlap < 0 {
+				continue
+			}
+			// The matches are intersecting or share a boundary.
+			// Try to split the context between the previous match and this one.
+			// Uneven splits should leave the latter element with the larger piece.
+
+			splitAt := int(math.Ceil(float64(left.LineNumber+right.LineNumber) / 2.0))
+			if splitAt < rightFirstline {
+				splitAt = rightFirstline
+			} else if splitAt > leftLastLine+1 {
+				splitAt = leftLastLine + 1
+			}
+
+			left.ContextAfter = left.ContextAfter[:splitAt-(left.LineNumber+1)]
+			right.ContextBefore = right.ContextBefore[len(right.ContextBefore)-(right.LineNumber-splitAt):]
+			left.ClipAfter = true
+			right.ClipBefore = true
+		}
+	}
+
 	log.Printf("responding success results=%d why=%s stats=%s",
 		len(reply.Results),
 		reply.Info.ExitReason,

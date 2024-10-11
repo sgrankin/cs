@@ -36,10 +36,10 @@ templ Index(p Page, d IndexPageData) {
 				method="get"
 				hx-get=""
 				hx-params="*"
-				hx-trigger="input from:input changed delay:100ms throttle:100ms consume, change from:input consume, change from:select consume, search"
+				hx-trigger="input from:input changed delay:150ms consume, change from:input consume, change from:select consume, search"
 				hx-select="#resultbox"
 				hx-target="#resultbox"
-				hx-swap="outerHTML settle:0ms"
+				hx-swap="outerHTML"
 				hx-select-oob="#regex-error"
 				hx-sync="this:replace"
 			>
@@ -137,7 +137,7 @@ templ fileContentMatch(backend string, r *api.Result) {
 		<div class="header">
 			<span class="header-path">
 				<a class="result-path" href={ viewURL(backend, r.Tree, r.Version, r.Path, -1) }>
-					<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>{ path.Dir(r.Path) }<span class="filename">{ path.Base(r.Path) }</span>
+					<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>{ path.Dir(r.Path) }/<span class="filename">{ path.Base(r.Path) }</span>
 				</a>
 				<div class="header-links"></div>
 			</span>
@@ -162,7 +162,13 @@ templ lineNumber(backend string, r *api.Result, match api.LineResult, lno int) {
 }
 
 templ matchView(backend string, r *api.Result, match api.LineResult) {
-	<div class="match">
+	<div
+		class={
+			"match",
+			templ.KV("clip-before", match.ClipBefore),
+			templ.KV("clip-after", match.ClipAfter),
+		}
+	>
 		<div class="contents">
 			for i, line := range match.ContextBefore {
 				@lineNumber(backend, r, match, match.LineNumber-len(match.ContextBefore)+i)

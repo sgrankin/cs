@@ -42,6 +42,8 @@ export interface LineResult {
     context_after: string[];
     bounds: number[];
     line: string;
+    ClipBefore: boolean;
+    ClipAfter: boolean;
 }
 export interface Result {
     tree: string;

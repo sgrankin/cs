@@ -68,6 +68,8 @@ type LineResult struct {
 	ContextAfter  []string `json:"context_after"`
 	Bounds        [2]int   `json:"bounds"`
 	Line          string   `json:"line"`
+	ClipBefore    bool     // Previous LineResult has context that abuts ContextBefore.
+	ClipAfter     bool     // Next LineResult has context that abouts ContextAfter.
 }
 
 type FileResult struct {
