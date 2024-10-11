@@ -70,7 +70,7 @@ func Index(p Page, d IndexPageData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"searcharea\"><form method=\"get\" hx-get=\"\" hx-params=\"*\" hx-trigger=\"input from:input changed delay:100ms throttle:100ms consume, change from:input consume, change from:select consume, search\" hx-select=\"#resultbox\" hx-target=\"#resultbox\" hx-swap=\"outerHTML settle:0ms\" hx-select-oob=\"#regex-error\" hx-sync=\"this:replace\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"searcharea\"><form method=\"get\" hx-get=\"\" hx-params=\"*\" hx-trigger=\"input from:input changed delay:150ms consume, change from:input consume, change from:select consume, search\" hx-select=\"#resultbox\" hx-target=\"#resultbox\" hx-swap=\"outerHTML\" hx-select-oob=\"#regex-error\" hx-sync=\"this:replace\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -494,14 +494,14 @@ func fileContentMatch(backend string, r *api.Result) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"filename\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("/<span class=\"filename\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(path.Base(r.Path))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 140, Col: 151}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 140, Col: 152}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -622,7 +622,29 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			templ_7745c5c3_Var29 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"match\"><div class=\"contents\">")
+		var templ_7745c5c3_Var30 = []any{
+			"match",
+			templ.KV("clip-before", match.ClipBefore),
+			templ.KV("clip-after", match.ClipAfter),
+		}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var30...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var30).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><div class=\"contents\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -635,12 +657,12 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var30 string
-			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(line)
+			var templ_7745c5c3_Var32 string
+			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(line)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 169, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 175, Col: 16}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -674,12 +696,12 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var31 string
-			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(line)
+			var templ_7745c5c3_Var33 string
+			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(line)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 178, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 184, Col: 16}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -712,9 +734,9 @@ func extensionsButtons(extensions []string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var32 == nil {
-			templ_7745c5c3_Var32 = templ.NopComponent
+		templ_7745c5c3_Var34 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var34 == nil {
+			templ_7745c5c3_Var34 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"file-extensions\">Narrow to: ")
@@ -726,12 +748,12 @@ func extensionsButtons(extensions []string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var33 string
-			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(ex)
+			var templ_7745c5c3_Var35 string
+			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(ex)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 188, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 194, Col: 65}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -764,9 +786,9 @@ func help() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var34 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var34 == nil {
-			templ_7745c5c3_Var34 = templ.NopComponent
+		templ_7745c5c3_Var36 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var36 == nil {
+			templ_7745c5c3_Var36 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"helparea\"><div class=\"helpsection\"><h5>Special query terms</h5></div><table><tr><td><code>path:</code></td><td>Only include results from matching files.</td><td><a href=\"/search?q=hello+path:test\">example</a></td></tr><tr><td><code>-path:</code></td><td>Exclude results from matching files.</td><td><a href=\"/search?q=hello+-path:test\">example</a></td></tr><tr><td><code>repo:</code></td><td>Only include results from matching repositories.</td><td><a href=\"/search?q=hello+repo:example\">example</a></td></tr><tr><td><code>-repo:</code></td><td>Exclude results from matching repositories.</td><td><a href=\"/search?q=hello+-repo:example\">example</a></td></tr><tr><td><code>max_matches:</code></td><td>Adjust the limit on number of matching lines returned.</td><td><a href=\"/search?q=hello+max_matches:5\">example</a></td></tr><tr><td><code>(<em>special-term</em>:) </code></td><td>Escape one of the above terms by wrapping it in parentheses (with regex enabled). </td><td><a href=\"/search?q=(file:)®ex=true\">example</a></td></tr></table><div class=\"helpsection\"><h5>Regular Expressions</h5></div><p>See <a href=\"https://github.com/google/re2/wiki/Syntax\">the RE2 documentation</a> for a complete listing of supported regex syntax.</p></div>")
@@ -793,9 +815,9 @@ func searchInputs(err error) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var35 == nil {
-			templ_7745c5c3_Var35 = templ.NopComponent
+		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var37 == nil {
+			templ_7745c5c3_Var37 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"search-inputs\"><div class=\"prefixed-input filter-code\"><label class=\"prefix-label\" for=\"searchbox\">Query:</label> <input name=\"q\" type=\"text\" id=\"searchbox\" tabindex=\"1\"></div><div id=\"regex-error\">")
@@ -807,12 +829,12 @@ func searchInputs(err error) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var36 string
-			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
+			var templ_7745c5c3_Var38 string
+			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 249, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 255, Col: 38}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -845,9 +867,9 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var37 == nil {
-			templ_7745c5c3_Var37 = templ.NopComponent
+		templ_7745c5c3_Var39 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var39 == nil {
+			templ_7745c5c3_Var39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"search-options\"><div class=\"search-option\"><span class=\"label\">Case:</span> <input type=\"radio\" name=\"fold_case\" value=\"false\" id=\"case-match\" tabindex=\"3\"> <label for=\"case-match\">match</label> <input type=\"radio\" name=\"fold_case\" value=\"auto\" id=\"case-auto\" tabindex=\"4\"> <label for=\"case-auto\">auto</label> [<span class=\"tooltip-target\">?<div class=\"tooltip\">Case-sensitive if the query contains capital letters</div></span>] <input type=\"radio\" name=\"fold_case\" value=\"true\" id=\"case-ignore\" tabindex=\"5\"> <label for=\"case-ignore\">ignore</label></div><div class=\"search-option\"><span class=\"label\">Regex:</span> <input type=\"checkbox\" name=\"regex\" id=\"regex\" tabindex=\"6\"> <label for=\"regex\">on</label></div>")
@@ -864,12 +886,12 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var38 string
-				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
+				var templ_7745c5c3_Var40 string
+				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 286, Col: 23}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 292, Col: 23}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -887,12 +909,12 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var39 string
-				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
+				var templ_7745c5c3_Var41 string
+				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 290, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 296, Col: 17}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -910,12 +932,12 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var40 string
-			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
+			var templ_7745c5c3_Var42 string
+			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 296, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 302, Col: 37}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -923,12 +945,12 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var41 string
-			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
+			var templ_7745c5c3_Var43 string
+			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 296, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 302, Col: 59}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -941,12 +963,12 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var42 string
-				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
+				var templ_7745c5c3_Var44 string
+				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 300, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/search.templ`, Line: 306, Col: 61}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
