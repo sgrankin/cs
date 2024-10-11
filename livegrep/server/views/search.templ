@@ -189,9 +189,11 @@ templ matchView(backend string, r *api.Result, match api.LineResult) {
 
 templ extensionsButtons(extensions []string) {
 	<div class="file-extensions">
-		Narrow to:
-		for _, ex := range limitSlice(extensions, 5) {
-			<button class="file-extension" onClick="limitToExtension">{ ex } </button>
+		if len(extensions) > 0 {
+			Narrow to:
+			for _, ex := range limitSlice(extensions, 5) {
+				<button class="file-extension" onClick="limitToExtension">{ ex } </button>
+			}
 		}
 	</div>
 }
