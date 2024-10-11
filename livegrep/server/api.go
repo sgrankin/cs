@@ -46,7 +46,7 @@ func writeQueryError(w http.ResponseWriter, err error) {
 	// 	fmt.Sprintf("Talking to backend: %s", err.Error()))
 }
 
-func extractQuery(r *http.Request) (cs.Query, bool, error) {
+func extractQuery(r *http.Request) (cs.Query, error) {
 	var query cs.Query
 
 	if err := r.ParseForm(); err != nil {
@@ -161,15 +161,6 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 		ExitReason: search.Stats.ExitReason.String(),
 	}
 	return reply, nil
-}
-
-func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	reply, err := s.searchForRequest(ctx, r)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "bad_query", err.Error())
-		return
-	}
-	replyJSON(w, 200, reply)
 }
 
 func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.ReplySearch, error) {

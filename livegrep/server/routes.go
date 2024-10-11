@@ -22,8 +22,6 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	mux.Handle("GET /static/", cs.EmbedFSServer(staticFS))
 	mux.Handle("GET /view/{backend}/{path...}", ctxHandlerFunc(srv.ServeFile))
 
-	mux.Handle("POST /api/v1/search/{backend}", ctxHandlerFunc(srv.ServeAPISearch)) // Parameters are in form format.
-
 	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
 	mux.Handle("GET /debug/stats", ctxHandlerFunc(srv.ServeStats))
 	mux.Handle("GET /debug/vars", expvar.Handler())
