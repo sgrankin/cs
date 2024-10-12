@@ -6,7 +6,6 @@ package server
 import (
 	"cmp"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -21,30 +20,6 @@ import (
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/api"
 )
-
-func replyJSON(w http.ResponseWriter, status int, obj any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	enc := json.NewEncoder(w)
-	if err := enc.Encode(obj); err != nil {
-		log.Printf("writing http response, data=%s err=%q",
-			asJSON{obj},
-			err.Error())
-	}
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	log.Printf("error status=%d code=%s message=%q",
-		status, code, message)
-	replyJSON(w, status, &api.ReplyError{Err: api.InnerError{Code: code, Message: message}})
-}
-
-func writeQueryError(w http.ResponseWriter, err error) {
-	// TODO: is this an invalid argument?
-	writeError(w, 400, "query", err.Error())
-	// writeError(ctx, w, 500, "internal_error",
-	// 	fmt.Sprintf("Talking to backend: %s", err.Error()))
-}
 
 func extractQuery(r *http.Request) (cs.Query, error) {
 	var query cs.Query

@@ -23,7 +23,6 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	mux.Handle("GET /view/{backend}/{path...}", ctxHandlerFunc(srv.ServeFile))
 
 	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
-	mux.Handle("GET /debug/stats", ctxHandlerFunc(srv.ServeStats))
 	mux.Handle("GET /debug/vars", expvar.Handler())
 	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
 	mux.HandleFunc("GET /debug/pprof/cmdline", pprof.Cmdline)
