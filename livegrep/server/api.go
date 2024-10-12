@@ -50,7 +50,7 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 	var query cs.Query
 
 	if err := r.ParseForm(); err != nil {
-		return query, false, err
+		return query, err
 	}
 
 	params := r.Form
@@ -83,7 +83,7 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 		}
 	}
 
-	return query, regex, err
+	return query, err
 }
 
 var ErrTimedOut = errors.New("timed out talking to backend")
@@ -177,17 +177,13 @@ func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.Re
 		}
 	}
 
-	q, isRegex, err := extractQuery(r)
+	q, err := extractQuery(r)
 	if err != nil {
 		return nil, err
 	}
 
 	if q.Line == "" {
-		kind := "string"
-		if isRegex {
-			kind = "regex"
-		}
-		return nil, fmt.Errorf("you must specify a %s to match", kind)
+		return nil, nil
 	}
 
 	if q.MaxMatches == 0 {
