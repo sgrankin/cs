@@ -77,6 +77,14 @@ templ countView(d *api.ReplySearch) {
 	</span>
 }
 
+func facetValues(f *api.Facet) []string {
+	vals := []string{}
+	for _, v := range f.Values {
+		vals = append(vals, v.Value)
+	}
+	return vals
+}
+
 templ matchesView(d *api.ReplySearch) {
 	<div
 		id="results"
@@ -85,7 +93,11 @@ templ matchesView(d *api.ReplySearch) {
 		class={ templ.KV("no-context", d.Query.ContextLines <= 0) }
 	>
 		if len(d.Query.File) == 0 {
-			@extensionsButtons(d.TopExtensions)
+			for _, f := range d.Facets {
+				if f.Key == "ext" {
+					@extensionsButtons(facetValues(f))
+				}
+			}
 		}
 		<div class="path-results">
 			for _, r := range limitedFileResults(d) {
@@ -255,7 +267,7 @@ templ extensionsButtons(extensions []string) {
 		if len(extensions) > 0 {
 			Narrow to:
 			for _, ex := range limitSlice(extensions, 5) {
-				<button class="file-extension" onClick="limitToExtension">{ ex } </button>
+				<button class="file-extension" hx-on:click={ templ.JSFuncCall("limitToExtension", templ.JSExpression("event")) }>{ ex } </button>
 			}
 		}
 	</div>

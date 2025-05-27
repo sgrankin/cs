@@ -14,12 +14,11 @@ import "./bootstrap/js/bootstrap";
 
 import "./codesearch.css";
 
-import "htmx.org/dist/htmx";
+import htmx from "htmx.org";
 import jQuery from "jquery";
 
 import {init as _init, updateOptions, updateSelected} from "./repo_selector.ts";
 import * as api from "./api.ts";
-
 
 type Query = {
     q: string;
@@ -28,7 +27,6 @@ type Query = {
     backend: string;
     repo: string[];
 };
-
 
 function handleKey(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
@@ -112,9 +110,6 @@ namespace CodesearchUI {
         input_repos.on("change", () => setPref("repos", input_repos.val()));
         input_context.on("change", () => setPref("context", input_context.prop("checked")));
 
-        toggleContext();
-
-        Codesearch.Connect(CodesearchUI);
         jQuery(".query-hint code").on("click", function (e) {
             let ext = e.target.textContent;
             if (!ext) return;
@@ -266,6 +261,23 @@ function init(initData: api.SearchScriptData) {
     });
     CodesearchUI.onload();
 }
+
+function limitToExtension(e) {
+    let ext = e.target.textContent;
+    let input = htmx.find("#searchbox") as HTMLInputElement;
+    var q = input.value;
+    if (jQuery("#regex").is(":checked")) {
+        q = "file:\\" + ext + "$ " + q;
+    } else {
+        q = "file:" + ext + " " + q;
+    }
+    input.value = q;
+    htmx.trigger("#searchbox", "search");
+}
+
+htmx.onLoad((target) => {
+    htmx.findAll(target, ".file-extension").forEach((elt) => (elt.onclick = limitToExtension));
+});
 
 jQuery(() => {
     init(

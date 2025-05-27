@@ -27,6 +27,7 @@ type ReplySearch struct {
 	SearchType  string        `json:"search_type"`
 	Query       cs.Query      `json:"query"`
 	Facets      []*Facet      `json:"facets"`
+	Backend     string
 }
 
 type Facet struct {

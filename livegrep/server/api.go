@@ -201,7 +201,6 @@ func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.Re
 			cmp.Compare(e1, e2),
 		)
 	})
-	reply.TopExtensions = extensions
 	reply.Backend = backendName
 
 	// Remove overlapping context lines:
