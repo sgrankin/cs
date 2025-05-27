@@ -1,8 +1,6 @@
 module sgrankin.dev/cs
 
-go 1.23
-
-toolchain go1.23.2
+go 1.24
 
 require (
 	github.com/alecthomas/assert/v2 v2.11.0
@@ -14,6 +12,7 @@ require (
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/quic-go/quic-go v0.47.0
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/sync v0.8.0
 	tailscale.com v1.74.1
 )
@@ -112,7 +111,6 @@ require (
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sys v0.23.0 // indirect
