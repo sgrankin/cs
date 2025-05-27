@@ -43,9 +43,10 @@ func main() {
 		meta, err := readMeta()
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			log.Fatalf("ReadMeta failed: %v", err)
-		}
-		for _, fname := range meta.BuildOutputs {
-			os.Remove(fname)
+		} else if meta != nil {
+			for _, fname := range meta.BuildOutputs {
+				os.Remove(fname)
+			}
 		}
 	}
 
