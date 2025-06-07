@@ -15,16 +15,17 @@ import "./bootstrap/js/bootstrap";
 import "./codesearch.css";
 
 import jQuery from "jquery";
-import {signal} from "@preact/signals";
-import {createDraft, Draft, finishDraft, immerable, produce} from "immer";
-import {getJSON, set} from "js-cookie";
-import {Fragment, h, JSX, render} from "preact";
-import {createPortal} from "preact/compat";
-import {useEffect, useState} from "preact/hooks";
-import {isEqual} from "underscore";
+import { signal } from "@preact/signals";
+import { createDraft, Draft, finishDraft, immerable, produce } from "immer";
+import { getJSON, set } from "js-cookie";
+import { Fragment, h, JSX, render } from "preact";
+import { createPortal } from "preact/compat";
+import { useEffect, useState } from "preact/hooks";
+import { isEqual } from "underscore";
 
-import {Codesearch} from "./codesearch.ts";
-import {init as _init, updateOptions, updateSelected} from "./repo_selector.ts";
+import { Codesearch } from "./codesearch.ts";
+import { init as _init, updateOptions, updateSelected } from "./repo_selector.ts";
+import { ReplySearch } from "./api.ts";
 
 type FilePath = {
     backend: string;
@@ -58,7 +59,7 @@ class FileGroup {
     matched: ClippedLineMatch[] = [];
 
     constructor(m: MatchResult) {
-        this.path = {...m};
+        this.path = { ...m };
         this.matched = [...m.lines] as ClippedLineMatch[];
     }
 
@@ -220,7 +221,7 @@ class SearchState {
 
         var query = {};
         if (current.q !== "") {
-            query = {...current, context: this.context};
+            query = { ...current, context: this.context };
         }
 
         var qs = jQuery.param(query);
@@ -275,7 +276,7 @@ class SearchState {
             SearchState.reset(next);
             return [finishDraft(next), undefined];
         }
-        return [finishDraft(next), {id, ...search}];
+        return [finishDraft(next), { id, ...search }];
     }
 
     OnSearchError(search: number, error: string): SearchState {
@@ -288,7 +289,7 @@ class SearchState {
         return this;
     }
 
-    OnSearchDone(searchID: number, reply: any): SearchState {
+    OnSearchDone(searchID: number, reply: ReplySearch): SearchState {
         if (searchID < this.displayedSearch) {
             return this;
         }
@@ -299,19 +300,19 @@ class SearchState {
             }
             const backend = next.searchMap[searchID].backend;
             for (const fm of reply.file_results) {
-                next.fileMatches.push(new FileMatch({...fm, backend}));
+                next.fileMatches.push(new FileMatch({ ...fm, backend }));
             }
             for (const m of reply.results) {
-                next.matches.addMatch({...m, backend});
+                next.matches.addMatch({ ...m, backend });
             }
-            next.time = reply.info.total_time;
-            next.why = reply.info.why;
+            next.time = reply.info?.total_time;
+            next.why = reply.info?.why;
             next.filenameOnly = reply.query.FilenameOnly;
         });
     }
 }
 
-function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
+function MatchView({ path, match }: { path: FilePath; match: ClippedLineMatch }) {
     const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
         var lnoStr = n.toString() + (isMatch ? ":" : "-");
         var classes = ["lno-link"];
@@ -321,9 +322,9 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
                 className={classes.join(" ")}
                 href={viewURL(path.backend, path.tree, path.version, path.path, n)}
             >
-				<span className="lno" aria-label={lnoStr}>
-					{lnoStr}
-				</span>
+                <span className="lno" aria-label={lnoStr}>
+                    {lnoStr}
+                </span>
             </a>
         );
     };
@@ -334,17 +335,25 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
         ctxBefore.unshift(
             _renderLno(match.lno - i - 1, false),
             <span>{match.context_before[i]}</span>,
-            <span/>,
+            <span />,
         );
     }
     let ctxAfter: JSX.Element[] = [];
     var linesAfter = Math.max(0, match.context_after.length - (match.clip_after || 0));
     for (let i = 0; i < linesAfter; i++) {
-        ctxAfter.push(_renderLno(match.lno + i + 1, false), <span>{match.context_after[i]}</span>, <span/>);
+        ctxAfter.push(
+            _renderLno(match.lno + i + 1, false),
+            <span>{match.context_after[i]}</span>,
+            <span />,
+        );
     }
     var line = match.line;
     var bounds = match.bounds;
-    var pieces = [line.substring(0, bounds[0]), line.substring(bounds[0], bounds[1]), line.substring(bounds[1])];
+    var pieces = [
+        line.substring(0, bounds[0]),
+        line.substring(bounds[0], bounds[1]),
+        line.substring(bounds[1]),
+    ];
 
     var classes = ["match"];
     if (match.clip_before !== undefined) classes.push("clip-before");
@@ -364,10 +373,10 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
                 {ctxBefore}
                 {_renderLno(match.lno, true)}
                 <span className="matchline">
-					{pieces[0]}
+                    {pieces[0]}
                     <span className="matchstr">{pieces[1]}</span>
                     {pieces[2]}
-				</span>
+                </span>
                 <span className="matchlinks">{links}</span>
                 {ctxAfter}
             </div>
@@ -377,7 +386,9 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
 
 function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[] {
     linkConfigs = linkConfigs.filter(function (linkConfig) {
-        return !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path);
+        return (
+            !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path)
+        );
     });
 
     var links = linkConfigs.map(function (linkConfig) {
@@ -421,7 +432,7 @@ function externalURL(url, tree, version, path, lno) {
     return url;
 }
 
-function FileMatchView({match}: { match: FileMatch }) {
+function FileMatchView({ match }: { match: FileMatch }) {
     var path_info = match.m;
     var pieces = [
         path_info.path.substring(0, path_info.bounds[0]),
@@ -442,8 +453,8 @@ function FileMatchView({match}: { match: FileMatch }) {
     );
 }
 
-function FileGroupView({group}: { group: FileGroup }) {
-    const {tree, version, path} = group.path;
+function FileGroupView({ group }: { group: FileGroup }) {
+    const { tree, version, path } = group.path;
 
     let basename = path;
     let dirname = "";
@@ -456,24 +467,24 @@ function FileGroupView({group}: { group: FileGroup }) {
     return (
         <div className="file-group">
             <div className="header">
-				<span className="header-path">
-					<a className="result-path" href={group.viewURL()}>
-						<span className="repo">{tree}:</span>
-						<span className="version">{shorten(version)}:</span>
+                <span className="header-path">
+                    <a className="result-path" href={group.viewURL()}>
+                        <span className="repo">{tree}:</span>
+                        <span className="version">{shorten(version)}:</span>
                         {dirname}
                         <span className="filename">{basename}</span>
-					</a>
-					<div className="header-links">
-						{renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path)}
-					</div>
-				</span>
+                    </a>
+                    <div className="header-links">
+                        {renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path)}
+                    </div>
+                </span>
             </div>
-            {group.matched.map((match) => MatchView({path: group.path, match}))}
+            {group.matched.map((match) => MatchView({ path: group.path, match }))}
         </div>
     );
 }
 
-function MatchesView({model}: { model: SearchState }) {
+function MatchesView({ model }: { model: SearchState }) {
     // Collate which file extensions (.py, .go, etc) are most common.
     // countExtension() is called for file_search_results and search_results
     var extension_map: Record<string, number> = {};
@@ -490,7 +501,7 @@ function MatchesView({model}: { model: SearchState }) {
     let pathResults: JSX.Element[] = [];
     for (const match of model.fileMatches) {
         if (model.filenameOnly || count < 10) {
-            pathResults.push(FileMatchView({match}));
+            pathResults.push(FileMatchView({ match }));
         }
         countExtension(match.m.path);
         count += 1;
@@ -501,7 +512,7 @@ function MatchesView({model}: { model: SearchState }) {
     for (const id in model.matches.groups) {
         const group = model.matches.groups[id];
         group.processContextOverlaps();
-        nodes.push(FileGroupView({group}));
+        nodes.push(FileGroupView({ group }));
         countExtension(group.path.path);
     }
 
@@ -516,7 +527,13 @@ function MatchesView({model}: { model: SearchState }) {
         classes = "no-context";
     }
     return (
-        <div class={classes} id="results" tabIndex={-1} style={{outline: "none"}} onKeyDown={handleKey}>
+        <div
+            class={classes}
+            id="results"
+            tabIndex={-1}
+            style={{ outline: "none" }}
+            onKeyDown={handleKey}
+        >
             {nodes}
         </div>
     );
@@ -590,7 +607,7 @@ function getSelectedText() {
     return window.getSelection ? window.getSelection()?.toString() : null;
 }
 
-function ResultView({model}: { model: SearchState }) {
+function ResultView({ model }: { model: SearchState }) {
     const [last_url, set_last_url] = useState(["", 0] as [string, number]);
     var browser_url = window.location.pathname + window.location.search;
 
@@ -632,13 +649,13 @@ function ResultView({model}: { model: SearchState }) {
 
     return (
         <div id="resultarea">
-            <div id="countarea">{CountView({model: model})}</div>
-            {MatchesView({model: model})}
+            <div id="countarea">{CountView({ model: model })}</div>
+            {MatchesView({ model: model })}
         </div>
     );
 }
 
-function CountView({model}: { model: SearchState }) {
+function CountView({ model }: { model: SearchState }) {
     var num_results = "";
     if (model.filenameOnly) {
         num_results += model.fileMatches.length;
@@ -651,9 +668,9 @@ function CountView({model}: { model: SearchState }) {
 
     let time = model.time ? (
         <span id="searchtimebox">
-			<span class="label"> in </span>
-			<span id="searchtime">{model.time + " ms"}</span>
-		</span>
+            <span class="label"> in </span>
+            <span id="searchtime">{model.time + " ms"}</span>
+        </span>
     ) : (
         <></>
     );
@@ -727,8 +744,7 @@ function HelpView() {
                         </code>
                     </td>
                     <td>
-                        Escape one of the above terms by wrapping it in parentheses (with regex
-                        enabled).
+                        Escape one of the above terms by wrapping it in parentheses (with regex enabled).
                     </td>
                     <td>
                         <a href="/search?q=(file:)&regex=true">example</a>
@@ -764,9 +780,9 @@ namespace CodesearchUI {
         if (input) return;
 
         const App = () => {
-            return ResultView({model: state.value});
+            return ResultView({ model: state.value });
         };
-        render(<App/>, jQuery("#resultbox")[0]);
+        render(<App />, jQuery("#resultbox")[0]);
 
         input = jQuery("#searchbox");
         input_repos = jQuery("#repos");
@@ -925,7 +941,7 @@ namespace CodesearchUI {
             prefs = {};
         }
         prefs[key] = value;
-        set("prefs", prefs, {expires: 36500});
+        set("prefs", prefs, { expires: 36500 });
     }
 
     function parseQueryParams() {

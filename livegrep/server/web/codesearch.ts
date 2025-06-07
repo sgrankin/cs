@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 import jQuery from "jquery";
+import { ReplyError, ReplySearch } from "./api";
 
 // TODO: this should be an instance of a singleton... probably?
 export namespace Codesearch {
     interface Delegate {
         OnConnect: () => void;
-        SearchDone: (id: number, reply: any) => void;
+        SearchDone: (id: number, reply: ReplySearch) => void;
         SearchFailed: (arg0: any, arg1: string) => void;
     }
 
@@ -43,25 +44,24 @@ export namespace Codesearch {
         var opts = in_flight;
 
         var url = "/api/v1/search/" + opts.backend;
-        const start = Date.now();
         try {
-            let data = await jQuery.ajax({
-                method: "POST",
-                url: url,
-                data: {
+            let data = await jQuery.post(
+                url,
+                {
                     q: opts.q,
                     fold_case: opts.fold_case,
                     regex: opts.regex,
                     repo: opts.repo,
                 },
-                dataType: "json",
-            });
-            delegate.SearchDone(opts.id, data);
+                null,
+                "json",
+            );
+            delegate.SearchDone(opts.id, new ReplySearch(data));
         } catch (err) {
             let xhr = err as jQuery.jqXHR;
             console.log(xhr);
             if (xhr.status >= 400 && xhr.status < 500) {
-                delegate.SearchFailed(opts.id, xhr.responseJSON.error.message);
+                delegate.SearchFailed(opts.id, new ReplyError(xhr.responseJSON).error.message);
             } else {
                 var message = "Cannot connect to server";
                 if (xhr.status) {

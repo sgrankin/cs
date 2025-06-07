@@ -15,7 +15,7 @@ require (
 	github.com/quic-go/quic-go v0.52.0
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 	golang.org/x/sync v0.14.0
-	tailscale.com v1.84.0
+	tailscale.com v1.84.2
 )
 
 require (
@@ -92,6 +92,8 @@ require (
 	github.com/tailscale/peercred v0.0.0-20250107143737-35a0c7bd7edc // indirect
 	github.com/tailscale/web-client-prebuilt v0.0.0-20250124233751-d4cd19a26976 // indirect
 	github.com/tailscale/wireguard-go v0.0.0-20250304000100-91a0587fb251 // indirect
+	github.com/tkrajina/go-reflector v0.5.8 // indirect
+	github.com/tkrajina/typescriptify-golang-structs v0.2.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
@@ -110,4 +112,9 @@ require (
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gvisor.dev/gvisor v0.0.0-20250205023644-9414b50a5633 // indirect
+)
+
+tool (
+	github.com/tkrajina/go-reflector/reflector
+	github.com/tkrajina/typescriptify-golang-structs/tscriptify
 )

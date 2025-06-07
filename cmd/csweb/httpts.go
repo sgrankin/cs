@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/quic-go/quic-go/http3"
-	"tailscale.com/client/tailscale"
+	"tailscale.com/client/local"
 	"tailscale.com/tsnet"
 )
 
@@ -26,16 +26,10 @@ type HTTPTSServer struct {
 
 	ts      *tsnet.Server
 	httpsrv *http.Server
-	lc      *tailscale.LocalClient
+	lc      *local.Client
 
 	ctx       context.Context
 	ctxCancel func()
-}
-
-func (s *HTTPTSServer) mkhttpsrv() {
-	if s.httpsrv != nil {
-		return
-	}
 }
 
 // Serve serves :443 and a :80 redirect on a tailnet.
