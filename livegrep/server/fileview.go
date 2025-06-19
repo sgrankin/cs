@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"os/exec"
 	"path"
 	"regexp"
 	"sort"
@@ -127,32 +126,6 @@ type gitTreeEntry struct {
 	ObjectType string
 	ObjectId   string
 	ObjectName string
-}
-
-func gitParseTreeEntry(line string) gitTreeEntry {
-	dataAndPath := strings.SplitN(line, "\t", 2)
-	dataFields := strings.Split(dataAndPath[0], " ")
-	return gitTreeEntry{
-		Mode:       dataFields[0],
-		ObjectType: dataFields[1],
-		ObjectId:   dataFields[2],
-		ObjectName: dataAndPath[1],
-	}
-}
-
-func gitListDir(obj string, repoPath string) ([]gitTreeEntry, error) {
-	out, err := exec.Command("git", "-C", repoPath, "cat-file", "-p", obj).Output()
-	if err != nil {
-		return nil, err
-	}
-
-	lines := strings.Split(string(out), "\n")
-	lines = lines[:len(lines)-1]
-	result := make([]gitTreeEntry, len(lines))
-	for i, line := range lines {
-		result[i] = gitParseTreeEntry(line)
-	}
-	return result, nil
 }
 
 func viewPath(backend, repo, commit string, name ...string) string {
@@ -274,7 +247,7 @@ func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pat
 
 	var readmeContent *sourceFileContent
 	if readmePath != "" {
-		readmeContent = mkFileContent(backend, cs.File{repoName, commit, readmePath})
+		readmeContent = mkFileContent(backend, cs.File{Tree: repoName, Version: commit, Path: readmePath})
 	}
 	return &directoryContent{
 		Entries:       dirEntries,

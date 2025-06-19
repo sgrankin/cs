@@ -17,7 +17,7 @@ import (
 	"sgrankin.dev/cs/livegrep/server/api"
 )
 
-func replyJSON(w http.ResponseWriter, status int, obj interface{}) {
+func replyJSON(w http.ResponseWriter, status int, obj any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)

@@ -31,16 +31,6 @@ var knownTags = map[string]bool{
 	"max_matches": true,
 }
 
-func onlyOneSynonym(ops map[string]string, op1 string, op2 string) (string, error) {
-	if ops[op1] != "" && ops[op2] != "" {
-		return "", fmt.Errorf("cannot provide both %s: and %s:, because they are synonyms", op1, op2)
-	}
-	if ops[op1] != "" {
-		return ops[op1], nil
-	}
-	return ops[op2], nil
-}
-
 func ensureSingleValue(ops map[string][]string, key string) (string, error) {
 	if len(ops[key]) > 1 {
 		return "", fmt.Errorf("multiple values for %s", key)
