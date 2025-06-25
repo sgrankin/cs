@@ -6,38 +6,33 @@
 import jQuery from "jquery";
 import "./codesearch.css";
 import "./fileview.css";
-
-var KeyCodes = {
-    ESCAPE: 27,
-    ENTER: 13,
-    SLASH_OR_QUESTION_MARK: 191,
-};
+import {FileViewData} from "./api.ts";
 
 function getSelectedText() {
-    return window.getSelection ? window.getSelection()?.toString() : null;
+    return window.getSelection()?.toString() || "";
 }
 
-function scrollToRange(range, elementContainer) {
+function scrollToRange(range: { start: number; end: number; }, elementContainer: JQuery) {
     // - If we have a single line, scroll the viewport so that the element is
     // at 1/3 of the viewport.
     // - If we have a range, try and center the range in the viewport
     // - If the range is to high to fit in the viewport, fallback to the single
     //   element scenario for the first line
-    var viewport = jQuery(window);
-    var viewportHeight = viewport.height();
+    let viewport = jQuery(window);
+    let viewportHeight = viewport.height() || 0;
 
-    var scrollOffset = Math.floor(viewport.height() / 3.0);
+    let scrollOffset = Math.floor(viewportHeight / 3.0);
 
-    var firstLineElement = elementContainer.find("#L" + range.start);
+    let firstLineElement = elementContainer.find("#L" + range.start);
     if (!firstLineElement.length) {
         // We were given a scroll offset to a line number that doesn't exist in the page, bail
         return;
     }
     if (range.start != range.end) {
-        // We have a range, try and center the entire range. If it's to high
-        // for the viewport, fallback to revealing the first element.
-        var lastLineElement = elementContainer.find("#L" + range.end);
-        var rangeHeight =
+        // We have a range, try and center the entire range.
+        // If it's too high for the viewport, fallback to revealing the first element.
+        let lastLineElement = elementContainer.find("#L" + range.end);
+        let rangeHeight =
             lastLineElement.offset().top + lastLineElement.height() - firstLineElement.offset().top;
         if (rangeHeight <= viewportHeight) {
             // Range fits in viewport, center it
@@ -50,7 +45,7 @@ function scrollToRange(range, elementContainer) {
     viewport.scrollTop(firstLineElement.offset().top - scrollOffset);
 }
 
-function setHash(hash) {
+function setHash(hash: string) {
     if (history.replaceState) {
         history.replaceState(null, "", hash);
     } else {
@@ -58,13 +53,13 @@ function setHash(hash) {
     }
 }
 
-function parseHashForLineRange(hashString) {
-    var parseMatch = hashString.match(/#L(\d+)(?:-L?(\d+))?/);
+function parseHashForLineRange(hashString: string) {
+    let parseMatch = hashString.match(/#L(\d+)(?:-L?(\d+))?/);
 
     if (parseMatch && parseMatch.length === 3) {
         // We have a match on the regex expression
-        var startLine = parseInt(parseMatch[1], 10);
-        var endLine = parseInt(parseMatch[2], 10);
+        let startLine = parseInt(parseMatch[1], 10);
+        let endLine = parseInt(parseMatch[2], 10);
         if (isNaN(endLine) || endLine < startLine) {
             endLine = startLine;
         }
@@ -77,18 +72,18 @@ function parseHashForLineRange(hashString) {
     return null;
 }
 
-function addHighlightClassesForRange(range, root) {
-    var idSelectors = [];
-    for (var lineNumber = range.start; lineNumber <= range.end; lineNumber++) {
+function addHighlightClassesForRange(range: { start: number; end: number; }, root: JQuery) {
+    let idSelectors: string[] = [];
+    for (let lineNumber = range.start; lineNumber <= range.end; lineNumber++) {
         idSelectors.push("#L" + lineNumber);
     }
     root.find(idSelectors.join(",")).addClass("highlighted");
 }
 
-function expandRangeToElement(element) {
-    var range = parseHashForLineRange(document.location.hash);
+function expandRangeToElement(element: JQuery) {
+    let range = parseHashForLineRange(document.location.hash);
     if (range) {
-        var elementLine = parseInt(element.attr("id").replace("L", ""), 10);
+        let elementLine = parseInt(element.attr("id").replace("L", ""), 10);
         if (elementLine < range.start) {
             range.end = range.start;
             range.start = elementLine;
@@ -99,27 +94,21 @@ function expandRangeToElement(element) {
     }
 }
 
-function init(initData) {
-    var root = jQuery(".file-content");
-    var lineNumberContainer = root.find(".line-numbers");
-    var helpScreen = jQuery(".help-screen");
+function init(initData: FileViewData) {
+    let root = jQuery(".file-content");
+    let lineNumberContainer = root.find(".line-numbers");
+    let helpScreen = jQuery(".help-screen");
 
-    function doSearch(event, query, newTab) {
-        var url;
-        if (query !== undefined) {
-            url =
-                "/search?q=" +
-                encodeURIComponent(query) +
-                "&repo=" +
-                encodeURIComponent(initData.repo_name);
-        } else {
-            url = "/search";
-        }
-        if (newTab === true) {
+    function doSearch(query: string, newTab = false) {
+        let url = "/search" + (query
+            ? "?q=" + encodeURIComponent(query) + "&repo=" + encodeURIComponent(initData.repo_name)
+            : "");
+
+        if (newTab)
             window.open(url);
-        } else {
+        else
             window.location.href = url;
-        }
+
     }
 
     function showHelp() {
@@ -141,16 +130,12 @@ function init(initData) {
         return true;
     }
 
-    function handleHashChange(scrollElementIntoView) {
-        if (scrollElementIntoView === undefined) {
-            scrollElementIntoView = true; // default if nothing was provided
-        }
-
+    function handleHashChange(scrollElementIntoView = true) {
         // Clear current highlights
         lineNumberContainer.find(".highlighted").removeClass("highlighted");
 
         // Highlight the current range from the hash, if any
-        var range = parseHashForLineRange(document.location.hash);
+        let range = parseHashForLineRange(document.location.hash);
         if (range) {
             addHighlightClassesForRange(range, lineNumberContainer);
             if (scrollElementIntoView) {
@@ -162,10 +147,10 @@ function init(initData) {
         jQuery("#external-link").attr("href", getExternalLink(range));
     }
 
-    function getLineNumber(range) {
+    function getLineNumber(range: { start: number; end: number; } | null) {
         if (range == null) {
             // Default to first line if no lines are selected.
-            return 1;
+            return "1";
         } else if (range.start == range.end) {
             return range.start;
         } else {
@@ -176,11 +161,11 @@ function init(initData) {
         }
     }
 
-    function getExternalLink(range) {
-        var lno = getLineNumber(range);
+    function getExternalLink(range: { start: number; end: number; } | null) {
+        let lno = getLineNumber(range);
 
-        var repoName = initData.repo_name;
-        var filePath = initData.file_path;
+        let repoName = initData.repo_name;
+        let filePath = initData.file_path;
         let url = initData.url_pattern;
 
         // If url not found, warn user and fail gracefully
@@ -199,69 +184,68 @@ function init(initData) {
         }
 
         // XXX code copied
-        url = url.replace("{lno}", lno);
+        url = url.replace("{lno}", lno.toString());
         url = url.replace("{version}", initData.commit);
         url = url.replace("{name}", repoName);
         url = url.replace("{path}", filePath);
         return url;
     }
 
-    function updateFragments(range, $anchors) {
-        $anchors.each(function () {
-            var $a = jQuery(this);
-            var href = $a.attr("href").split("#")[0];
-            if (range !== null) {
-                href += "#L" + getLineNumber(range);
+    function processKeyEvent(key: string) {
+        switch (key) {
+            case "Enter": {
+                // Perform a new search with the selected text, if any
+                let selectedText = getSelectedText();
+                if (selectedText) {
+                    doSearch(selectedText, true);
+                }
+                return true;
             }
-            $a.attr("href", href);
-        });
-    }
-
-    function processKeyEvent(event) {
-        if (event.which === KeyCodes.ENTER) {
-            // Perform a new search with the selected text, if any
-            var selectedText = getSelectedText();
-            if (selectedText) {
-                doSearch(event, selectedText, true);
+            case "/": {
+                hideHelp();
+                doSearch(getSelectedText());
+                return true;
             }
-        } else if (event.which === KeyCodes.SLASH_OR_QUESTION_MARK) {
-            event.preventDefault();
-            if (event.shiftKey) {
+            case "?": {
                 showHelp();
-            } else {
-                hideHelp();
-                doSearch(event, getSelectedText());
+                return true;
             }
-        } else if (event.which === KeyCodes.ESCAPE) {
-            // Avoid swallowing the important escape key event unless we're sure we want to
-            if (!helpScreen.hasClass("hidden")) {
-                event.preventDefault();
+            case "Escape": {
+                // Avoid swallowing the important escape key event unless we're sure we want to
+                if (helpScreen.hasClass("hidden")) {
+                    return false;
+                }
                 hideHelp();
+                jQuery("#query").trigger("blur");
+                return true;
             }
-            jQuery("#query").blur();
-        } else if (String.fromCharCode(event.which) == "V") {
-            // Visually highlight the external link to indicate what happened
-            jQuery("#external-link").focus();
-            window.location = jQuery("#external-link").attr("href");
-        } else if (String.fromCharCode(event.which) == "N" || String.fromCharCode(event.which) == "P") {
-            var goBackwards = String.fromCharCode(event.which) === "P";
-            var selectedText = getSelectedText();
-            if (selectedText) {
-                window.find(selectedText, false /* case sensitive */, goBackwards);
+            case "v": {
+                // Visually highlight the external link to indicate what happened
+                let link = jQuery("#external-link");
+                link.trigger("focus");
+                window.location.href = link.attr("href") as string;
+                return true;
+            }
+            case "n":
+            case "p": {
+                let selectedText = getSelectedText();
+                if (selectedText) {
+                    window.find(selectedText, /*case-sensitive:*/false, /*previous:*/key == "p");
+                }
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
-    function initializeActionButtons(root) {
-        // Map out action name to function call, and automate the details of actually hooking
-        // up the event handling.
-        var ACTION_MAP = {
+    function initializeActionButtons(root: JQuery) {
+        // Map out action name to function call, and automate the details of actually hooking up the event handling.
+        let ACTION_MAP = {
             search: doSearch,
             help: showHelp,
         };
 
-        for (var actionName in ACTION_MAP) {
+        for (let actionName in ACTION_MAP) {
             root.on(
                 "click auxclick",
                 '[data-action-name="' + actionName + '"]',
@@ -273,19 +257,19 @@ function init(initData) {
                     return function (event) {
                         event.preventDefault();
                         event.stopImmediatePropagation(); // Prevent immediately closing modals etc.
-                        handler.call(this, event);
+                        handler();
                     };
                 })(ACTION_MAP[actionName]),
             );
         }
     }
 
-    var showSelectionReminder = function () {
+    let showSelectionReminder = function () {
         jQuery(".without-selection").hide();
         jQuery(".with-selection").show();
     };
 
-    var hideSelectionReminder = function () {
+    let hideSelectionReminder = function () {
         jQuery(".without-selection").show();
         jQuery(".with-selection").hide();
     };
@@ -298,7 +282,7 @@ function init(initData) {
         lineNumberContainer.on("click", "a", function (event) {
             event.preventDefault();
             if (event.shiftKey) {
-                expandRangeToElement(jQuery(event.target), lineNumberContainer);
+                expandRangeToElement(jQuery(event.target));
             } else {
                 setHash(jQuery(event.target).attr("href"));
             }
@@ -311,18 +295,18 @@ function init(initData) {
             handleHashChange();
         });
 
-        jQuery(document).on("keydown", function (event) {
+        jQuery(document).on("keydown", event => {
             // Filter out key events when the user has focused an input field.
             if (jQuery(event.target).is("input,textarea")) return;
             // Filter out key if a modifier is pressed.
             if (event.altKey || event.ctrlKey || event.metaKey) return;
-            processKeyEvent(event);
+            if (processKeyEvent(event.key)) event.preventDefault();
         });
 
-        jQuery(document).mouseup(function () {
-            var selectedText = getSelectedText();
+        jQuery(document).on("mouseup", function () {
+            let selectedText = getSelectedText();
             if (selectedText) {
-                showSelectionReminder(selectedText);
+                showSelectionReminder();
             } else {
                 hideSelectionReminder();
             }
@@ -344,5 +328,5 @@ function init(initData) {
 }
 
 jQuery(() => {
-    init(JSON.parse(document.getElementById("data").text));
+    init(new FileViewData((document.getElementById("data") as HTMLScriptElement).text));
 });

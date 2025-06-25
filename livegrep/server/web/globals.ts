@@ -6,4 +6,4 @@
 // For compatibility with (our) bootstrap, we need this globally...
 import jquery from "jquery";
 
-globalThis.jQuery = jquery;
+window.jQuery = jquery;
