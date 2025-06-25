@@ -21,11 +21,10 @@ import { getJSON, set } from "js-cookie";
 import { Fragment, h, JSX, render } from "preact";
 import { createPortal } from "preact/compat";
 import { useEffect, useState } from "preact/hooks";
-import { isEqual } from "underscore";
 
 import { Codesearch } from "./codesearch.ts";
 import { init as _init, updateOptions, updateSelected } from "./repo_selector.ts";
-import { ReplySearch } from "./api.ts";
+import { LinkConfig, ReplySearch, SearchScriptData } from "./api.ts";
 
 type FilePath = {
     backend: string;
@@ -149,7 +148,13 @@ class FileMatch {
     }
 }
 
-function viewURL(backend, tree, version, path, lno?) {
+function viewURL(
+    backend: string,
+    tree: string,
+    version: string,
+    path: string,
+    lno?: number | undefined,
+) {
     path = path.replace(/^\/+/, ""); // Trim any leading slashes
     // Tree/version/path separation is via : as tree may have slashes in it...
     // TODO: should we just URL encode it?
@@ -160,7 +165,7 @@ function viewURL(backend, tree, version, path, lno?) {
     return url;
 }
 
-function shorten(ref) {
+function shorten(ref: string) {
     var match = /^refs\/(tags|branches)\/(.*)/.exec(ref);
     if (match) {
         return match[2];
@@ -264,8 +269,10 @@ class SearchState {
             cur.fold_case === search.fold_case &&
             cur.regex === search.regex &&
             cur.backend === search.backend &&
-            isEqual(cur.repo, search.repo)
+            cur.repo.length == search.repo.length &&
+            cur.repo.every((v, i) => v == search.repo[i])
         ) {
+            // No change; return current search.
             return [this, undefined];
         }
         const next = createDraft(this);
@@ -360,7 +367,9 @@ function MatchView({ path, match }: { path: FilePath; match: ClippedLineMatch })
     if (match.clip_after !== undefined) classes.push("clip-after");
 
     var links = renderLinkConfigs(
-        CodesearchUI.linkConfigs.filter((c) => c.url_template.includes("{lno}")),
+        CodesearchUI.linkConfigs.filter((c: { url_template: string }) =>
+            c.url_template.includes("{lno}"),
+        ),
         path.tree,
         path.version,
         path.path,
@@ -384,7 +393,13 @@ function MatchView({ path, match }: { path: FilePath; match: ClippedLineMatch })
     );
 }
 
-function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[] {
+function renderLinkConfigs(
+    linkConfigs: LinkConfig[],
+    tree: string,
+    version: string,
+    path: string,
+    lno?: number | undefined,
+): JSX.Element[] {
     linkConfigs = linkConfigs.filter(function (linkConfig) {
         return (
             !linkConfig.match_regexp || linkConfig.match_regexp.test(tree + "@" + version + "/+/" + path)
@@ -412,7 +427,7 @@ function renderLinkConfigs(linkConfigs, tree, version, path, lno?): JSX.Element[
     return out;
 }
 
-function externalURL(url, tree, version, path, lno) {
+function externalURL(url: string, tree: string, version: string, path: string, lno: number | undefined) {
     if (lno === undefined) {
         lno = 1;
     }
@@ -424,7 +439,7 @@ function externalURL(url, tree, version, path, lno) {
     }
 
     // the order of these replacements is used to minimize conflicts
-    url = url.replace(/{lno}/g, lno);
+    url = url.replace(/{lno}/g, lno.toString());
     url = url.replace(/{version}/g, shorten(version));
     url = url.replace(/{name}/g, tree);
     url = url.replace(/{basename}/g, tree.split("/")[1]); // E.g. "foo" in "username/foo"
@@ -488,7 +503,7 @@ function MatchesView({ model }: { model: SearchState }) {
     // Collate which file extensions (.py, .go, etc) are most common.
     // countExtension() is called for file_search_results and search_results
     var extension_map: Record<string, number> = {};
-    var countExtension = (path) => {
+    var countExtension = (path: string) => {
         var r = /[^\/](\.[a-z.]{1,6})$/i;
         var match = path.match(r);
         if (match) {
@@ -768,13 +783,16 @@ function ErrorView(err: string) {
 
 // TODO: this should be an instance of a singleton... maybe?
 namespace CodesearchUI {
-    export let backend_repos = {};
-    export let defaultSearchRepos;
-    export let linkConfigs;
+    export let backend_repos: { [x: string]: any };
+    export let linkConfigs: LinkConfig[];
     let state = signal(new SearchState());
-    export let input, input_backend, input_regex;
-    let input_repos, inputs_case, input_context;
-    let timer;
+    export let input: JQuery<HTMLInputElement>;
+    export let input_backend: JQuery<HTMLSelectElement> | null;
+    export let input_regex: JQuery<HTMLInputElement>;
+    let input_repos: JQuery<HTMLSelectElement>;
+    let inputs_case: JQuery<HTMLInputElement>;
+    let input_context: JQuery<HTMLInputElement>;
+    let timer: NodeJS.Timeout | null;
 
     export function onload() {
         if (input) return;
@@ -793,40 +811,34 @@ namespace CodesearchUI {
         input_context = jQuery("input[name=context]");
 
         if (inputs_case.filter(":checked").length == 0) {
-            inputs_case.filter("[value=auto]").attr("checked", true);
+            inputs_case.filter("[value=auto]").attr("checked", "true");
         }
 
         _init();
         initQuery();
         updateRepoOptions();
 
-        input.keydown(onKeypress);
-        input.bind("paste", onKeypress);
-        input.focus();
-        if (input_backend) input_backend.change(selectBackend);
+        input.on("keydown", onKeypress);
+        input.on("paste", onKeypress);
+        input.trigger("focus");
+        if (input_backend) input_backend.on("change", selectBackend);
 
-        inputs_case.change(onKeypress);
-        input_regex.change(onKeypress);
-        input_repos.change(onKeypress);
-        input_context.change(toggleContext);
+        inputs_case.on("change", onKeypress);
+        input_regex.on("change", onKeypress);
+        input_repos.on("change", onKeypress);
+        input_context.on("change", toggleContext);
 
-        input_regex.change(function () {
-            setPref("regex", input_regex.prop("checked"));
-        });
-        input_repos.change(function () {
-            setPref("repos", input_repos.val());
-        });
-        input_context.change(function () {
-            setPref("context", input_context.prop("checked"));
-        });
+        input_regex.on("change", () => setPref("regex", input_regex.prop("checked")));
+        input_repos.on("change", () => setPref("repos", input_repos.val()));
+        input_context.on("change", () => setPref("context", input_context.prop("checked")));
 
         toggleContext();
 
         Codesearch.Connect(CodesearchUI);
-        jQuery(".query-hint code").click(function (e) {
+        jQuery(".query-hint code").on("click", function (e) {
             var ext = e.target.textContent;
             if (!ext) return;
-            var q = input.val();
+            var q = input.val() as string;
             if (
                 !q.includes(ext) &&
                 ((ext.indexOf("-") == 0 && !q.includes(ext.substring(1))) ||
@@ -835,11 +847,11 @@ namespace CodesearchUI {
                 q = q + " " + ext;
             }
             input.val(q);
-            input.focus();
+            input.trigger("focus");
         });
 
         // Update the search when the user hits Forward or Back.
-        window.onpopstate = (event) => {
+        window.onpopstate = (_event: any) => {
             var parms = parseQueryParams();
             initQueryFromParams(parms);
             NewSearch();
@@ -855,7 +867,7 @@ namespace CodesearchUI {
         var parms = parseQueryParams();
 
         var hasParms = false;
-        for (var p in parms) {
+        for (var _ in parms) {
             hasParms = true;
             break;
         }
@@ -869,32 +881,32 @@ namespace CodesearchUI {
         setTimeout(onKeypress, 0);
     }
 
-    function initQueryFromParams(parms) {
+    function initQueryFromParams(parms: Map<string, string[]>) {
         var q: string[] = [];
-        if (parms.q) q.push(parms.q[0]);
-        if (parms.file) q.push("file:" + parms.file[0]);
+        if (parms["q"]) q.push(parms["q"][0]);
+        if (parms["file"]) q.push("file:" + parms["file"][0]);
         input.val(q.join(" "));
 
-        if (parms.fold_case) {
-            inputs_case.filter("[value=" + parms.fold_case[0] + "]").attr("checked", true);
+        if (parms["fold_case"]) {
+            inputs_case.filter("[value=" + parms["fold_case"][0] + "]").attr("checked", "true");
         }
 
-        if (parms.regex) {
-            input_regex.prop("checked", parms.regex[0] === "true");
+        if (parms["regex"]) {
+            input_regex.prop("checked", parms["regex"][0] === "true");
         }
 
-        if (parms.context) {
-            input_context.prop("checked", parms.context[0] === "true");
+        if (parms["context"]) {
+            input_context.prop("checked", parms["context"][0] === "true");
         }
 
-        var backend = null;
-        if (parms.backend) backend = parms.backend;
-        var m;
-        if ((m = new RegExp("/search/([^/]+)/?").exec(window.location.pathname))) {
-            backend = m[1];
-        }
+        var backend: string | null = null;
+        if (parms["backend"]) backend = parms["backend"];
+
+        var m = new RegExp("/search/([^/]+)/?").exec(window.location.pathname);
+        if (m) backend = m[1];
+
         if (backend && input_backend) {
-            var old_backend = input_backend.val();
+            var old_backend = input_backend.val() as string;
             input_backend.val(backend);
 
             // Something (bootstrap-select?) messes with the behaviour of val() on
@@ -907,8 +919,8 @@ namespace CodesearchUI {
             }
         }
 
-        var repos = [];
-        if (parms.repo) repos = repos.concat(parms.repo);
+        var repos: string[] = [];
+        if (parms["repo"]) repos = repos.concat(parms["repo"]);
         if (parms["repo[]"]) repos = repos.concat(parms["repo[]"]);
         updateSelected(repos);
     }
@@ -923,8 +935,6 @@ namespace CodesearchUI {
         }
         if (prefs["repos"] !== undefined) {
             updateSelected(prefs["repos"]);
-        } else if (defaultSearchRepos !== undefined) {
-            updateSelected(defaultSearchRepos);
         }
         if (prefs["context"] !== undefined) {
             input_context.prop("checked", prefs["context"]);
@@ -945,16 +955,16 @@ namespace CodesearchUI {
         set("prefs", prefs, { expires: 36500 });
     }
 
-    function parseQueryParams() {
-        var urlParams = {};
-        var e,
+    function parseQueryParams(): Map<string, string[]> {
+        var urlParams = new Map();
+        var e: string[] | null,
             a = /\+/g,
             r = /([^&=]+)=?([^&]*)/g,
-            d = (s) => decodeURIComponent(s.replace(a, " ")),
+            d = (s: string) => decodeURIComponent(s.replace(a, " ")),
             q = window.location.search.substring(1);
 
         while ((e = r.exec(q))) {
-            if (urlParams[d(e[1])]) {
+            if (urlParams.get(d(e[1]))) {
                 urlParams[d(e[1])].push(d(e[2]));
             } else {
                 urlParams[d(e[1])] = [d(e[2])];
@@ -975,7 +985,7 @@ namespace CodesearchUI {
 
     function updateRepoOptions() {
         if (!input_backend) return;
-        var backend = input_backend.val();
+        var backend = input_backend.val() as string;
         setPref("backend", backend);
         updateOptions(backend_repos[backend]);
     }
@@ -988,11 +998,11 @@ namespace CodesearchUI {
     export function NewSearch() {
         clearTimer();
         let search: Query = {
-            q: input.val(),
-            fold_case: inputs_case.filter(":checked").val(),
+            q: input.val() || "",
+            fold_case: inputs_case.is(":checked"),
             regex: input_regex.is(":checked"),
-            repo: input_repos.val(),
-            backend: input_backend?.val(),
+            repo: input_repos.val() as string[],
+            backend: input_backend?.val() as string,
         };
 
         const [next, qs] = state.value.OnNewSearch(search);
@@ -1009,26 +1019,23 @@ namespace CodesearchUI {
         }
     }
 
-    export function SearchFailed(search, error) {
+    export function SearchFailed(search: number, error: string) {
         state.value = state.value.OnSearchError(search, error);
     }
 
-    export function SearchDone(search, reply) {
+    export function SearchDone(search: number, reply: ReplySearch) {
         state.value = state.value.OnSearchDone(search, reply);
     }
 }
 
-function init(initData) {
+function init(initData: SearchScriptData) {
     CodesearchUI.backend_repos = initData.backend_repos;
     CodesearchUI.linkConfigs = (initData.link_configs || []).map(function (link_config) {
-        if (link_config.match_regexp) {
-            link_config.match_regexp = new RegExp(link_config.match_regexp);
-        }
         return link_config;
     });
     CodesearchUI.onload();
 }
 
 jQuery(() => {
-    init(JSON.parse((document.getElementById("data") as HTMLScriptElement).text));
+    init(new SearchScriptData((document.getElementById("data") as HTMLScriptElement).text));
 });

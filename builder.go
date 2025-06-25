@@ -5,9 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"log"
-	"maps"
-	"os"
-	"strings"
 
 	"sgrankin.dev/cs/codesearch/index"
 )
@@ -36,10 +33,6 @@ type Repo interface {
 
 type indexBuilder struct{}
 
-func newIndexBuilder() *indexBuilder {
-	return &indexBuilder{}
-}
-
 // BuildIndex creates a new index at `path` with the given `repos`.
 func BuildIndex(path string, repos []Repo) error {
 	log.Printf("Building index at %q", path)
@@ -58,38 +51,4 @@ func BuildIndex(path string, repos []Repo) error {
 	wix.Flush()
 	wix.Close()
 	return nil
-}
-
-// rebuildIfNeeded creates a new index in place of the old one if it needs to be updated.
-//
-// The `paths` are used to check if updates are needed, returning nil if not.
-//
-// To check if updates are needed, repos are compared by version to what's currently in the index
-// The new index is placed where the existing index resides, but the actual Index is not closed
-// and can continue to be used until the new index is swapped in.
-func (b *indexBuilder) rebuildIfNeeded(ix *index.Index, repos []Repo) *index.Index {
-	versions := map[string]Version{}
-	for _, p := range ix.Paths() {
-		repo, version, _ := strings.Cut(p, "@")
-		versions[repo] = version
-	}
-	newVersions := map[string]Version{}
-	for _, repo := range repos {
-		newVersions[repo.Name()] = repo.Version()
-	}
-	if maps.Equal(versions, newVersions) {
-		return nil
-	}
-	return b.rebuild(ix, repos)
-}
-
-func (b *indexBuilder) rebuild(ix *index.Index, repos []Repo) *index.Index {
-	log.Printf("Rebuilding index %q", ix.Path)
-	tempIndexPath := ix.Path + "~"
-	if err := BuildIndex(tempIndexPath, repos); err != nil {
-		log.Printf("Rebuild failed: %v", err)
-		return nil
-	}
-	os.Rename(tempIndexPath, ix.Path)
-	return index.Open(ix.Path)
 }

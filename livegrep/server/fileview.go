@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"sgrankin.dev/cs"
+	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/chroma"
 )
 
@@ -37,12 +38,7 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 	url, domain := externalURL(repoName, commit, path)
 	fileData.ExternalDomain = domain
-	script_data := &struct {
-		RepoName   string `json:"repo_name"`
-		URLPattern string `json:"url_pattern"`
-		FilePath   string `json:"file_path"`
-		Commit     string `json:"commit"`
-	}{
+	script_data := &api.FileViewData{
 		RepoName:   repoName,
 		URLPattern: url,
 		FilePath:   path,

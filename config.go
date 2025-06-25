@@ -56,7 +56,9 @@ type ServeConfig struct {
 }
 
 type LinkConfig struct {
-	MatchRegexp string `json:"match_regexp"` // Filename match that enables this link.
+	// Filename match that enables this link.
+	MatchRegexp string `json:"match_regexp" ts_type:"RegExp" ts_transform:"new RegExp(__VALUE__)"`
+
 	Label       string `json:"label"`        // Link label.
 	UrlTemplate string `json:"url_template"` // URL template with {placeholders}: name, basename, version, path, lno.
 	Target      string `json:"target"`       // <a> tag target attribute.

@@ -89,7 +89,7 @@ func (b *indexSearcher) SearchFiles(
 	postings := b.ix.PostingQuery(index.RegexpQuery(re.Syn()))
 	var idx atomic.Int64 // Each worker will claim a posting atomically.
 	idx.Store(-1)
-	for i := 0; i < len(postings); i++ {
+	for i := range postings {
 		if ctx.Err() != nil {
 			return // Cancelled!
 		}
@@ -123,11 +123,7 @@ func searchBlob(re *regexp.Regexp, blob []byte, contextLines, maxMatches int) []
 	lineNumUntil := 0
 
 	for m != nil {
-		lineStart := bytes.LastIndexByte(blob[:m.End], '\n') + 1
-		if lineStart < 0 {
-			// Clamp start to beginning of file.
-			lineStart = 0
-		}
+		lineStart := max(bytes.LastIndexByte(blob[:m.End], '\n')+1, 0)
 		lineEnd := len(blob)
 		if m.End < len(blob) {
 			lineEnd = bytes.IndexByte(blob[m.End:], '\n')
@@ -158,12 +154,6 @@ func searchBlob(re *regexp.Regexp, blob []byte, contextLines, maxMatches int) []
 		m = regexp.Match(re, blob[lineEnd+1:]).Add(lineEnd + 1)
 	}
 	return results
-}
-
-func splitname(b []byte) (repo, version, name []byte) {
-	repo, b, _ = bytes.Cut(b, []byte("@"))
-	version, name, _ = bytes.Cut(b, []byte("/+/"))
-	return
 }
 
 func countNL(b []byte) int {

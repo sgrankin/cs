@@ -50,3 +50,15 @@ type FileResult struct {
 	Path    string `json:"path"`
 	Bounds  [2]int `json:"bounds"`
 }
+
+type SearchScriptData struct {
+	BackendRepos map[string][]string `json:"backend_repos"`
+	LinkConfigs  []cs.LinkConfig     `json:"link_configs"`
+}
+
+type FileViewData struct {
+	RepoName   string `json:"repo_name"`
+	URLPattern string `json:"url_pattern"`
+	FilePath   string `json:"file_path"`
+	Commit     string `json:"commit"`
+}

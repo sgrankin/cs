@@ -47,10 +47,10 @@
 		{{if gt (.Data.Backends | len) 1 }}
 		<div class="search-option">
 			<span class="label">Search:</span>
+			{{- $current := .Data.Backend -}}
 			<select id="backend" tabindex="7">
-				{{- $current := .Data.Backend }}
-				{{- range .Data.Backends -}}
-					<option value="{{.Name}}" {{if eq .Name $current}}selected{{end}}>{{.Name}}</option>
+				{{ range .Data.Backends -}}
+				<option value="{{.Name}}" {{if eq .Name $current}}selected{{end}}>{{.Name}}</option>
 				{{- end -}}
 			</select>
 		</div>

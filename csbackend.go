@@ -78,7 +78,7 @@ func NewSearchIndex(cfg IndexConfig) *searchIndex {
 
 func (si *searchIndex) Reload() {
 	meta, err := readIndexMeta(si.cfg.Path)
-	if err != nil || meta.ModTime == si.meta.ModTime {
+	if err != nil || meta.ModTime.Equal(si.meta.ModTime) {
 		return
 	}
 	log.Printf("Reloading index %s at %s (%v -> %v)", si.cfg.Name, si.cfg.Path, meta.ModTime, si.meta.ModTime)
@@ -306,8 +306,7 @@ func BuildSearchIndex(cfg IndexConfig, githubToken string) error {
 		return nil // Nothing to do.
 	}
 
-	ctx := context.Background()
-	wg, ctx := errgroup.WithContext(ctx)
+	wg := errgroup.Group{}
 	wg.SetLimit(1)
 	wg.SetLimit(runtime.GOMAXPROCS(0))
 

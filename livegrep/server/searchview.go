@@ -5,14 +5,10 @@ import (
 	"net/http"
 
 	"sgrankin.dev/cs"
+	"sgrankin.dev/cs/livegrep/server/api"
 )
 
-type searchScriptData struct {
-	BackendRepos map[string][]string `json:"backend_repos"`
-	LinkConfigs  []cs.LinkConfig     `json:"link_configs"`
-}
-
-func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends []cs.SearchIndex, sampleRepo string) {
+func (s *server) makeSearchScriptData() (script_data *api.SearchScriptData, backends []cs.SearchIndex, sampleRepo string) {
 	backends = []cs.SearchIndex{}
 	repos := map[string][]string{}
 	sampleRepo = ""
@@ -30,7 +26,9 @@ func (s *server) makeSearchScriptData() (script_data *searchScriptData, backends
 		repos[bk.Name()] = trees
 	}
 
-	script_data = &searchScriptData{repos, s.config.Templates.Links}
+	script_data = &api.SearchScriptData{
+		BackendRepos: repos,
+		LinkConfigs:  s.config.Templates.Links}
 	return script_data, backends, sampleRepo
 }
 

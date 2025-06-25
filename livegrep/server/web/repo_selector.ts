@@ -4,10 +4,13 @@
  */
 
 import jQuery from "jquery";
-import { isEqual } from "underscore";
 
+function repoSelector(): JQuery<HTMLSelectElement> {
+	return jQuery("#repos");
+}
 export function init() {
-	jQuery("#repos").selectpicker({
+	let repos = repoSelector();
+	repos.selectpicker({
 		actionsBox: true,
 		selectedTextFormat: "count > 4",
 		countSelectedText: "({0} repositories)",
@@ -15,7 +18,7 @@ export function init() {
 		liveSearch: true,
 		width: "20em",
 	});
-	jQuery("#repos").on("refreshed.bs.select", () => {
+	repos.on("refreshed.bs.select", () => {
 		var headers = jQuery(this).parent().find(".dropdown-header");
 		headers.css("cursor", "pointer");
 		headers.on("click", (event) => {
@@ -23,39 +26,38 @@ export function init() {
 			var optgroup = jQuery('#repos optgroup[label="' + jQuery(this).text() + '"]');
 			var allSelected = !optgroup.children("option:not(:selected)").length;
 			optgroup.children().prop("selected", !allSelected);
-			jQuery("#repos").selectpicker("refresh").trigger("change");
+			repos.selectpicker("refresh").trigger("change");
 		});
 	});
 	jQuery(window).on("keyup", ".bootstrap-select .bs-searchbox input", (event) => {
-		var keycode = event.keyCode ? event.keyCode : event.which;
-		if (keycode == "13") {
+		if (event.key == "Enter") {
 			jQuery(this).val("");
-			jQuery("#repos").selectpicker("refresh");
+			repos.selectpicker("refresh");
 		}
 	});
-	jQuery(window).keyup((keyevent) => {
-		var code = keyevent.keyCode ? keyevent.keyCode : keyevent.which;
-		if (code == 9 && jQuery(".bootstrap-select button:focus").length) {
-			jQuery("#repos").selectpicker("toggle");
-			jQuery(".bootstrap-select .bs-searchbox input").focus();
+	jQuery(window).on("keyup", (keyevent) => {
+		if (keyevent.key == "Tab" && jQuery(".bootstrap-select button:focus").length) {
+			repos.selectpicker("toggle");
+			jQuery(".bootstrap-select .bs-searchbox input").trigger("focus");
 		}
 	});
 }
 
-export function updateOptions(newOptions) {
+export function updateOptions(newOptions: any[]) {
 	// Skip update if the options are the same, to avoid losing selected state.
-	var currentOptions = [];
-	jQuery("#repos")
-		.find("option")
-		.each(() => {
-			currentOptions.push(jQuery(this).attr("value"));
-		});
-	if (isEqual(currentOptions, newOptions)) {
+	var currentOptions: string[] = [];
+	let repos = repoSelector();
+	repos.find("option").each(() => {
+		currentOptions.push(jQuery(this).attr("value"));
+	});
+	if (
+		currentOptions.length == newOptions.length &&
+		currentOptions.every((v, i) => v == newOptions[i])
+	) {
 		return;
 	}
 
-	jQuery("#repos").empty();
-
+	repos.empty();
 	newOptions.sort();
 	var groups = new Map();
 	groups.set("/", jQuery("#repos"));
@@ -82,6 +84,6 @@ export function updateOptions(newOptions) {
 	jQuery("#repos").selectpicker("refresh");
 }
 
-export function updateSelected(newSelected) {
+export function updateSelected(newSelected: string[]) {
 	jQuery("#repos").selectpicker("val", newSelected);
 }
