@@ -58,7 +58,7 @@ export namespace Codesearch {
             );
             delegate.SearchDone(opts.id, new ReplySearch(data));
         } catch (err) {
-            let xhr = err as jQuery.jqXHR;
+            let xhr = err as JQuery.jqXHR;
             console.log(xhr);
             if (xhr.status >= 400 && xhr.status < 500) {
                 delegate.SearchFailed(opts.id, new ReplyError(xhr.responseJSON).error.message);

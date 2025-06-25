@@ -825,6 +825,7 @@ namespace CodesearchUI {
         Codesearch.Connect(CodesearchUI);
         jQuery(".query-hint code").click(function (e) {
             var ext = e.target.textContent;
+            if (!ext) return;
             var q = input.val();
             if (
                 !q.includes(ext) &&
@@ -1029,5 +1030,5 @@ function init(initData) {
 }
 
 jQuery(() => {
-    init(JSON.parse(document.getElementById("data").text));
+    init(JSON.parse((document.getElementById("data") as HTMLScriptElement).text));
 });
