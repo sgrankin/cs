@@ -6,7 +6,7 @@
 import jQuery from "jquery";
 import "./codesearch.css";
 import "./fileview.css";
-import {FileViewData} from "./api.ts";
+import * as api from "./api.ts";
 
 function getSelectedText() {
     return window.getSelection()?.toString() || "";
@@ -328,5 +328,5 @@ function init(initData: FileViewData) {
 }
 
 jQuery(() => {
-    init(new FileViewData((document.getElementById("data") as HTMLScriptElement).text));
+    init(JSON.parse((document.getElementById("data") as HTMLScriptElement).text) as api.FileViewData);
 });

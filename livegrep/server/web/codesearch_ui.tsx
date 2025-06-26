@@ -1037,5 +1037,5 @@ function init(initData: api.SearchScriptData) {
 }
 
 jQuery(() => {
-    init(new api.SearchScriptData((document.getElementById("data") as HTMLScriptElement).text));
+    init(JSON.parse((document.getElementById("data") as HTMLScriptElement).text) as api.SearchScriptData);
 });

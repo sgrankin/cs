@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 import jQuery from "jquery";
-import {ReplyError, ReplySearch} from "./api";
+import * as api from "./api";
 
 // TODO: this should be an instance of a singleton... probably?
 export namespace Codesearch {
     interface Delegate {
         OnConnect: () => void;
-        SearchDone: (id: number, reply: ReplySearch) => void;
+        SearchDone: (id: number, reply: api.ReplySearch) => void;
         SearchFailed: (arg0: any, arg1: string) => void;
     }
 
@@ -56,12 +56,12 @@ export namespace Codesearch {
                 null,
                 "json",
             );
-            delegate.SearchDone(opts.id, new ReplySearch(data));
+            delegate.SearchDone(opts.id, data as api.ReplySearch);
         } catch (err) {
             let xhr = err as JQuery.jqXHR;
             console.log(xhr);
             if (xhr.status >= 400 && xhr.status < 500) {
-                delegate.SearchFailed(opts.id, new ReplyError(xhr.responseJSON).error.message);
+                delegate.SearchFailed(opts.id, (JSON.parse(xhr.responseJSON) as api.ReplyError).error.message);
             } else {
                 let message = "Cannot connect to server";
                 if (xhr.status) {
