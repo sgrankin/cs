@@ -84,9 +84,9 @@ type ExitReason string
 func (v ExitReason) String() string { return string(v) }
 
 const (
-	ExitReasonNone       = "NONE"
-	ExitReasonTimeout    = "TIMEOUT"
-	ExitReasonMatchLimit = "MATCH_LIMIT"
+	ExitReasonNone       ExitReason = "NONE"
+	ExitReasonTimeout    ExitReason = "TIMEOUT"
+	ExitReasonMatchLimit ExitReason = "MATCH_LIMIT"
 )
 
 type SearchStats struct {
@@ -95,10 +95,21 @@ type SearchStats struct {
 	ExitReason ExitReason
 }
 
+type Facet struct {
+	Key    string
+	Values []FacetValue
+}
+
+type FacetValue struct {
+	Value string
+	Count int
+}
+
 type CodeSearchResult struct {
 	Stats       SearchStats
 	Results     []SearchResult
 	FileResults []FileResult
+	Facets      []Facet
 
 	// unique index identity that served this request
 	IndexName string

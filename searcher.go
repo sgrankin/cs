@@ -3,8 +3,8 @@ package cs
 import (
 	"bytes"
 	"context"
+	"iter"
 	"regexp/syntax"
-	"sync/atomic"
 
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/codesearch/regexp"
@@ -78,37 +78,39 @@ func (b *indexSearcher) SearchFileNames(
 	return res
 }
 
-// Searchfiles will search the index for files matching the regexp.
+// SearchFiles will search the index for files matching the regexp.
 // It yields functions that perform the search on individual files, and result any matches found.
 func (b *indexSearcher) SearchFiles(
 	ctx context.Context,
 	re *regexp.Regexp, fileFilter *regexpFilter,
 	contextLines, maxMatches int,
-	yield func(func() *SearchResult),
-) {
-	postings := b.ix.PostingQuery(index.RegexpQuery(re.Syn()))
-	var idx atomic.Int64 // Each worker will claim a posting atomically.
-	idx.Store(-1)
-	for i := range postings {
-		if ctx.Err() != nil {
-			return // Cancelled!
-		}
-		name := b.ix.NameBytes(postings[i])
-		if !fileFilter.Accept(name) {
-			continue
-		}
-		yield(func() *SearchResult {
-			re := re.Clone()
-			blob := b.ix.Data(postings[i])
-			lines := searchBlob(re, blob, contextLines, maxMatches)
-			if len(lines) == 0 {
-				return nil
+) iter.Seq[func() *SearchResult] {
+	return func(yield func(func() *SearchResult) bool) {
+		postings := b.ix.PostingQuery(index.RegexpQuery(re.Syn()))
+		for i := range postings {
+			if ctx.Err() != nil {
+				return // Cancelled!
 			}
-			return &SearchResult{
-				File:  File{Tree: b.repo, Version: b.version, Path: string(name)},
-				Lines: lines,
+			name := b.ix.NameBytes(postings[i])
+			if !fileFilter.Accept(name) {
+				continue
 			}
-		})
+			if !yield(func() *SearchResult {
+				re := re.Clone()
+				blob := b.ix.Data(postings[i])
+				lines := searchBlob(re, blob, contextLines, maxMatches)
+				if len(lines) == 0 {
+					return nil
+				}
+				return &SearchResult{
+					File:  File{Tree: b.repo, Version: b.version, Path: string(name)},
+					Lines: lines,
+				}
+			}) {
+				return
+			}
+		}
+
 	}
 }
 

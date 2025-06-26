@@ -8,6 +8,7 @@ import (
 	"log"
 	"maps"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp/syntax"
 	"runtime"
@@ -170,8 +171,19 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		wg.Wait()
 	}(ctxFileSearch)
 
-	var exitReason ExitReason = ExitReasonNone
-	var searchResults []SearchResult
+	exitReason := ExitReasonNone
+	searchResults := []SearchResult{}
+	facets := map[string]map[string]int{}
+	incFacet := func(key, val string) {
+		if val == "" {
+			return
+		}
+		if facets[key] == nil {
+			facets[key] = map[string]int{}
+		}
+		facets[key][val] += 1
+	}
+
 	if !q.FilenameOnly {
 		searchChan := make(chan SearchResult)
 		ctxSearch, cancelSearch := context.WithCancel(ctx)
@@ -180,7 +192,7 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 			wg, ctx := errgroup.WithContext(ctx)
 			wg.SetLimit(runtime.GOMAXPROCS(0))
 			for _, searcher := range searchers {
-				searcher.SearchFiles(ctx, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches, func(f func() *SearchResult) {
+				for f := range searcher.SearchFiles(ctx, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches) {
 					wg.Go(func() error {
 						result := f()
 						if result != nil {
@@ -191,7 +203,7 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 						}
 						return nil
 					})
-				})
+				}
 			}
 			wg.Wait()
 		}(ctxSearch)
@@ -199,6 +211,10 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		nMatches := 0
 		for r := range searchChan {
 			searchResults = append(searchResults, r)
+			incFacet("repo", r.File.Tree)
+			incFacet("ext", path.Ext(r.File.Path))
+			// TODO: path facet that excludes the common path filter.
+
 			nMatches += len(r.Lines)
 			if nMatches > q.MaxMatches {
 				exitReason = ExitReasonMatchLimit
@@ -222,10 +238,24 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 	cancelFileSearch()
 	sort.Slice(fileResults, func(i, j int) bool { return fileResults[i].File.Less(fileResults[j].File) })
 
+	facetResults := []Facet{}
+	for key, values := range facets {
+		fv := []FacetValue{}
+		for val, count := range values {
+			fv = append(fv, FacetValue{val, count})
+		}
+		sort.Slice(fv, func(i, j int) bool {
+			return fv[i].Count > fv[j].Count ||
+				fv[i].Count == fv[j].Count && fv[i].Value < fv[j].Value
+		})
+		facetResults = append(facetResults, Facet{key, fv})
+	}
+
 	return &CodeSearchResult{
 		Stats:       SearchStats{ExitReason: exitReason},
 		Results:     searchResults,
 		FileResults: fileResults,
+		Facets:      facetResults,
 	}, nil
 }
 

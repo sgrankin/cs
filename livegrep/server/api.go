@@ -140,6 +140,17 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 		})
 	}
 
+	for _, f := range search.Facets {
+		facet := &api.Facet{Key: f.Key}
+		for _, v := range f.Values {
+			facet.Values = append(facet.Values, api.FacetValue{
+				Value: v.Value,
+				Count: v.Count,
+			})
+		}
+		reply.Facets = append(reply.Facets, facet)
+	}
+
 	reply.Info = &api.Stats{
 		TotalTime:  int64(time.Since(start) / time.Millisecond),
 		ExitReason: search.Stats.ExitReason.String(),
@@ -163,7 +174,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		}
 	}
 
-	q, is_regex, err := extractQuery(r)
+	q, isRegex, err := extractQuery(r)
 	if err != nil {
 		writeError(w, 400, "bad_query", err.Error())
 		return
@@ -171,7 +182,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 
 	if q.Line == "" {
 		kind := "string"
-		if is_regex {
+		if isRegex {
 			kind = "regex"
 		}
 		msg := fmt.Sprintf("You must specify a %s to match", kind)

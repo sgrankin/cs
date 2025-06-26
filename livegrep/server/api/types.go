@@ -22,6 +22,16 @@ type ReplySearch struct {
 	FileResults []*FileResult `json:"file_results"`
 	SearchType  string        `json:"search_type"`
 	Query       cs.Query      `json:"query"`
+	Facets      []*Facet      `json:"facets"`
+}
+
+type Facet struct {
+	Key    string       `json:"key"`
+	Values []FacetValue `json:"values"`
+}
+type FacetValue struct {
+	Value string `json:"value"`
+	Count int    `json:"count"`
 }
 
 type Stats struct {
