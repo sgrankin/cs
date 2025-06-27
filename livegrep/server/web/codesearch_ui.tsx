@@ -17,7 +17,6 @@ import "./codesearch.css";
 import jQuery from "jquery";
 import {signal} from "@preact/signals";
 import {createDraft, Draft, finishDraft, immerable, produce} from "immer";
-import {getJSON, set} from "js-cookie";
 import {Fragment, h, JSX, render} from "preact";
 import {createPortal} from "preact/compat";
 import {useEffect, useState} from "preact/hooks";
@@ -904,7 +903,7 @@ namespace CodesearchUI {
     }
 
     function initControlsFromPrefs() {
-        var prefs = getJSON("prefs");
+        var prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
         if (!prefs) {
             prefs = {};
         }
@@ -925,12 +924,12 @@ namespace CodesearchUI {
     function setPref(key: string, value: any) {
         // Load from the cookie again every time in case some other pref has been
         // changed out from under us.
-        var prefs = getJSON("prefs");
+        var prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
         if (!prefs) {
             prefs = {};
         }
         prefs[key] = value;
-        set("prefs", prefs, {expires: 36500});
+        localStorage.setItem("prefs", JSON.stringify(prefs))
     }
 
     function parseQueryParams(): Map<string, string[]> {
