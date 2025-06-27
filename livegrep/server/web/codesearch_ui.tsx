@@ -249,6 +249,7 @@ class SearchState {
         draft.filenameOnly = undefined;
         draft.matches = new SearchResultSet();
         draft.fileMatches = [];
+        draft.facets = [];
         for (let k in draft.searchMap) {
             if (parseInt(k) < (draft.displayedSearch ?? 0)) {
                 delete draft.searchMap[k];
@@ -330,10 +331,10 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
         if (isMatch) classes.push("matchlno");
         return (
             <a
-                className={classes.join(" ")}
+                class={classes.join(" ")}
                 href={viewURL(path.backend, path.tree, path.version, path.path, n)}
             >
-                <span className="lno" aria-label={lnoStr}>
+                <span class="lno" aria-label={lnoStr}>
                     {lnoStr}
                 </span>
             </a>
@@ -381,16 +382,16 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
     );
 
     return (
-        <div className={classes.join(" ")}>
-            <div className="contents">
+        <div class={classes.join(" ")}>
+            <div class="contents">
                 {ctxBefore}
                 {_renderLno(match.lno, true)}
-                <span className="matchline">
+                <span class="matchline">
                     {pieces[0]}
-                    <span className="matchstr">{pieces[1]}</span>
+                    <span class="matchstr">{pieces[1]}</span>
                     {pieces[2]}
                 </span>
-                <span className="matchlinks">{links}</span>
+                <span class="matchlinks">{links}</span>
                 {ctxAfter}
             </div>
         </div>
@@ -413,7 +414,7 @@ function renderLinkConfigs(
     var links = linkConfigs.map(function (linkConfig) {
         return (
             <a
-                className="file-action-link"
+                class="file-action-link"
                 href={externalURL(linkConfig.url_template, tree, version, path, lno)}
                 target={linkConfig.target}
             >
@@ -424,7 +425,7 @@ function renderLinkConfigs(
     let out: JSX.Element[] = [];
     for (let i = 0; i < links.length; i++) {
         if (i > 0) {
-            out.push(<span className="file-action-link-separator">\u00B7</span>);
+            out.push(<span class="file-action-link-separator">\u00B7</span>);
         }
         out.push(links[i]);
     }
@@ -461,11 +462,11 @@ function FileMatchView({match}: { match: FileMatch }) {
 
     return (
         <div class="filename-match">
-            <a className="label header result-path" href={match.viewURL()}>
-                <span className="repo">{path_info.tree}:</span>
-                <span className="version">{shorten(path_info.version)}:</span>
+            <a class="label header result-path" href={match.viewURL()}>
+                <span class="repo">{path_info.tree}:</span>
+                <span class="version">{shorten(path_info.version)}:</span>
                 {pieces[0]}
-                <span className="matchstr">{pieces[1]}</span>
+                <span class="matchstr">{pieces[1]}</span>
                 {pieces[2]}
             </a>
         </div>
@@ -484,16 +485,16 @@ function FileGroupView({group}: { group: FileGroup }) {
     }
 
     return (
-        <div className="file-group">
-            <div className="header">
-                <span className="header-path">
-                    <a className="result-path" href={group.viewURL()}>
-                        <span className="repo">{tree}:</span>
-                        <span className="version">{shorten(version)}:</span>
+        <div class="file-group">
+            <div class="header">
+                <span class="header-path">
+                    <a class="result-path" href={group.viewURL()}>
+                        <span class="repo">{tree}:</span>
+                        <span class="version">{shorten(version)}:</span>
                         {dirname}
-                        <span className="filename">{basename}</span>
+                        <span class="filename">{basename}</span>
                     </a>
-                    <div className="header-links">
+                    <div class="header-links">
                         {renderLinkConfigs(CodesearchUI.linkConfigs, tree, version, path)}
                     </div>
                 </span>
@@ -504,16 +505,6 @@ function FileGroupView({group}: { group: FileGroup }) {
 }
 
 function MatchesView({model}: { model: SearchState }) {
-    // Collate which file extensions (.py, .go, etc) are most common.
-    // countExtension() is called for file_search_results and search_results
-    var extension_map: Record<string, number> = {};
-    for (const f of model.facets) {
-        if (f.key != "ext") continue;
-        for (const fv of f.values)
-            extension_map[fv.value] = fv.count;
-        break;
-    }
-
     let count = 0;
     let pathResults: JSX.Element[] = [];
     for (const match of model.fileMatches) {
@@ -523,7 +514,7 @@ function MatchesView({model}: { model: SearchState }) {
         count += 1;
     }
 
-    let nodes = [<div className="path-results">{pathResults}</div>];
+    let nodes = [<div class="path-results">{pathResults}</div>];
 
     for (const id in model.matches.groups) {
         const group = model.matches.groups[id];
@@ -535,7 +526,9 @@ function MatchesView({model}: { model: SearchState }) {
     var query = model.searchMap[id].q;
     var already_file_limited = /\bfile:/.test(query);
     if (!already_file_limited) {
-        nodes.unshift(...renderExtensionButtons(extension_map));
+        nodes.unshift(
+            ExtensionButtons(
+                model.facets.find((f) => f.key == "ext")?.values.map((f) => [f.value, f.count])))
     }
     let classes = "";
     if (!model.context) {
@@ -554,40 +547,25 @@ function MatchesView({model}: { model: SearchState }) {
     );
 }
 
-function renderExtensionButtons(extension_map: Record<string, number>) {
+function ExtensionButtons(extensions: [string, number][]) {
     // Display a series of buttons for the most common file extensions
     // among the current search results, that each narrow the search to
     // files matching that extension.
-    var extension_array: [number, string][] = [];
-    for (let ext in extension_map) {
-        extension_array.push([extension_map[ext], ext]);
-    }
-    if (extension_array.length < 2) {
-        return [];
-    }
-    extension_array.sort((a, b) => b[0] - a[0]);
+    if (extensions.length < 2) return <></>;
+    let popular = extensions.toSorted((a, b) => b[1] - a[1]).slice(0, 5)
 
-    var popular: string[] = [];
-    var end = Math.min(extension_array.length, 5);
-    for (var i = 0; i < end; i++) {
-        popular.push(extension_array[i][1]);
-    }
-    popular.sort();
-
-    return [
-        <div className="file-extensions">
-            Narrow to:
-            {popular.map((ex) => (
-                <button className="file-extension" onClick={limitToExtension}>
-                    {ex}
-                </button>
-            ))}
-        </div>,
-    ];
+    return <div class="file-extensions">
+        Narrow to:
+        {popular.map(([ext, count]) => (
+            <button class="file-extension" onClick={limitToExtension} data-ext={ext}>
+                {ext} ({count})
+            </button>
+        ))}
+    </div>;
 }
 
 function limitToExtension(e: MouseEvent) {
-    var ext = (e.target as HTMLElement).textContent;
+    var ext = jQuery(e.target as HTMLElement).data("ext");
     var q = CodesearchUI.input.val();
     if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
     else q = "file:" + ext + " " + q;
@@ -703,7 +681,7 @@ function HelpView() {
     // Restore that by using some repo from the current backend for this view.
     return (
         <>
-            <div className="helpsection">
+            <div class="helpsection">
                 <h5>Special query terms</h5>
             </div>
             <table>

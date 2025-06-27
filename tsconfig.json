@@ -1,17 +1,17 @@
 {
-	"compilerOptions": {
-		"module": "ES2022",
-		"moduleResolution": "Bundler",
-		"target": "ES2022",
-		"jsx": "react",
-		"allowImportingTsExtensions": true,
-		"allowSyntheticDefaultImports": true,
-		"strictNullChecks": true,
-		"strictFunctionTypes": true,
-		"sourceMap": true,
-		"noEmit": true,
-		"jsxFactory": "h",
-		"jsxFragmentFactory": "Fragment"
-	},
-	"exclude": ["node_modules", "**/node_modules/*"]
+  "compilerOptions": {
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "jsx": "react",
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "sourceMap": true,
+    "noEmit": true,
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment"
+  },
+  "exclude": ["node_modules", "**/node_modules/*"]
 }
