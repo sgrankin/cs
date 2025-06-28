@@ -1,41 +1,47 @@
-{{/* Copyright (C) 2024 Sergey Grankin Copyright 2011-2013 Nelson Elhage SPDX-License-Identifier:
-BSD-2-Clause */}} {{define "layout" -}} {{- /*gotype: sgrankin.dev/cs/livegrep/server.page*/ -}}
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+{{/* Copyright (C) 2024 Sergey Grankin Copyright 2011-2013 Nelson Elhage SPDX-License-Identifier: BSD-2-Clause */}}
+{{define "layout" -}}
+    {{- /*gotype: sgrankin.dev/cs/livegrep/server.page*/ -}}
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>{{.Title}}</title>
         <link
-            rel="search"
-            type="application/opensearchdescription+xml"
-            href="/opensearch.xml"
-            title="Code Search"
+                rel="search"
+                type="application/opensearchdescription+xml"
+                href="/opensearch.xml"
+                title="Code Search"
         />
-        <link rel="shortcut icon" href="/static/favicon.ico" />
-        {{ if .JSPath }}
-        <script src="/{{.JSPath}}" type="module" defer></script>
+        <link rel="shortcut icon" href="/static/favicon.ico"/>
+        {{ with .JSPath }}
+            <script src="/{{.}}" type="module" defer></script>
         {{ end }}
-        <link rel="stylesheet" href="/{{.CSSPath}}" />
+        <link rel="stylesheet" href="/{{.CSSPath}}"/>
     </head>
 
     <body>
-        {{block "body" .}}{{end}} {{if .IncludeHeader}}
+    {{block "body" .}}{{end}}
+    {{if .IncludeHeader}}
         <footer id="header">
-            {{with .Config.Templates.HeaderHTML}} {{.}} {{else}}
-            <ul>
-                <li><a href="/">search</a></li>
-                <li><a href="/about">about</a></li>
-                <li><a href="https://github.com/sgrankin/cs">source</a></li>
-                {{with .Config.Templates.Feedback.MailTo}}
-                <li><a id="feedbacklink" href="mailto:{{.}}">feedback</a></li>
-                {{end}}
-            </ul>
+            {{with .Config.Templates.HeaderHTML}}
+                {{.}}
+            {{else}}
+                <ul>
+                    <li><a href="/">search</a></li>
+                    <li><a href="/about">about</a></li>
+                    <li><a href="https://github.com/sgrankin/cs">source</a></li>
+                    {{with .Config.Templates.Feedback.MailTo}}
+                        <li><a id="feedbacklink" href="mailto:{{.}}">feedback</a></li>
+                    {{end}}
+                </ul>
             {{end}}
         </footer>
-        {{end}} {{with .Config.Templates.FooterHTML}} {{.}} {{end}} {{if .ScriptData}}
-        <script id="data" type="application/json">
-            {{.ScriptData}}
-        </script>
-        {{end}}
+    {{end}}
+    {{with .Config.Templates.FooterHTML -}}
+        {{.}}
+    {{- end}}
+    {{with .ScriptData -}}
+        <script id="data" type="application/json">{{.}}</script>
+    {{- end}}
     </body>
-</html>
+    </html>
 {{end}}
