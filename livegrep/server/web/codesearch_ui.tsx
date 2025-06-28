@@ -80,7 +80,7 @@ class FileGroup {
         // NOTE: The logic below requires matches to be sorted by line number.
         this.matched.sort((a, b) => a.lno - b.lno);
 
-        for (var i = 1, len = this.matched.length; i < len; i++) {
+        for (let i = 1, len = this.matched.length; i < len; i++) {
             let previous = this.matched[i - 1];
             let current = this.matched[i];
             let lastLineOfPrevContext = previous.lno + previous.context_after.length;
@@ -99,8 +99,8 @@ class FileGroup {
                     splitAt = lastLineOfPrevContext + 1;
                 }
 
-                var clipForPrevious = lastLineOfPrevContext - (splitAt - 1);
-                var clipForCurrent = splitAt - firstLineOfThisContext;
+                let clipForPrevious = lastLineOfPrevContext - (splitAt - 1);
+                let clipForCurrent = splitAt - firstLineOfThisContext;
                 previous.clip_after = clipForPrevious;
                 current.clip_before = clipForCurrent;
             } else {
@@ -157,7 +157,7 @@ function viewURL(
     path = path.replace(/^\/+/, ""); // Trim any leading slashes
     // Tree/version/path separation is via : as tree may have slashes in it...
     // TODO: should we just URL encode it?
-    var url = "/view/" + backend + "/" + tree + "@" + version + "/+/" + path;
+    let url = "/view/" + backend + "/" + tree + "@" + version + "/+/" + path;
     if (lno !== undefined) {
         url += "#L" + lno;
     }
@@ -165,7 +165,7 @@ function viewURL(
 }
 
 function shorten(ref: string) {
-    var match = /^refs\/(tags|branches)\/(.*)/.exec(ref);
+    let match = /^refs\/(tags|branches)\/(.*)/.exec(ref);
     if (match) {
         return match[2];
     }
@@ -212,29 +212,29 @@ class SearchState {
     readonly filenameOnly: boolean | undefined;
 
     viewURL() {
-        var current = this.searchMap[this.displayedSearch];
+        let current = this.searchMap[this.displayedSearch];
         if (!current) {
             return "/search";
         }
 
-        var base = "/search";
+        let base = "/search";
         if (current.backend) {
             base += "/" + current.backend;
         } else if (CodesearchUI.input_backend) {
             base += "/" + CodesearchUI.input_backend.val();
         }
 
-        var query = {};
+        let query = {};
         if (current.q !== "") {
             query = {...current, context: this.context};
         }
 
-        var qs = jQuery.param(query);
+        let qs = jQuery.param(query);
         return base + (qs ? "?" + qs : "");
     }
 
     title() {
-        var current = this.searchMap[this.displayedSearch];
+        let current = this.searchMap[this.displayedSearch];
         if (!current || !current.q) {
             return "code search";
         }
@@ -263,7 +263,7 @@ class SearchState {
     }
 
     OnNewSearch(search: Query): [SearchState, QueryState | undefined] {
-        var cur = this.searchMap[this.displayedSearch];
+        let cur = this.searchMap[this.displayedSearch];
         if (
             cur &&
             cur.q === search.q &&
@@ -277,7 +277,7 @@ class SearchState {
             return [this, undefined];
         }
         const next = createDraft(this);
-        var id = ++next.lastSearch;
+        let id = ++next.lastSearch;
         next.searchMap[id] = search;
         if (!search.q.length) {
             next.displayedSearch = id;
@@ -307,13 +307,13 @@ class SearchState {
                 SearchState.reset(next);
             }
             const backend = next.searchMap[searchID].backend;
-            for (const fm of reply.file_results) {
+            for (const fm of (reply.file_results || [])) {
                 next.fileMatches.push(new FileMatch({...fm, backend}));
             }
-            for (const m of reply.results) {
+            for (const m of (reply.results || [])) {
                 next.matches.addMatch({...m, backend});
             }
-            for (const f of reply.facets) {
+            for (const f of (reply.facets || [])) {
                 next.facets.push({...f, backend})
             }
             next.time = reply.info?.total_time;
@@ -325,8 +325,8 @@ class SearchState {
 
 function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
     const _renderLno = (n: number, isMatch: boolean): JSX.Element => {
-        var lnoStr = n.toString() + (isMatch ? ":" : "-");
-        var classes = ["lno-link"];
+        let lnoStr = n.toString() + (isMatch ? ":" : "-");
+        let classes = ["lno-link"];
         if (isMatch) classes.push("matchlno");
         return (
             <a
@@ -341,7 +341,7 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
     };
 
     let ctxBefore: JSX.Element[] = [];
-    var linesBefore = Math.max(0, match.context_before.length - (match.clip_before || 0));
+    let linesBefore = Math.max(0, match.context_before.length - (match.clip_before || 0));
     for (let i = 0; i < linesBefore; i++) {
         ctxBefore.unshift(
             _renderLno(match.lno - i - 1, false),
@@ -350,7 +350,7 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
         );
     }
     let ctxAfter: JSX.Element[] = [];
-    var linesAfter = Math.max(0, match.context_after.length - (match.clip_after || 0));
+    let linesAfter = Math.max(0, match.context_after.length - (match.clip_after || 0));
     for (let i = 0; i < linesAfter; i++) {
         ctxAfter.push(
             _renderLno(match.lno + i + 1, false),
@@ -358,19 +358,19 @@ function MatchView({path, match}: { path: FilePath; match: ClippedLineMatch }) {
             <span/>,
         );
     }
-    var line = match.line;
-    var bounds = match.bounds;
-    var pieces = [
+    let line = match.line;
+    let bounds = match.bounds;
+    let pieces = [
         line.substring(0, bounds[0]),
         line.substring(bounds[0], bounds[1]),
         line.substring(bounds[1]),
     ];
 
-    var classes = ["match"];
+    let classes = ["match"];
     if (match.clip_before !== undefined) classes.push("clip-before");
     if (match.clip_after !== undefined) classes.push("clip-after");
 
-    var links = renderLinkConfigs(
+    let links = renderLinkConfigs(
         CodesearchUI.linkConfigs.filter((c: { url_template: string }) =>
             c.url_template.includes("{lno}"),
         ),
@@ -410,7 +410,7 @@ function renderLinkConfigs(
         );
     });
 
-    var links = linkConfigs.map(function (linkConfig) {
+    let links = linkConfigs.map(function (linkConfig) {
         return (
             <a
                 class="file-action-link"
@@ -452,8 +452,8 @@ function externalURL(url: string, tree: string, version: string, path: string, l
 }
 
 function FileMatchView({match}: { match: FileMatch }) {
-    var path_info = match.m;
-    var pieces = [
+    let path_info = match.m;
+    let pieces = [
         path_info.path.substring(0, path_info.bounds[0]),
         path_info.path.substring(path_info.bounds[0], path_info.bounds[1]),
         path_info.path.substring(path_info.bounds[1]),
@@ -521,13 +521,12 @@ function MatchesView({model}: { model: SearchState }) {
         nodes.push(FileGroupView({group}));
     }
 
-    var id = model.lastSearch;
-    var query = model.searchMap[id].q;
-    var already_file_limited = /\bfile:/.test(query);
-    if (!already_file_limited) {
-        nodes.unshift(
-            ExtensionButtons(
-                model.facets.find((f) => f.key == "ext")?.values.map((f) => [f.value, f.count])))
+    let id = model.lastSearch;
+    let query = model.searchMap[id].q;
+    let already_file_limited = /\bfile:/.test(query);
+    if (!already_file_limited && model.facets) {
+        let extensions = model.facets.find((f) => f.key == "ext")?.values.map((f) => [f.value, f.count]);
+        nodes.unshift(ExtensionButtons(extensions))
     }
     let classes = "";
     if (!model.context) {
@@ -550,7 +549,7 @@ function ExtensionButtons(extensions: [string, number][]) {
     // Display a series of buttons for the most common file extensions
     // among the current search results, that each narrow the search to
     // files matching that extension.
-    if (extensions.length < 2) return <></>;
+    if (!extensions || extensions.length < 2) return <></>;
     let popular = extensions.toSorted((a, b) => b[1] - a[1]).slice(0, 5)
 
     return <div class="file-extensions">
@@ -564,8 +563,8 @@ function ExtensionButtons(extensions: [string, number][]) {
 }
 
 function limitToExtension(e: MouseEvent) {
-    var ext = jQuery(e.target as HTMLElement).data("ext");
-    var q = CodesearchUI.input.val();
+    let ext = jQuery(e.target as HTMLElement).data("ext");
+    let q = CodesearchUI.input.val();
     if (CodesearchUI.input_regex.is(":checked")) q = "file:\\" + ext + "$ " + q;
     else q = "file:" + ext + " " + q;
     CodesearchUI.input.val(q);
@@ -576,9 +575,9 @@ function handleKey(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
         return;
     }
-    var which = event.key;
+    let which = event.key;
     if (which == "/" || which == "?") {
-        var t = getSelectedText();
+        let t = getSelectedText();
         if (!t) return;
         event.preventDefault();
         if (CodesearchUI.input_regex.is(":checked")) {
@@ -601,7 +600,7 @@ function getSelectedText() {
 
 function ResultView({model}: { model: SearchState }) {
     const [last_url, set_last_url] = useState(["", 0] as [string, number]);
-    var browser_url = window.location.pathname + window.location.search;
+    let browser_url = window.location.pathname + window.location.search;
 
     // Update title and history if needed.
     useEffect(() => {
@@ -611,12 +610,12 @@ function ResultView({model}: { model: SearchState }) {
 
         document.title = model.title();
 
-        var url = model.viewURL();
+        let url = model.viewURL();
         if (browser_url !== url) {
             // If the user is typing quickly, just keep replacing the current URL.
             // But after they"ve paused, enroll the URL they paused at into their browser history.
-            var now = Date.now();
-            var two_seconds = 2000;
+            let now = Date.now();
+            let two_seconds = 2000;
             if (last_url[0] === "") {
                 // If this.last_url is null, that means this is the initial navigation.
                 // We should never pushState here, otherwise the user will need to
@@ -648,7 +647,7 @@ function ResultView({model}: { model: SearchState }) {
 }
 
 function CountView({model}: { model: SearchState }) {
-    var num_results = "";
+    let num_results = "";
     if (model.filenameOnly) {
         num_results += model.fileMatches.length;
     } else {
@@ -813,9 +812,9 @@ namespace CodesearchUI {
 
         Codesearch.Connect(CodesearchUI);
         jQuery(".query-hint code").on("click", function (e) {
-            var ext = e.target.textContent;
+            let ext = e.target.textContent;
             if (!ext) return;
-            var q = input.val() as string;
+            let q = input.val() as string;
             if (
                 !q.includes(ext) &&
                 ((ext.indexOf("-") == 0 && !q.includes(ext.substring(1))) ||
@@ -829,7 +828,7 @@ namespace CodesearchUI {
 
         // Update the search when the user hits Forward or Back.
         window.onpopstate = (_event: any) => {
-            var parms = parseQueryParams();
+            let parms = parseQueryParams();
             initQueryFromParams(parms);
             NewSearch();
         };
@@ -841,10 +840,10 @@ namespace CodesearchUI {
 
     // Initialize query from URL or user's saved preferences.
     function initQuery() {
-        var parms = parseQueryParams();
+        let parms = parseQueryParams();
 
-        var hasParms = false;
-        for (var _ in parms) {
+        let hasParms = false;
+        for (let _ in parms) {
             hasParms = true;
             break;
         }
@@ -859,7 +858,7 @@ namespace CodesearchUI {
     }
 
     function initQueryFromParams(parms: Map<string, string[]>) {
-        var q: string[] = [];
+        let q: string[] = [];
         if (parms["q"]) q.push(parms["q"][0]);
         if (parms["file"]) q.push("file:" + parms["file"][0]);
         input.val(q.join(" "));
@@ -876,14 +875,14 @@ namespace CodesearchUI {
             input_context.prop("checked", parms["context"][0] === "true");
         }
 
-        var backend: string | null = null;
+        let backend: string | null = null;
         if (parms["backend"]) backend = parms["backend"];
 
-        var m = new RegExp("/search/([^/]+)/?").exec(window.location.pathname);
+        let m = new RegExp("/search/([^/]+)/?").exec(window.location.pathname);
         if (m) backend = m[1];
 
         if (backend && input_backend) {
-            var old_backend = input_backend.val() as string;
+            let old_backend = input_backend.val() as string;
             input_backend.val(backend);
 
             // Something (bootstrap-select?) messes with the behaviour of val() on
@@ -896,14 +895,14 @@ namespace CodesearchUI {
             }
         }
 
-        var repos: string[] = [];
+        let repos: string[] = [];
         if (parms["repo"]) repos = repos.concat(parms["repo"]);
         if (parms["repo[]"]) repos = repos.concat(parms["repo[]"]);
         updateSelected(repos);
     }
 
     function initControlsFromPrefs() {
-        var prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
+        let prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
         if (!prefs) {
             prefs = {};
         }
@@ -924,7 +923,7 @@ namespace CodesearchUI {
     function setPref(key: string, value: any) {
         // Load from the cookie again every time in case some other pref has been
         // changed out from under us.
-        var prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
+        let prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
         if (!prefs) {
             prefs = {};
         }
@@ -933,8 +932,8 @@ namespace CodesearchUI {
     }
 
     function parseQueryParams(): Map<string, string[]> {
-        var urlParams = new Map();
-        var e: string[] | null,
+        let urlParams = new Map();
+        let e: string[] | null,
             a = /\+/g,
             r = /([^&=]+)=?([^&]*)/g,
             d = (s: string) => decodeURIComponent(s.replace(a, " ")),
@@ -962,7 +961,7 @@ namespace CodesearchUI {
 
     function updateRepoOptions() {
         if (!input_backend) return;
-        var backend = input_backend.val() as string;
+        let backend = input_backend.val() as string;
         setPref("backend", backend);
         updateOptions(backend_repos[backend]);
     }
