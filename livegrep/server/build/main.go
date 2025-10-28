@@ -135,13 +135,11 @@ func buildOpts(debug bool) api.BuildOptions {
 			"web/codesearch_ui.tsx",
 			"web/fileview.ts",
 		},
-		EntryNames: "[dir]/[name]-[hash]",
-		Outdir:     outDir,
-		Bundle:     true,
-		Write:      true,
-		Format:     api.FormatESModule,
-		Platform:   api.PlatformBrowser,
-		Splitting:  true,
+		Outdir:   outDir,
+		Bundle:   true,
+		Write:    true,
+		Format:   api.FormatESModule,
+		Platform: api.PlatformBrowser,
 		Loader: map[string]api.Loader{
 			".eot":   api.LoaderDataURL,
 			".svg":   api.LoaderDataURL,
@@ -150,7 +148,7 @@ func buildOpts(debug bool) api.BuildOptions {
 			".woff2": api.LoaderDataURL,
 		},
 
-		Target: api.ES2022,
+		Target: api.ES2024,
 
 		Sourcemap:         api.SourceMapLinked,
 		MinifyWhitespace:  !debug,
