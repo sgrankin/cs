@@ -34,7 +34,7 @@ templ Index(p Page, d IndexPageData) {
 		<div id="searcharea">
 			<form
 				method="get"
-				hx-get=""
+				hx-get="/search"
 				hx-params="*"
 				hx-trigger="input from:input changed delay:150ms consume, change from:input consume, change from:select consume, search"
 				hx-select="#resultbox"
@@ -42,8 +42,8 @@ templ Index(p Page, d IndexPageData) {
 				hx-swap="outerHTML"
 				hx-select-oob="#regex-error"
 				hx-sync="this:replace"
+				hx-push-url="true"
 			>
-				// hx-push-url="true"
 				@searchInputs(d.SearchResultErr)
 				@searchOptions(d.Backend, d.Backends)
 			</form>

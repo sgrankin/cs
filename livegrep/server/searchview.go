@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"sgrankin.dev/cs"
@@ -38,9 +39,13 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 	backend := r.PathValue("backend")
 	scriptData, backends, sampleRepo := s.makeSearchScriptData()
 	result, resultErr := s.searchForRequest(ctx, r)
+	title := "code search"
+	if result != nil {
+		title = fmt.Sprintf("%s · %s", result.Query.Line, title)
+	}
 	views.Index(
 		views.Page{
-			Title:         "code search",
+			Title:         title,
 			JSPath:        meta.EntrypointMap["web/codesearch_ui.tsx"].JS,
 			CSSPath:       meta.EntrypointMap["web/codesearch_ui.tsx"].CSS,
 			ScriptData:    scriptData,
