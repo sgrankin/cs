@@ -9077,7 +9077,7 @@ var htmx2 = (function() {
        */
       historyRestoreAsHxRequest: true,
       /**
-       * Weather to report input validation errors to the end user and update focus to the first input that fails validation.
+       * Whether to report input validation errors to the end user and update focus to the first input that fails validation.
        * This should always be enabled as this matches default browser form submit behaviour
        * @type boolean
        * @default false
@@ -9093,7 +9093,7 @@ var htmx2 = (function() {
     location,
     /** @type {typeof internalEval} */
     _: null,
-    version: "2.0.7"
+    version: "2.0.8"
   };
   htmx.onLoad = onLoadHelper;
   htmx.process = processNode;
@@ -9231,6 +9231,9 @@ var htmx2 = (function() {
     }
   }
   function parseHTML(resp) {
+    if ("parseHTMLUnsafe" in Document) {
+      return Document.parseHTMLUnsafe(resp);
+    }
     const parser = new DOMParser();
     return parser.parseFromString(resp, "text/html");
   }
@@ -10934,13 +10937,14 @@ var htmx2 = (function() {
     });
     return eventResult;
   }
-  let currentPathForHistory = location.pathname + location.search;
+  let currentPathForHistory;
   function setCurrentPathForHistory(path) {
     currentPathForHistory = path;
     if (canAccessLocalStorage()) {
       sessionStorage.setItem("htmx-current-path-for-history", path);
     }
   }
+  setCurrentPathForHistory(location.pathname + location.search);
   function getHistoryElement() {
     const historyElt = getDocument().querySelector("[hx-history-elt],[data-hx-history-elt]");
     return historyElt || getDocument().body;
@@ -11597,7 +11601,10 @@ var htmx2 = (function() {
             targetOverride: resolvedTarget,
             swapOverride: context.swap,
             select: context.select,
-            returnPromise: true
+            returnPromise: true,
+            push: context.push,
+            replace: context.replace,
+            selectOOB: context.selectOOB
           }
         );
       }
@@ -12103,8 +12110,8 @@ var htmx2 = (function() {
     }
     const requestPath = responseInfo.pathInfo.finalRequestPath;
     const responsePath = responseInfo.pathInfo.responsePath;
-    const pushUrl = getClosestAttributeValue(elt, "hx-push-url");
-    const replaceUrl = getClosestAttributeValue(elt, "hx-replace-url");
+    const pushUrl = responseInfo.etc.push || getClosestAttributeValue(elt, "hx-push-url");
+    const replaceUrl = responseInfo.etc.replace || getClosestAttributeValue(elt, "hx-replace-url");
     const elementIsBoosted = getInternalData(elt).boosted;
     let saveType = null;
     let path = null;
@@ -12182,17 +12189,15 @@ var htmx2 = (function() {
       handleTriggerHeader(xhr, "HX-Trigger", elt);
     }
     if (hasHeader(xhr, /HX-Location:/i)) {
-      saveCurrentPageToHistory();
       let redirectPath = xhr.getResponseHeader("HX-Location");
-      var redirectSwapSpec;
+      var redirectSwapSpec = {};
       if (redirectPath.indexOf("{") === 0) {
         redirectSwapSpec = parseJSON(redirectPath);
         redirectPath = redirectSwapSpec.path;
         delete redirectSwapSpec.path;
       }
-      ajaxHelper("get", redirectPath, redirectSwapSpec).then(function() {
-        pushUrlIntoHistory(redirectPath);
-      });
+      redirectSwapSpec.push = redirectSwapSpec.push || "true";
+      ajaxHelper("get", redirectPath, redirectSwapSpec);
       return;
     }
     const shouldRefresh = hasHeader(xhr, /HX-Refresh:/i) && xhr.getResponseHeader("HX-Refresh") === "true";
@@ -12267,7 +12272,7 @@ var htmx2 = (function() {
       if (hasHeader(xhr, /HX-Reselect:/i)) {
         selectOverride = xhr.getResponseHeader("HX-Reselect");
       }
-      const selectOOB = getClosestAttributeValue(elt, "hx-select-oob");
+      const selectOOB = etc.selectOOB || getClosestAttributeValue(elt, "hx-select-oob");
       const select = getClosestAttributeValue(elt, "hx-select");
       swap(target, serverResponse, swapSpec, {
         select: selectOverride === "unset" ? null : selectOverride || select,
@@ -12419,7 +12424,10 @@ var htmx2 = (function() {
       "[hx-trigger='restored'],[data-hx-trigger='restored']"
     );
     body.addEventListener("htmx:abort", function(evt) {
-      const target = evt.target;
+      const target = (
+        /** @type {CustomEvent} */
+        evt.detail.elt || evt.target
+      );
       const internalData = getInternalData(target);
       if (internalData && internalData.xhr) {
         internalData.xhr.abort();
