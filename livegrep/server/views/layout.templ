@@ -30,7 +30,7 @@ templ layout(p Page) {
 			}
 			<link rel="stylesheet" href={ string(templ.URL("/" + p.CSSPath)) }/>
 		</head>
-		<body>
+		<body hx-ext="morph">
 			{ children... }
 			if p.IncludeHeader {
 				<footer id="header">

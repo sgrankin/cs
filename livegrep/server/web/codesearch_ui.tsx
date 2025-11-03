@@ -15,6 +15,7 @@ import "./bootstrap/js/bootstrap";
 import "./codesearch.css";
 
 import htmx from "htmx.org";
+import "idiomorph";
 import jQuery from "jquery";
 import {LitElement, html} from "lit";
 import {customElement, property} from "lit/decorators.js";
@@ -56,24 +57,6 @@ function handleKey(event: KeyboardEvent) {
 function getSelectedText() {
     return window.getSelection ? window.getSelection()?.toString() : null;
 }
-
-// var url = model.viewURL();
-// if (browser_url !== url) {
-//     // If the user is typing quickly, just keep replacing the current URL.
-//     // But after they"ve paused, enroll the URL they paused at into their browser history.
-//     var now = Date.now();
-//     var two_seconds = 2000;
-//     if (last_url[0] === "") {
-//         // If this.last_url is null, that means this is the initial navigation.
-//         // We should never pushState here, otherwise the user will need to
-//         // backspace twice to go back to the previous page.
-//         history.replaceState(null, "", url);
-//     } else if (now - last_url[1] > two_seconds) {
-//         history.pushState(null, "", url);
-//     } else {
-//         history.replaceState(null, "", url);
-//     }
-//     set_last_url([url, now]);
 
 // TODO: this should be an instance of a singleton... maybe?
 namespace CodesearchUI {
