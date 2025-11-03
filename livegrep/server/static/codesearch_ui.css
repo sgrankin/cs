@@ -2692,7 +2692,7 @@ a:hover {
 }
 .match .contents {
   display: grid;
-  grid-template-columns: 4em auto auto;
+  grid-template-columns: subgrid;
   white-space: pre-wrap;
   font-family:
     "Menlo",
@@ -2706,12 +2706,6 @@ a:hover {
 }
 #results.no-context .match .contents > * {
   display: none;
-}
-#results.no-context .match .contents > .matchlno {
-  display: inline;
-}
-#results.no-context .match .contents > .matchline {
-  display: inline;
 }
 .no-context .match {
   border-top: none;
@@ -2727,28 +2721,8 @@ a:hover {
 .no-context .match:last-of-type .contents {
   padding-bottom: 10px;
 }
-.lno-link {
-  color: var(--color-foreground-subtle);
-  padding-right: 1em;
-  text-align: right;
-}
-.matchlno {
-  font-weight: bold;
-}
-.matchlinks {
-  opacity: 0.7;
-  text-align: right;
-}
 .match:hover {
   background-color: var(--color-background-subtle);
-}
-.match:hover .matchlinks {
-  opacity: 1;
-}
-.matchstr {
-  background: var(--color-background-matchstr);
-  color: var(--color-foreground-matchstr);
-  font-weight: bold;
 }
 #countarea {
   text-align: right;

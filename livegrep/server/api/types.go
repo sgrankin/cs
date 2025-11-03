@@ -82,7 +82,6 @@ type FileResult struct {
 
 type SearchScriptData struct {
 	BackendRepos map[string][]string `json:"backend_repos"`
-	LinkConfigs  []cs.LinkConfig     `json:"link_configs"`
 }
 
 type FileViewData struct {

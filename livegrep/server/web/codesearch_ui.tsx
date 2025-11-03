@@ -17,7 +17,8 @@ import "./codesearch.css";
 import htmx from "htmx.org";
 import "idiomorph";
 import jQuery from "jquery";
-import {LitElement, html} from "lit";
+import {LitElement, html, css} from "lit";
+import {classMap} from "lit/directives/class-map.js";
 import {customElement, property} from "lit/decorators.js";
 
 import {init as _init, updateOptions, updateSelected} from "./repo_selector.ts";
@@ -61,7 +62,6 @@ function getSelectedText() {
 // TODO: this should be an instance of a singleton... maybe?
 namespace CodesearchUI {
     export let backend_repos: {[x: string]: any};
-    export let linkConfigs: api.LinkConfig[];
     export let input: JQuery<HTMLInputElement>;
     export let input_backend: JQuery<HTMLSelectElement> | null;
     export let input_regex: JQuery<HTMLInputElement>;
@@ -241,9 +241,6 @@ namespace CodesearchUI {
 
 function init(initData: api.SearchScriptData) {
     CodesearchUI.backend_repos = initData.backend_repos;
-    CodesearchUI.linkConfigs = (initData.link_configs || []).map(function (link_config) {
-        return link_config;
-    });
     CodesearchUI.onload();
 }
 
@@ -268,6 +265,58 @@ export class SearchFilterButton extends LitElement {
             input.value;
         htmx.trigger("#searchbox", "search");
     }
+}
+
+@customElement("match-line")
+export class MatchLine extends LitElement {
+    @property({type: Number}) lineNo: number;
+    @property() line: string;
+    @property() href: string;
+    @property({type: Number}) start?: number;
+    @property({type: Number}) end?: number;
+
+    render() {
+        let isMatch = this.start != undefined && this.end != undefined;
+        var matchLine = html`${this.line}`;
+        if (isMatch) {
+            matchLine = html`${this.line.substring(0, this.start)}<span class="matchstr"
+                    >${this.line.substring(this.start!, this.end)}</span
+                >${this.line.substring(this.end!)}`;
+        }
+        return html`<a
+                class="${classMap({"lno-link": true, matchlno: isMatch})}"
+                href="${this.href}"
+                ><span class="lno">${this.lineNo}</span></a
+            >
+            <span class="${classMap({matchline: isMatch})}">${matchLine}</span>`;
+    }
+    static styles = css`
+        :host {
+            display: grid;
+            grid-template-columns: 4em auto;
+        }
+        .lno-link {
+            color: var(--color-foreground-subtle);
+            padding-right: 1em;
+            text-align: right;
+            text-decoration: none;
+        }
+        .lno-link:hover {
+            text-decoration: underline;
+        }
+        .matchlno {
+            font-weight: bold;
+            display: inline;
+        }
+        .matchline {
+            display: inline;
+        }
+        .matchstr {
+            background: var(--color-background-matchstr);
+            color: var(--color-foreground-matchstr);
+            font-weight: bold;
+        }
+    `;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

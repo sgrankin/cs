@@ -30,7 +30,6 @@ func (s *server) makeSearchScriptData() (script_data *api.SearchScriptData, back
 
 	script_data = &api.SearchScriptData{
 		BackendRepos: repos,
-		LinkConfigs:  s.config.Templates.Links,
 	}
 	return script_data, backends, sampleRepo
 }

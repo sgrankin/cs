@@ -1,6 +1,5 @@
 /* Do not change, this code is generated from Golang structs */
 
-
 export interface InnerError {
     code: string;
     message: string;
@@ -68,20 +67,8 @@ export interface ReplySearch {
     Backend: string;
 }
 
-
-
-
-
-
-export interface LinkConfig {
-    match_regexp: RegExp;
-    label: string;
-    url_template: string;
-    target: string;
-}
 export interface SearchScriptData {
     backend_repos: {[key: string]: string[]};
-    link_configs: LinkConfig[];
 }
 export interface FileViewData {
     repo_name: string;

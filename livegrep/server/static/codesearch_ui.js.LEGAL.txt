@@ -39,6 +39,7 @@ bootstrap-select/dist/js/bootstrap-select.js:
 @lit/reactive-element/reactive-element.js:
 lit-html/lit-html.js:
 lit-element/lit-element.js:
+lit-html/directive.js:
 @lit/reactive-element/decorators/custom-element.js:
 @lit/reactive-element/decorators/property.js:
 @lit/reactive-element/decorators/state.js:
@@ -58,6 +59,13 @@ lit-html/is-server.js:
   /**
    * @license
    * Copyright 2022 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   */
+
+lit-html/directives/class-map.js:
+  /**
+   * @license
+   * Copyright 2018 Google LLC
    * SPDX-License-Identifier: BSD-3-Clause
    */
 
