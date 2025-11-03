@@ -267,7 +267,11 @@ templ extensionsButtons(extensions []string) {
 		if len(extensions) > 0 {
 			Narrow to:
 			for _, ex := range limitSlice(extensions, 5) {
-				<button class="file-extension" hx-on:click={ templ.JSFuncCall("limitToExtension", templ.JSExpression("event")) }>{ ex } </button>
+				<filter-button
+					text={ ex }
+					rawFilter={ fmt.Sprintf("file:%s", ex) }
+					regexFilter={ fmt.Sprintf("file:\\%s$", ex) }
+				></filter-button>
 			}
 		}
 	</div>

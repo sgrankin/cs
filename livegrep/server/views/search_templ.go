@@ -830,39 +830,52 @@ func extensionsButtons(extensions []string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			for _, ex := range limitSlice(extensions, 5) {
-				templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, templ.JSFuncCall("limitToExtension", templ.JSExpression("event")))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<filter-button text=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<button class=\"file-extension\" hx-on:click=\"")
+				var templ_7745c5c3_Var35 string
+				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(ex)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 271, Col: 13}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var35 templ.ComponentScript = templ.JSFuncCall("limitToExtension", templ.JSExpression("event"))
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35.Call)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" rawFilter=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var36 string
-				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(ex)
+				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("file:%s", ex))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 270, Col: 119}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 272, Col: 42}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" regexFilter=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var37 string
+				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("file:\\%s$", ex))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 273, Col: 47}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"></filter-button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -886,12 +899,12 @@ func help() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var37 == nil {
-			templ_7745c5c3_Var37 = templ.NopComponent
+		templ_7745c5c3_Var38 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var38 == nil {
+			templ_7745c5c3_Var38 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<div id=\"helparea\"><div class=\"helpsection\"><h5>Special query terms</h5></div><table><tr><td><code>path:</code></td><td>Only include results from matching files.</td><td><a href=\"/search?q=hello+path:test\">example</a></td></tr><tr><td><code>-path:</code></td><td>Exclude results from matching files.</td><td><a href=\"/search?q=hello+-path:test\">example</a></td></tr><tr><td><code>repo:</code></td><td>Only include results from matching repositories.</td><td><a href=\"/search?q=hello+repo:example\">example</a></td></tr><tr><td><code>-repo:</code></td><td>Exclude results from matching repositories.</td><td><a href=\"/search?q=hello+-repo:example\">example</a></td></tr><tr><td><code>max_matches:</code></td><td>Adjust the limit on number of matching lines returned.</td><td><a href=\"/search?q=hello+max_matches:5\">example</a></td></tr><tr><td><code>(<em>special-term</em>:) </code></td><td>Escape one of the above terms by wrapping it in parentheses (with regex enabled). </td><td><a href=\"/search?q=(file:)®ex=true\">example</a></td></tr></table><div class=\"helpsection\"><h5>Regular Expressions</h5></div><p>See the complete supported regex syntax in <a href=\"https://github.com/google/re2/wiki/Syntax\">the RE2 documentation</a>.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div id=\"helparea\"><div class=\"helpsection\"><h5>Special query terms</h5></div><table><tr><td><code>path:</code></td><td>Only include results from matching files.</td><td><a href=\"/search?q=hello+path:test\">example</a></td></tr><tr><td><code>-path:</code></td><td>Exclude results from matching files.</td><td><a href=\"/search?q=hello+-path:test\">example</a></td></tr><tr><td><code>repo:</code></td><td>Only include results from matching repositories.</td><td><a href=\"/search?q=hello+repo:example\">example</a></td></tr><tr><td><code>-repo:</code></td><td>Exclude results from matching repositories.</td><td><a href=\"/search?q=hello+-repo:example\">example</a></td></tr><tr><td><code>max_matches:</code></td><td>Adjust the limit on number of matching lines returned.</td><td><a href=\"/search?q=hello+max_matches:5\">example</a></td></tr><tr><td><code>(<em>special-term</em>:) </code></td><td>Escape one of the above terms by wrapping it in parentheses (with regex enabled). </td><td><a href=\"/search?q=(file:)®ex=true\">example</a></td></tr></table><div class=\"helpsection\"><h5>Regular Expressions</h5></div><p>See the complete supported regex syntax in <a href=\"https://github.com/google/re2/wiki/Syntax\">the RE2 documentation</a>.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -915,35 +928,35 @@ func searchInputs(err error) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var38 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var38 == nil {
-			templ_7745c5c3_Var38 = templ.NopComponent
+		templ_7745c5c3_Var39 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var39 == nil {
+			templ_7745c5c3_Var39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div class=\"search-inputs\"><div class=\"prefixed-input filter-code\"><label class=\"prefix-label\" for=\"searchbox\">Query:</label> <input name=\"q\" type=\"text\" id=\"searchbox\" tabindex=\"1\"></div><div id=\"regex-error\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"search-inputs\"><div class=\"prefixed-input filter-code\"><label class=\"prefix-label\" for=\"searchbox\">Query:</label> <input name=\"q\" type=\"text\" id=\"searchbox\" tabindex=\"1\"></div><div id=\"regex-error\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if err != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<span id=\"errortext\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<span id=\"errortext\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var39 string
-			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
+			var templ_7745c5c3_Var40 string
+			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 331, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 335, Col: 38}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</div><div class=\"query-hint\">Special terms: <code>path:</code> <code>-path:</code> <code>repo:</code> <code>-repo:</code> <code>max_matches:</code></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</div><div class=\"query-hint\">Special terms: <code>path:</code> <code>-path:</code> <code>repo:</code> <code>-repo:</code> <code>max_matches:</code></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -967,118 +980,118 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var40 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var40 == nil {
-			templ_7745c5c3_Var40 = templ.NopComponent
+		templ_7745c5c3_Var41 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var41 == nil {
+			templ_7745c5c3_Var41 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<div class=\"search-options\"><div class=\"search-option\"><span class=\"label\">Case:</span> <input type=\"radio\" name=\"fold_case\" value=\"false\" id=\"case-match\" tabindex=\"3\"> <label for=\"case-match\">match</label> <input type=\"radio\" name=\"fold_case\" value=\"auto\" id=\"case-auto\" tabindex=\"4\"> <label for=\"case-auto\">auto</label> [<span class=\"tooltip-target\">?<div class=\"tooltip\">Case-sensitive if the query contains capital letters</div></span>] <input type=\"radio\" name=\"fold_case\" value=\"true\" id=\"case-ignore\" tabindex=\"5\"> <label for=\"case-ignore\">ignore</label></div><div class=\"search-option\"><span class=\"label\">Regex:</span> <input type=\"checkbox\" name=\"regex\" id=\"regex\" tabindex=\"6\"> <label for=\"regex\">on</label></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"search-options\"><div class=\"search-option\"><span class=\"label\">Case:</span> <input type=\"radio\" name=\"fold_case\" value=\"false\" id=\"case-match\" tabindex=\"3\"> <label for=\"case-match\">match</label> <input type=\"radio\" name=\"fold_case\" value=\"auto\" id=\"case-auto\" tabindex=\"4\"> <label for=\"case-auto\">auto</label> [<span class=\"tooltip-target\">?<div class=\"tooltip\">Case-sensitive if the query contains capital letters</div></span>] <input type=\"radio\" name=\"fold_case\" value=\"true\" id=\"case-ignore\" tabindex=\"5\"> <label for=\"case-ignore\">ignore</label></div><div class=\"search-option\"><span class=\"label\">Regex:</span> <input type=\"checkbox\" name=\"regex\" id=\"regex\" tabindex=\"6\"> <label for=\"regex\">on</label></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(indexes) > 1 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"search-option\"><span class=\"label\">Search:</span> <select name=\"backend\" id=\"backend\" tabindex=\"7\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div class=\"search-option\"><span class=\"label\">Search:</span> <select name=\"backend\" id=\"backend\" tabindex=\"7\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, b := range indexes {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<option value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var41 string
-				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 368, Col: 23}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				if b.Name() == currentIndex {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, " selected")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, ">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 372, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 372, Col: 23}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</option>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if b.Name() == currentIndex {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, " selected")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, ">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var43 string
+				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 376, Col: 17}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</select></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</select></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if len(indexes) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<select name=\"backend\" id=\"backend\" style=\"display: none\"><option value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var43 string
-			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 378, Col: 37}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<select name=\"backend\" id=\"backend\" style=\"display: none\"><option value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 378, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 382, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</option></select> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var45 string
+			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 382, Col: 59}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</option></select> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if indexes[0].Name() != "-" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<div class=\"search-option\"><span class=\"label\">Searching:</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div class=\"search-option\"><span class=\"label\">Searching:</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var45 string
-				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
+				var templ_7745c5c3_Var46 string
+				templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 382, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 386, Col: 61}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo[]\" id=\"repos\" multiple></select></div><div class=\"search-option\"><span class=\"label\">Context:</span> <input type=\"checkbox\" name=\"context\" id=\"context\" tabindex=\"8\" checked=\"CHECKED\"> <label for=\"context\">on</label></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "<div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo[]\" id=\"repos\" multiple></select></div><div class=\"search-option\"><span class=\"label\">Context:</span> <input type=\"checkbox\" name=\"context\" id=\"context\" tabindex=\"8\" checked=\"CHECKED\"> <label for=\"context\">on</label></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

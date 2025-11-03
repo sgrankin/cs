@@ -16,6 +16,8 @@ import "./codesearch.css";
 
 import htmx from "htmx.org";
 import jQuery from "jquery";
+import {LitElement, html} from "lit";
+import {customElement, property} from "lit/decorators.js";
 
 import {init as _init, updateOptions, updateSelected} from "./repo_selector.ts";
 import * as api from "./api.ts";
@@ -262,27 +264,31 @@ function init(initData: api.SearchScriptData) {
     CodesearchUI.onload();
 }
 
-function limitToExtension(e) {
-    let ext = e.target.textContent;
-    let input = htmx.find("#searchbox") as HTMLInputElement;
-    var q = input.value;
-    if (jQuery("#regex").is(":checked")) {
-        q = "file:\\" + ext + "$ " + q;
-    } else {
-        q = "file:" + ext + " " + q;
+@customElement("filter-button")
+export class SearchFilterButton extends LitElement {
+    @property() text: string;
+    @property() rawFilter: string;
+    @property() regexFilter: string;
+
+    render() {
+        return html`
+            <button type="button" class="file-extension" @click="${this._apply}">
+                ${this.text}
+            </button>
+        `;
     }
-    input.value = q;
-    htmx.trigger("#searchbox", "search");
+    private _apply(e: Event) {
+        let input = htmx.find("#searchbox") as HTMLInputElement;
+        input.value =
+            (jQuery("#regex").is(":checked") ? this.regexFilter : this.rawFilter) +
+            " " +
+            input.value;
+        htmx.trigger("#searchbox", "search");
+    }
 }
 
-htmx.onLoad((target) => {
-    htmx.findAll(target, ".file-extension").forEach((elt) => (elt.onclick = limitToExtension));
-});
-
-jQuery(() => {
-    init(
-        JSON.parse(
-            (document.getElementById("data") as HTMLScriptElement).text,
-        ) as api.SearchScriptData,
-    );
+document.addEventListener("DOMContentLoaded", () => {
+    let text = (htmx.find("#data") as HTMLScriptElement).text;
+    let data = JSON.parse(text) as api.SearchScriptData;
+    init(data);
 });

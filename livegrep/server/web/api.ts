@@ -65,6 +65,7 @@ export interface ReplySearch {
     search_type: string;
     query: Query;
     facets: Facet[];
+    Backend: string;
 }
 
 

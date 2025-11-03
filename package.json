@@ -1,11 +1,21 @@
 {
   "name": "com_github_livegrep_livegrep_web",
   "devDependencies": {
+    "@lit-labs/observers": "2.0.6",
+    "@lit-labs/signals": "0.1.3",
+    "@lit-labs/virtualizer": "2.1.1",
     "@types/jquery": "3.5.33",
-    "@types/node": "24.9.2",
+    "@types/node": "24.10.0",
     "bootstrap-select": "1.13.18",
+    "htmx-ext-json-enc": "2.0.3",
+    "htmx-ext-multi-swap": "2.0.2",
+    "htmx-ext-path-params": "2.0.2",
+    "htmx-ext-preload": "2.1.2",
+    "htmx-ext-sse": "2.2.4",
     "htmx.org": "2.0.8",
-    "jquery": "3.7.1"
+    "idiomorph": "0.7.4",
+    "jquery": "3.7.1",
+    "lit": "3.3.1"
   },
   "private": "true"
 }

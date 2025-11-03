@@ -23,6 +23,14 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __decorateClass = (decorators, target, key, kind) => {
+  var result = kind > 1 ? void 0 : kind ? __getOwnPropDesc(target, key) : target;
+  for (var i5 = decorators.length - 1, decorator; i5 >= 0; i5--)
+    if (decorator = decorators[i5])
+      result = (kind ? decorator(target, key, result) : decorator(result)) || result;
+  if (kind && result) __defProp(target, key, result);
+  return result;
+};
 
 // ../../node_modules/jquery/dist/jquery.js
 var require_jquery = __commonJS({
@@ -30,11 +38,11 @@ var require_jquery = __commonJS({
     (function(global, factory) {
       "use strict";
       if (typeof module === "object" && typeof module.exports === "object") {
-        module.exports = global.document ? factory(global, true) : function(w) {
-          if (!w.document) {
+        module.exports = global.document ? factory(global, true) : function(w2) {
+          if (!w2.document) {
             throw new Error("jQuery requires a window with a document");
           }
-          return factory(w);
+          return factory(w2);
         };
       } else {
         factory(global);
@@ -72,13 +80,13 @@ var require_jquery = __commonJS({
       };
       function DOMEval(code, node, doc) {
         doc = doc || document2;
-        var i, val, script = doc.createElement("script");
+        var i5, val, script = doc.createElement("script");
         script.text = code;
         if (node) {
-          for (i in preservedScriptAttributes) {
-            val = node[i] || node.getAttribute && node.getAttribute(i);
+          for (i5 in preservedScriptAttributes) {
+            val = node[i5] || node.getAttribute && node.getAttribute(i5);
             if (val) {
-              script.setAttribute(i, val);
+              script.setAttribute(i5, val);
             }
           }
         }
@@ -122,8 +130,8 @@ var require_jquery = __commonJS({
           return jQuery4.each(this, callback);
         },
         map: function(callback) {
-          return this.pushStack(jQuery4.map(this, function(elem, i) {
-            return callback.call(elem, i, elem);
+          return this.pushStack(jQuery4.map(this, function(elem, i5) {
+            return callback.call(elem, i5, elem);
           }));
         },
         slice: function() {
@@ -136,18 +144,18 @@ var require_jquery = __commonJS({
           return this.eq(-1);
         },
         even: function() {
-          return this.pushStack(jQuery4.grep(this, function(_elem, i) {
-            return (i + 1) % 2;
+          return this.pushStack(jQuery4.grep(this, function(_elem, i5) {
+            return (i5 + 1) % 2;
           }));
         },
         odd: function() {
-          return this.pushStack(jQuery4.grep(this, function(_elem, i) {
-            return i % 2;
+          return this.pushStack(jQuery4.grep(this, function(_elem, i5) {
+            return i5 % 2;
           }));
         },
-        eq: function(i) {
-          var len = this.length, j = +i + (i < 0 ? len : 0);
-          return this.pushStack(j >= 0 && j < len ? [this[j]] : []);
+        eq: function(i5) {
+          var len = this.length, j2 = +i5 + (i5 < 0 ? len : 0);
+          return this.pushStack(j2 >= 0 && j2 < len ? [this[j2]] : []);
         },
         end: function() {
           return this.prevObject || this.constructor();
@@ -159,21 +167,21 @@ var require_jquery = __commonJS({
         splice: arr.splice
       };
       jQuery4.extend = jQuery4.fn.extend = function() {
-        var options, name, src, copy, copyIsArray, clone, target = arguments[0] || {}, i = 1, length = arguments.length, deep = false;
+        var options, name, src, copy, copyIsArray, clone, target = arguments[0] || {}, i5 = 1, length = arguments.length, deep = false;
         if (typeof target === "boolean") {
           deep = target;
-          target = arguments[i] || {};
-          i++;
+          target = arguments[i5] || {};
+          i5++;
         }
         if (typeof target !== "object" && !isFunction2(target)) {
           target = {};
         }
-        if (i === length) {
+        if (i5 === length) {
           target = this;
-          i--;
+          i5--;
         }
-        for (; i < length; i++) {
-          if ((options = arguments[i]) != null) {
+        for (; i5 < length; i5++) {
+          if ((options = arguments[i5]) != null) {
             for (name in options) {
               copy = options[name];
               if (name === "__proto__" || target === copy) {
@@ -233,17 +241,17 @@ var require_jquery = __commonJS({
           DOMEval(code, { nonce: options && options.nonce }, doc);
         },
         each: function(obj, callback) {
-          var length, i = 0;
+          var length, i5 = 0;
           if (isArrayLike(obj)) {
             length = obj.length;
-            for (; i < length; i++) {
-              if (callback.call(obj[i], i, obj[i]) === false) {
+            for (; i5 < length; i5++) {
+              if (callback.call(obj[i5], i5, obj[i5]) === false) {
                 break;
               }
             }
           } else {
-            for (i in obj) {
-              if (callback.call(obj[i], i, obj[i]) === false) {
+            for (i5 in obj) {
+              if (callback.call(obj[i5], i5, obj[i5]) === false) {
                 break;
               }
             }
@@ -252,9 +260,9 @@ var require_jquery = __commonJS({
         },
         // Retrieve the text value of an array of DOM nodes
         text: function(elem) {
-          var node, ret = "", i = 0, nodeType = elem.nodeType;
+          var node, ret = "", i5 = 0, nodeType = elem.nodeType;
           if (!nodeType) {
-            while (node = elem[i++]) {
+            while (node = elem[i5++]) {
               ret += jQuery4.text(node);
             }
           }
@@ -284,8 +292,8 @@ var require_jquery = __commonJS({
           }
           return ret;
         },
-        inArray: function(elem, arr2, i) {
-          return arr2 == null ? -1 : indexOf.call(arr2, elem, i);
+        inArray: function(elem, arr2, i5) {
+          return arr2 == null ? -1 : indexOf.call(arr2, elem, i5);
         },
         isXMLDoc: function(elem) {
           var namespace = elem && elem.namespaceURI, docElem = elem && (elem.ownerDocument || elem).documentElement;
@@ -294,37 +302,37 @@ var require_jquery = __commonJS({
         // Support: Android <=4.0 only, PhantomJS 1 only
         // push.apply(_, arraylike) throws on ancient WebKit
         merge: function(first, second) {
-          var len = +second.length, j = 0, i = first.length;
-          for (; j < len; j++) {
-            first[i++] = second[j];
+          var len = +second.length, j2 = 0, i5 = first.length;
+          for (; j2 < len; j2++) {
+            first[i5++] = second[j2];
           }
-          first.length = i;
+          first.length = i5;
           return first;
         },
         grep: function(elems, callback, invert) {
-          var callbackInverse, matches2 = [], i = 0, length = elems.length, callbackExpect = !invert;
-          for (; i < length; i++) {
-            callbackInverse = !callback(elems[i], i);
+          var callbackInverse, matches2 = [], i5 = 0, length = elems.length, callbackExpect = !invert;
+          for (; i5 < length; i5++) {
+            callbackInverse = !callback(elems[i5], i5);
             if (callbackInverse !== callbackExpect) {
-              matches2.push(elems[i]);
+              matches2.push(elems[i5]);
             }
           }
           return matches2;
         },
         // arg is for internal usage only
         map: function(elems, callback, arg) {
-          var length, value, i = 0, ret = [];
+          var length, value, i5 = 0, ret = [];
           if (isArrayLike(elems)) {
             length = elems.length;
-            for (; i < length; i++) {
-              value = callback(elems[i], i, arg);
+            for (; i5 < length; i5++) {
+              value = callback(elems[i5], i5, arg);
               if (value != null) {
                 ret.push(value);
               }
             }
           } else {
-            for (i in elems) {
-              value = callback(elems[i], i, arg);
+            for (i5 in elems) {
+              value = callback(elems[i5], i5, arg);
               if (value != null) {
                 ret.push(value);
               }
@@ -365,11 +373,11 @@ var require_jquery = __commonJS({
         "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" + whitespace + "+$",
         "g"
       );
-      jQuery4.contains = function(a, b) {
-        var bup = b && b.parentNode;
-        return a === bup || !!(bup && bup.nodeType === 1 && // Support: IE 9 - 11+
+      jQuery4.contains = function(a3, b3) {
+        var bup = b3 && b3.parentNode;
+        return a3 === bup || !!(bup && bup.nodeType === 1 && // Support: IE 9 - 11+
         // IE doesn't have `contains` on SVG.
-        (a.contains ? a.contains(bup) : a.compareDocumentPosition && a.compareDocumentPosition(bup) & 16));
+        (a3.contains ? a3.contains(bup) : a3.compareDocumentPosition && a3.compareDocumentPosition(bup) & 16));
       };
       var rcssescape = /([\0-\x1f\x7f]|^-?\d)|^-$|[^\x80-\uFFFF\w-]/g;
       function fcssescape(ch, asCodePoint) {
@@ -386,8 +394,8 @@ var require_jquery = __commonJS({
       };
       var preferredDoc = document2, pushNative = push;
       (function() {
-        var i, Expr, outermostContext, sortInput, hasDuplicate, push2 = pushNative, document3, documentElement2, documentIsHTML, rbuggyQSA, matches2, expando = jQuery4.expando, dirruns = 0, done = 0, classCache = createCache(), tokenCache = createCache(), compilerCache = createCache(), nonnativeSelectorCache = createCache(), sortOrder = function(a, b) {
-          if (a === b) {
+        var i5, Expr, outermostContext, sortInput, hasDuplicate, push2 = pushNative, document3, documentElement2, documentIsHTML, rbuggyQSA, matches2, expando = jQuery4.expando, dirruns = 0, done = 0, classCache = createCache(), tokenCache = createCache(), compilerCache = createCache(), nonnativeSelectorCache = createCache(), sortOrder = function(a3, b3) {
+          if (a3 === b3) {
             hasDuplicate = true;
           }
           return 0;
@@ -433,7 +441,7 @@ var require_jquery = __commonJS({
             preferredDoc.childNodes
           );
           arr[preferredDoc.childNodes.length].nodeType;
-        } catch (e) {
+        } catch (e5) {
           push2 = {
             apply: function(target, els) {
               pushNative.apply(target, slice.call(els));
@@ -444,7 +452,7 @@ var require_jquery = __commonJS({
           };
         }
         function find2(selector, context, results, seed) {
-          var m, i2, elem, nid, match, groups, newSelector, newContext = context && context.ownerDocument, nodeType = context ? context.nodeType : 9;
+          var m2, i6, elem, nid, match, groups, newSelector, newContext = context && context.ownerDocument, nodeType = context ? context.nodeType : 9;
           results = results || [];
           if (typeof selector !== "string" || !selector || nodeType !== 1 && nodeType !== 9 && nodeType !== 11) {
             return results;
@@ -454,10 +462,10 @@ var require_jquery = __commonJS({
             context = context || document3;
             if (documentIsHTML) {
               if (nodeType !== 11 && (match = rquickExpr2.exec(selector))) {
-                if (m = match[1]) {
+                if (m2 = match[1]) {
                   if (nodeType === 9) {
-                    if (elem = context.getElementById(m)) {
-                      if (elem.id === m) {
+                    if (elem = context.getElementById(m2)) {
+                      if (elem.id === m2) {
                         push2.call(results, elem);
                         return results;
                       }
@@ -465,7 +473,7 @@ var require_jquery = __commonJS({
                       return results;
                     }
                   } else {
-                    if (newContext && (elem = newContext.getElementById(m)) && find2.contains(context, elem) && elem.id === m) {
+                    if (newContext && (elem = newContext.getElementById(m2)) && find2.contains(context, elem) && elem.id === m2) {
                       push2.call(results, elem);
                       return results;
                     }
@@ -473,8 +481,8 @@ var require_jquery = __commonJS({
                 } else if (match[2]) {
                   push2.apply(results, context.getElementsByTagName(selector));
                   return results;
-                } else if ((m = match[3]) && context.getElementsByClassName) {
-                  push2.apply(results, context.getElementsByClassName(m));
+                } else if ((m2 = match[3]) && context.getElementsByClassName) {
+                  push2.apply(results, context.getElementsByClassName(m2));
                   return results;
                 }
               }
@@ -491,9 +499,9 @@ var require_jquery = __commonJS({
                     }
                   }
                   groups = tokenize(selector);
-                  i2 = groups.length;
-                  while (i2--) {
-                    groups[i2] = (nid ? "#" + nid : ":scope") + " " + toSelector(groups[i2]);
+                  i6 = groups.length;
+                  while (i6--) {
+                    groups[i6] = (nid ? "#" + nid : ":scope") + " " + toSelector(groups[i6]);
                   }
                   newSelector = groups.join(",");
                 }
@@ -533,7 +541,7 @@ var require_jquery = __commonJS({
           var el = document3.createElement("fieldset");
           try {
             return !!fn(el);
-          } catch (e) {
+          } catch (e5) {
             return false;
           } finally {
             if (el.parentNode) {
@@ -577,10 +585,10 @@ var require_jquery = __commonJS({
           return markFunction(function(argument) {
             argument = +argument;
             return markFunction(function(seed, matches3) {
-              var j, matchIndexes = fn([], seed.length, argument), i2 = matchIndexes.length;
-              while (i2--) {
-                if (seed[j = matchIndexes[i2]]) {
-                  seed[j] = !(matches3[j] = seed[j]);
+              var j2, matchIndexes = fn([], seed.length, argument), i6 = matchIndexes.length;
+              while (i6--) {
+                if (seed[j2 = matchIndexes[i6]]) {
+                  seed[j2] = !(matches3[j2] = seed[j2]);
                 }
               }
             });
@@ -619,7 +627,7 @@ var require_jquery = __commonJS({
             try {
               document3.querySelector(":has(*,:jqfake)");
               return false;
-            } catch (e) {
+            } catch (e5) {
               return true;
             }
           });
@@ -646,15 +654,15 @@ var require_jquery = __commonJS({
             };
             Expr.find.ID = function(id, context) {
               if (typeof context.getElementById !== "undefined" && documentIsHTML) {
-                var node2, i2, elems, elem = context.getElementById(id);
+                var node2, i6, elems, elem = context.getElementById(id);
                 if (elem) {
                   node2 = elem.getAttributeNode("id");
                   if (node2 && node2.value === id) {
                     return [elem];
                   }
                   elems = context.getElementsByName(id);
-                  i2 = 0;
-                  while (elem = elems[i2++]) {
+                  i6 = 0;
+                  while (elem = elems[i6++]) {
                     node2 = elem.getAttributeNode("id");
                     if (node2 && node2.value === id) {
                       return [elem];
@@ -711,27 +719,27 @@ var require_jquery = __commonJS({
             rbuggyQSA.push(":has");
           }
           rbuggyQSA = rbuggyQSA.length && new RegExp(rbuggyQSA.join("|"));
-          sortOrder = function(a, b) {
-            if (a === b) {
+          sortOrder = function(a3, b3) {
+            if (a3 === b3) {
               hasDuplicate = true;
               return 0;
             }
-            var compare = !a.compareDocumentPosition - !b.compareDocumentPosition;
+            var compare = !a3.compareDocumentPosition - !b3.compareDocumentPosition;
             if (compare) {
               return compare;
             }
-            compare = (a.ownerDocument || a) == (b.ownerDocument || b) ? a.compareDocumentPosition(b) : (
+            compare = (a3.ownerDocument || a3) == (b3.ownerDocument || b3) ? a3.compareDocumentPosition(b3) : (
               // Otherwise we know they are disconnected
               1
             );
-            if (compare & 1 || !support.sortDetached && b.compareDocumentPosition(a) === compare) {
-              if (a === document3 || a.ownerDocument == preferredDoc && find2.contains(preferredDoc, a)) {
+            if (compare & 1 || !support.sortDetached && b3.compareDocumentPosition(a3) === compare) {
+              if (a3 === document3 || a3.ownerDocument == preferredDoc && find2.contains(preferredDoc, a3)) {
                 return -1;
               }
-              if (b === document3 || b.ownerDocument == preferredDoc && find2.contains(preferredDoc, b)) {
+              if (b3 === document3 || b3.ownerDocument == preferredDoc && find2.contains(preferredDoc, b3)) {
                 return 1;
               }
-              return sortInput ? indexOf.call(sortInput, a) - indexOf.call(sortInput, b) : 0;
+              return sortInput ? indexOf.call(sortInput, a3) - indexOf.call(sortInput, b3) : 0;
             }
             return compare & 4 ? -1 : 1;
           };
@@ -750,7 +758,7 @@ var require_jquery = __commonJS({
               elem.document && elem.document.nodeType !== 11) {
                 return ret;
               }
-            } catch (e) {
+            } catch (e5) {
               nonnativeSelectorCache(expr, true);
             }
           }
@@ -776,18 +784,18 @@ var require_jquery = __commonJS({
           throw new Error("Syntax error, unrecognized expression: " + msg);
         };
         jQuery4.uniqueSort = function(results) {
-          var elem, duplicates = [], j = 0, i2 = 0;
+          var elem, duplicates = [], j2 = 0, i6 = 0;
           hasDuplicate = !support.sortStable;
           sortInput = !support.sortStable && slice.call(results, 0);
           sort.call(results, sortOrder);
           if (hasDuplicate) {
-            while (elem = results[i2++]) {
-              if (elem === results[i2]) {
-                j = duplicates.push(i2);
+            while (elem = results[i6++]) {
+              if (elem === results[i6]) {
+                j2 = duplicates.push(i6);
               }
             }
-            while (j--) {
-              splice.call(results, duplicates[j], 1);
+            while (j2--) {
+              splice.call(results, duplicates[j2], 1);
             }
           }
           sortInput = null;
@@ -968,10 +976,10 @@ var require_jquery = __commonJS({
               if (fn.length > 1) {
                 args = [pseudo, pseudo, "", argument];
                 return Expr.setFilters.hasOwnProperty(pseudo.toLowerCase()) ? markFunction(function(seed, matches3) {
-                  var idx, matched = fn(seed, argument), i2 = matched.length;
-                  while (i2--) {
-                    idx = indexOf.call(seed, matched[i2]);
-                    seed[idx] = !(matches3[idx] = matched[i2]);
+                  var idx, matched = fn(seed, argument), i6 = matched.length;
+                  while (i6--) {
+                    idx = indexOf.call(seed, matched[i6]);
+                    seed[idx] = !(matches3[idx] = matched[i6]);
                   }
                 }) : function(elem) {
                   return fn(elem, 0, args);
@@ -985,10 +993,10 @@ var require_jquery = __commonJS({
             not: markFunction(function(selector) {
               var input = [], results = [], matcher = compile(selector.replace(rtrimCSS, "$1"));
               return matcher[expando] ? markFunction(function(seed, matches3, _context, xml) {
-                var elem, unmatched = matcher(seed, null, xml, []), i2 = seed.length;
-                while (i2--) {
-                  if (elem = unmatched[i2]) {
-                    seed[i2] = !(matches3[i2] = elem);
+                var elem, unmatched = matcher(seed, null, xml, []), i6 = seed.length;
+                while (i6--) {
+                  if (elem = unmatched[i6]) {
+                    seed[i6] = !(matches3[i6] = elem);
                   }
                 }
               }) : function(elem, _context, xml) {
@@ -1095,48 +1103,48 @@ var require_jquery = __commonJS({
               return [argument < 0 ? argument + length : argument];
             }),
             even: createPositionalPseudo(function(matchIndexes, length) {
-              var i2 = 0;
-              for (; i2 < length; i2 += 2) {
-                matchIndexes.push(i2);
+              var i6 = 0;
+              for (; i6 < length; i6 += 2) {
+                matchIndexes.push(i6);
               }
               return matchIndexes;
             }),
             odd: createPositionalPseudo(function(matchIndexes, length) {
-              var i2 = 1;
-              for (; i2 < length; i2 += 2) {
-                matchIndexes.push(i2);
+              var i6 = 1;
+              for (; i6 < length; i6 += 2) {
+                matchIndexes.push(i6);
               }
               return matchIndexes;
             }),
             lt: createPositionalPseudo(function(matchIndexes, length, argument) {
-              var i2;
+              var i6;
               if (argument < 0) {
-                i2 = argument + length;
+                i6 = argument + length;
               } else if (argument > length) {
-                i2 = length;
+                i6 = length;
               } else {
-                i2 = argument;
+                i6 = argument;
               }
-              for (; --i2 >= 0; ) {
-                matchIndexes.push(i2);
+              for (; --i6 >= 0; ) {
+                matchIndexes.push(i6);
               }
               return matchIndexes;
             }),
             gt: createPositionalPseudo(function(matchIndexes, length, argument) {
-              var i2 = argument < 0 ? argument + length : argument;
-              for (; ++i2 < length; ) {
-                matchIndexes.push(i2);
+              var i6 = argument < 0 ? argument + length : argument;
+              for (; ++i6 < length; ) {
+                matchIndexes.push(i6);
               }
               return matchIndexes;
             })
           }
         };
         Expr.pseudos.nth = Expr.pseudos.eq;
-        for (i in { radio: true, checkbox: true, file: true, password: true, image: true }) {
-          Expr.pseudos[i] = createInputPseudo(i);
+        for (i5 in { radio: true, checkbox: true, file: true, password: true, image: true }) {
+          Expr.pseudos[i5] = createInputPseudo(i5);
         }
-        for (i in { submit: true, reset: true }) {
-          Expr.pseudos[i] = createButtonPseudo(i);
+        for (i5 in { submit: true, reset: true }) {
+          Expr.pseudos[i5] = createButtonPseudo(i5);
         }
         function setFilters() {
         }
@@ -1191,9 +1199,9 @@ var require_jquery = __commonJS({
           );
         }
         function toSelector(tokens) {
-          var i2 = 0, len = tokens.length, selector = "";
-          for (; i2 < len; i2++) {
-            selector += tokens[i2].value;
+          var i6 = 0, len = tokens.length, selector = "";
+          for (; i6 < len; i6++) {
+            selector += tokens[i6].value;
           }
           return selector;
         }
@@ -1244,9 +1252,9 @@ var require_jquery = __commonJS({
         }
         function elementMatcher(matchers) {
           return matchers.length > 1 ? function(elem, context, xml) {
-            var i2 = matchers.length;
-            while (i2--) {
-              if (!matchers[i2](elem, context, xml)) {
+            var i6 = matchers.length;
+            while (i6--) {
+              if (!matchers[i6](elem, context, xml)) {
                 return false;
               }
             }
@@ -1254,20 +1262,20 @@ var require_jquery = __commonJS({
           } : matchers[0];
         }
         function multipleContexts(selector, contexts, results) {
-          var i2 = 0, len = contexts.length;
-          for (; i2 < len; i2++) {
-            find2(selector, contexts[i2], results);
+          var i6 = 0, len = contexts.length;
+          for (; i6 < len; i6++) {
+            find2(selector, contexts[i6], results);
           }
           return results;
         }
         function condense(unmatched, map, filter, context, xml) {
-          var elem, newUnmatched = [], i2 = 0, len = unmatched.length, mapped = map != null;
-          for (; i2 < len; i2++) {
-            if (elem = unmatched[i2]) {
+          var elem, newUnmatched = [], i6 = 0, len = unmatched.length, mapped = map != null;
+          for (; i6 < len; i6++) {
+            if (elem = unmatched[i6]) {
               if (!filter || filter(elem, context, xml)) {
                 newUnmatched.push(elem);
                 if (mapped) {
-                  map.push(i2);
+                  map.push(i6);
                 }
               }
             }
@@ -1282,7 +1290,7 @@ var require_jquery = __commonJS({
             postFinder = setMatcher(postFinder, postSelector);
           }
           return markFunction(function(seed, results, context, xml) {
-            var temp, i2, elem, matcherOut, preMap = [], postMap = [], preexisting = results.length, elems = seed || multipleContexts(
+            var temp, i6, elem, matcherOut, preMap = [], postMap = [], preexisting = results.length, elems = seed || multipleContexts(
               selector || "*",
               context.nodeType ? [context] : context,
               []
@@ -1302,10 +1310,10 @@ var require_jquery = __commonJS({
             if (postFilter) {
               temp = condense(matcherOut, postMap);
               postFilter(temp, [], context, xml);
-              i2 = temp.length;
-              while (i2--) {
-                if (elem = temp[i2]) {
-                  matcherOut[postMap[i2]] = !(matcherIn[postMap[i2]] = elem);
+              i6 = temp.length;
+              while (i6--) {
+                if (elem = temp[i6]) {
+                  matcherOut[postMap[i6]] = !(matcherIn[postMap[i6]] = elem);
                 }
               }
             }
@@ -1313,17 +1321,17 @@ var require_jquery = __commonJS({
               if (postFinder || preFilter) {
                 if (postFinder) {
                   temp = [];
-                  i2 = matcherOut.length;
-                  while (i2--) {
-                    if (elem = matcherOut[i2]) {
-                      temp.push(matcherIn[i2] = elem);
+                  i6 = matcherOut.length;
+                  while (i6--) {
+                    if (elem = matcherOut[i6]) {
+                      temp.push(matcherIn[i6] = elem);
                     }
                   }
                   postFinder(null, matcherOut = [], temp, xml);
                 }
-                i2 = matcherOut.length;
-                while (i2--) {
-                  if ((elem = matcherOut[i2]) && (temp = postFinder ? indexOf.call(seed, elem) : preMap[i2]) > -1) {
+                i6 = matcherOut.length;
+                while (i6--) {
+                  if ((elem = matcherOut[i6]) && (temp = postFinder ? indexOf.call(seed, elem) : preMap[i6]) > -1) {
                     seed[temp] = !(results[temp] = elem);
                   }
                 }
@@ -1341,7 +1349,7 @@ var require_jquery = __commonJS({
           });
         }
         function matcherFromTokens(tokens) {
-          var checkContext, matcher, j, len = tokens.length, leadingRelative = Expr.relative[tokens[0].type], implicitRelative = leadingRelative || Expr.relative[" "], i2 = leadingRelative ? 1 : 0, matchContext = addCombinator(function(elem) {
+          var checkContext, matcher, j2, len = tokens.length, leadingRelative = Expr.relative[tokens[0].type], implicitRelative = leadingRelative || Expr.relative[" "], i6 = leadingRelative ? 1 : 0, matchContext = addCombinator(function(elem) {
             return elem === checkContext;
           }, implicitRelative, true), matchAnyContext = addCombinator(function(elem) {
             return indexOf.call(checkContext, elem) > -1;
@@ -1350,28 +1358,28 @@ var require_jquery = __commonJS({
             checkContext = null;
             return ret;
           }];
-          for (; i2 < len; i2++) {
-            if (matcher = Expr.relative[tokens[i2].type]) {
+          for (; i6 < len; i6++) {
+            if (matcher = Expr.relative[tokens[i6].type]) {
               matchers = [addCombinator(elementMatcher(matchers), matcher)];
             } else {
-              matcher = Expr.filter[tokens[i2].type].apply(null, tokens[i2].matches);
+              matcher = Expr.filter[tokens[i6].type].apply(null, tokens[i6].matches);
               if (matcher[expando]) {
-                j = ++i2;
-                for (; j < len; j++) {
-                  if (Expr.relative[tokens[j].type]) {
+                j2 = ++i6;
+                for (; j2 < len; j2++) {
+                  if (Expr.relative[tokens[j2].type]) {
                     break;
                   }
                 }
                 return setMatcher(
-                  i2 > 1 && elementMatcher(matchers),
-                  i2 > 1 && toSelector(
+                  i6 > 1 && elementMatcher(matchers),
+                  i6 > 1 && toSelector(
                     // If the preceding token was a descendant combinator, insert an implicit any-element `*`
-                    tokens.slice(0, i2 - 1).concat({ value: tokens[i2 - 2].type === " " ? "*" : "" })
+                    tokens.slice(0, i6 - 1).concat({ value: tokens[i6 - 2].type === " " ? "*" : "" })
                   ).replace(rtrimCSS, "$1"),
                   matcher,
-                  i2 < j && matcherFromTokens(tokens.slice(i2, j)),
-                  j < len && matcherFromTokens(tokens = tokens.slice(j)),
-                  j < len && toSelector(tokens)
+                  i6 < j2 && matcherFromTokens(tokens.slice(i6, j2)),
+                  j2 < len && matcherFromTokens(tokens = tokens.slice(j2)),
+                  j2 < len && toSelector(tokens)
                 );
               }
               matchers.push(matcher);
@@ -1381,18 +1389,18 @@ var require_jquery = __commonJS({
         }
         function matcherFromGroupMatchers(elementMatchers, setMatchers) {
           var bySet = setMatchers.length > 0, byElement = elementMatchers.length > 0, superMatcher = function(seed, context, xml, results, outermost) {
-            var elem, j, matcher, matchedCount = 0, i2 = "0", unmatched = seed && [], setMatched = [], contextBackup = outermostContext, elems = seed || byElement && Expr.find.TAG("*", outermost), dirrunsUnique = dirruns += contextBackup == null ? 1 : Math.random() || 0.1, len = elems.length;
+            var elem, j2, matcher, matchedCount = 0, i6 = "0", unmatched = seed && [], setMatched = [], contextBackup = outermostContext, elems = seed || byElement && Expr.find.TAG("*", outermost), dirrunsUnique = dirruns += contextBackup == null ? 1 : Math.random() || 0.1, len = elems.length;
             if (outermost) {
               outermostContext = context == document3 || context || outermost;
             }
-            for (; i2 !== len && (elem = elems[i2]) != null; i2++) {
+            for (; i6 !== len && (elem = elems[i6]) != null; i6++) {
               if (byElement && elem) {
-                j = 0;
+                j2 = 0;
                 if (!context && elem.ownerDocument != document3) {
                   setDocument(elem);
                   xml = !documentIsHTML;
                 }
-                while (matcher = elementMatchers[j++]) {
+                while (matcher = elementMatchers[j2++]) {
                   if (matcher(elem, context || document3, xml)) {
                     push2.call(results, elem);
                     break;
@@ -1411,17 +1419,17 @@ var require_jquery = __commonJS({
                 }
               }
             }
-            matchedCount += i2;
-            if (bySet && i2 !== matchedCount) {
-              j = 0;
-              while (matcher = setMatchers[j++]) {
+            matchedCount += i6;
+            if (bySet && i6 !== matchedCount) {
+              j2 = 0;
+              while (matcher = setMatchers[j2++]) {
                 matcher(unmatched, setMatched, context, xml);
               }
               if (seed) {
                 if (matchedCount > 0) {
-                  while (i2--) {
-                    if (!(unmatched[i2] || setMatched[i2])) {
-                      setMatched[i2] = pop.call(results);
+                  while (i6--) {
+                    if (!(unmatched[i6] || setMatched[i6])) {
+                      setMatched[i6] = pop.call(results);
                     }
                   }
                 }
@@ -1441,14 +1449,14 @@ var require_jquery = __commonJS({
           return bySet ? markFunction(superMatcher) : superMatcher;
         }
         function compile(selector, match) {
-          var i2, setMatchers = [], elementMatchers = [], cached = compilerCache[selector + " "];
+          var i6, setMatchers = [], elementMatchers = [], cached = compilerCache[selector + " "];
           if (!cached) {
             if (!match) {
               match = tokenize(selector);
             }
-            i2 = match.length;
-            while (i2--) {
-              cached = matcherFromTokens(match[i2]);
+            i6 = match.length;
+            while (i6--) {
+              cached = matcherFromTokens(match[i6]);
               if (cached[expando]) {
                 setMatchers.push(cached);
               } else {
@@ -1464,7 +1472,7 @@ var require_jquery = __commonJS({
           return cached;
         }
         function select(selector, context, results, seed) {
-          var i2, tokens, token, type, find3, compiled = typeof selector === "function" && selector, match = !seed && tokenize(selector = compiled.selector || selector);
+          var i6, tokens, token, type, find3, compiled = typeof selector === "function" && selector, match = !seed && tokenize(selector = compiled.selector || selector);
           results = results || [];
           if (match.length === 1) {
             tokens = match[0] = match[0].slice(0);
@@ -1480,9 +1488,9 @@ var require_jquery = __commonJS({
               }
               selector = selector.slice(tokens.shift().value.length);
             }
-            i2 = matchExpr.needsContext.test(selector) ? 0 : tokens.length;
-            while (i2--) {
-              token = tokens[i2];
+            i6 = matchExpr.needsContext.test(selector) ? 0 : tokens.length;
+            while (i6--) {
+              token = tokens[i6];
               if (Expr.relative[type = token.type]) {
                 break;
               }
@@ -1491,7 +1499,7 @@ var require_jquery = __commonJS({
                   token.matches[0].replace(runescape, funescape),
                   rsibling.test(tokens[0].type) && testContext(context.parentNode) || context
                 )) {
-                  tokens.splice(i2, 1);
+                  tokens.splice(i6, 1);
                   selector = seed.length && toSelector(tokens);
                   if (!selector) {
                     push2.apply(results, seed);
@@ -1542,11 +1550,11 @@ var require_jquery = __commonJS({
         }
         return matched;
       };
-      var siblings = function(n, elem) {
+      var siblings = function(n5, elem) {
         var matched = [];
-        for (; n; n = n.nextSibling) {
-          if (n.nodeType === 1 && n !== elem) {
-            matched.push(n);
+        for (; n5; n5 = n5.nextSibling) {
+          if (n5.nodeType === 1 && n5 !== elem) {
+            matched.push(n5);
           }
         }
         return matched;
@@ -1555,8 +1563,8 @@ var require_jquery = __commonJS({
       var rsingleTag = /^<([a-z][^\/\0>:\x20\t\r\n\f]*)[\x20\t\r\n\f]*\/?>(?:<\/\1>|)$/i;
       function winnow(elements, qualifier, not) {
         if (isFunction2(qualifier)) {
-          return jQuery4.grep(elements, function(elem, i) {
-            return !!qualifier.call(elem, i, elem) !== not;
+          return jQuery4.grep(elements, function(elem, i5) {
+            return !!qualifier.call(elem, i5, elem) !== not;
           });
         }
         if (qualifier.nodeType) {
@@ -1585,19 +1593,19 @@ var require_jquery = __commonJS({
       };
       jQuery4.fn.extend({
         find: function(selector) {
-          var i, ret, len = this.length, self = this;
+          var i5, ret, len = this.length, self = this;
           if (typeof selector !== "string") {
             return this.pushStack(jQuery4(selector).filter(function() {
-              for (i = 0; i < len; i++) {
-                if (jQuery4.contains(self[i], this)) {
+              for (i5 = 0; i5 < len; i5++) {
+                if (jQuery4.contains(self[i5], this)) {
                   return true;
                 }
               }
             }));
           }
           ret = this.pushStack([]);
-          for (i = 0; i < len; i++) {
-            jQuery4.find(selector, self[i], ret);
+          for (i5 = 0; i5 < len; i5++) {
+            jQuery4.find(selector, self[i5], ret);
           }
           return len > 1 ? jQuery4.uniqueSort(ret) : ret;
         },
@@ -1682,21 +1690,21 @@ var require_jquery = __commonJS({
       };
       jQuery4.fn.extend({
         has: function(target) {
-          var targets = jQuery4(target, this), l = targets.length;
+          var targets = jQuery4(target, this), l3 = targets.length;
           return this.filter(function() {
-            var i = 0;
-            for (; i < l; i++) {
-              if (jQuery4.contains(this, targets[i])) {
+            var i5 = 0;
+            for (; i5 < l3; i5++) {
+              if (jQuery4.contains(this, targets[i5])) {
                 return true;
               }
             }
           });
         },
         closest: function(selectors, context) {
-          var cur, i = 0, l = this.length, matched = [], targets = typeof selectors !== "string" && jQuery4(selectors);
+          var cur, i5 = 0, l3 = this.length, matched = [], targets = typeof selectors !== "string" && jQuery4(selectors);
           if (!rneedsContext.test(selectors)) {
-            for (; i < l; i++) {
-              for (cur = this[i]; cur && cur !== context; cur = cur.parentNode) {
+            for (; i5 < l3; i5++) {
+              for (cur = this[i5]; cur && cur !== context; cur = cur.parentNode) {
                 if (cur.nodeType < 11 && (targets ? targets.index(cur) > -1 : (
                   // Don't pass non-elements to jQuery#find
                   cur.nodeType === 1 && jQuery4.find.matchesSelector(cur, selectors)
@@ -1811,7 +1819,7 @@ var require_jquery = __commonJS({
       var rnothtmlwhite = /[^\x20\t\r\n\f]+/g;
       function createOptions(options) {
         var object = {};
-        jQuery4.each(options.match(rnothtmlwhite) || [], function(_, flag) {
+        jQuery4.each(options.match(rnothtmlwhite) || [], function(_2, flag) {
           object[flag] = true;
         });
         return object;
@@ -1850,7 +1858,7 @@ var require_jquery = __commonJS({
                 queue.push(memory);
               }
               (function add(args) {
-                jQuery4.each(args, function(_, arg) {
+                jQuery4.each(args, function(_2, arg) {
                   if (isFunction2(arg)) {
                     if (!options.unique || !self.has(arg)) {
                       list.push(arg);
@@ -1868,7 +1876,7 @@ var require_jquery = __commonJS({
           },
           // Remove a callback from the list
           remove: function() {
-            jQuery4.each(arguments, function(_, arg) {
+            jQuery4.each(arguments, function(_2, arg) {
               var index;
               while ((index = jQuery4.inArray(arg, list, index)) > -1) {
                 list.splice(index, 1);
@@ -1939,8 +1947,8 @@ var require_jquery = __commonJS({
         };
         return self;
       };
-      function Identity(v) {
-        return v;
+      function Identity(v2) {
+        return v2;
       }
       function Thrower(ex) {
         throw ex;
@@ -2067,17 +2075,17 @@ var require_jquery = __commonJS({
                   }, process = special ? mightThrow : function() {
                     try {
                       mightThrow();
-                    } catch (e) {
+                    } catch (e5) {
                       if (jQuery4.Deferred.exceptionHook) {
                         jQuery4.Deferred.exceptionHook(
-                          e,
+                          e5,
                           process.error
                         );
                       }
                       if (depth + 1 >= maxDepth) {
                         if (handler !== Thrower) {
                           that = void 0;
-                          args = [e];
+                          args = [e5];
                         }
                         deferred2.rejectWith(that, args);
                       }
@@ -2126,7 +2134,7 @@ var require_jquery = __commonJS({
               return obj != null ? jQuery4.extend(obj, promise) : promise;
             }
           }, deferred = {};
-          jQuery4.each(tuples, function(i, tuple) {
+          jQuery4.each(tuples, function(i5, tuple) {
             var list = tuple[2], stateString = tuple[5];
             promise[tuple[1]] = list.add;
             if (stateString) {
@@ -2136,10 +2144,10 @@ var require_jquery = __commonJS({
                 },
                 // rejected_callbacks.disable
                 // fulfilled_callbacks.disable
-                tuples[3 - i][2].disable,
+                tuples[3 - i5][2].disable,
                 // rejected_handlers.disable
                 // fulfilled_handlers.disable
-                tuples[3 - i][3].disable,
+                tuples[3 - i5][3].disable,
                 // progress_callbacks.lock
                 tuples[0][2].lock,
                 // progress_handlers.lock
@@ -2161,10 +2169,10 @@ var require_jquery = __commonJS({
         },
         // Deferred helper
         when: function(singleValue) {
-          var remaining = arguments.length, i = remaining, resolveContexts = Array(i), resolveValues = slice.call(arguments), primary = jQuery4.Deferred(), updateFunc = function(i2) {
+          var remaining = arguments.length, i5 = remaining, resolveContexts = Array(i5), resolveValues = slice.call(arguments), primary = jQuery4.Deferred(), updateFunc = function(i6) {
             return function(value) {
-              resolveContexts[i2] = this;
-              resolveValues[i2] = arguments.length > 1 ? slice.call(arguments) : value;
+              resolveContexts[i6] = this;
+              resolveValues[i6] = arguments.length > 1 ? slice.call(arguments) : value;
               if (!--remaining) {
                 primary.resolveWith(resolveContexts, resolveValues);
               }
@@ -2173,16 +2181,16 @@ var require_jquery = __commonJS({
           if (remaining <= 1) {
             adoptValue(
               singleValue,
-              primary.done(updateFunc(i)).resolve,
+              primary.done(updateFunc(i5)).resolve,
               primary.reject,
               !remaining
             );
-            if (primary.state() === "pending" || isFunction2(resolveValues[i] && resolveValues[i].then)) {
+            if (primary.state() === "pending" || isFunction2(resolveValues[i5] && resolveValues[i5].then)) {
               return primary.then();
             }
           }
-          while (i--) {
-            adoptValue(resolveValues[i], updateFunc(i), primary.reject);
+          while (i5--) {
+            adoptValue(resolveValues[i5], updateFunc(i5), primary.reject);
           }
           return primary.promise();
         }
@@ -2240,11 +2248,11 @@ var require_jquery = __commonJS({
         window2.addEventListener("load", completed);
       }
       var access = function(elems, fn, key, value, chainable, emptyGet, raw) {
-        var i = 0, len = elems.length, bulk = key == null;
+        var i5 = 0, len = elems.length, bulk = key == null;
         if (toType(key) === "object") {
           chainable = true;
-          for (i in key) {
-            access(elems, fn, i, key[i], true, emptyGet, raw);
+          for (i5 in key) {
+            access(elems, fn, i5, key[i5], true, emptyGet, raw);
           }
         } else if (value !== void 0) {
           chainable = true;
@@ -2263,11 +2271,11 @@ var require_jquery = __commonJS({
             }
           }
           if (fn) {
-            for (; i < len; i++) {
+            for (; i5 < len; i5++) {
               fn(
-                elems[i],
+                elems[i5],
                 key,
-                raw ? value : value.call(elems[i], i, fn(elems[i], key))
+                raw ? value : value.call(elems[i5], i5, fn(elems[i5], key))
               );
             }
           }
@@ -2337,7 +2345,7 @@ var require_jquery = __commonJS({
           return value !== void 0 ? value : key;
         },
         remove: function(owner, key) {
-          var i, cache = owner[this.expando];
+          var i5, cache = owner[this.expando];
           if (cache === void 0) {
             return;
           }
@@ -2348,9 +2356,9 @@ var require_jquery = __commonJS({
               key = camelCase(key);
               key = key in cache ? [key] : key.match(rnothtmlwhite) || [];
             }
-            i = key.length;
-            while (i--) {
-              delete cache[key[i]];
+            i5 = key.length;
+            while (i5--) {
+              delete cache[key[i5]];
             }
           }
           if (key === void 0 || jQuery4.isEmptyObject(cache)) {
@@ -2395,7 +2403,7 @@ var require_jquery = __commonJS({
           if (typeof data === "string") {
             try {
               data = getData(data);
-            } catch (e) {
+            } catch (e5) {
             }
             dataUser.set(elem, key, data);
           } else {
@@ -2425,15 +2433,15 @@ var require_jquery = __commonJS({
       });
       jQuery4.fn.extend({
         data: function(key, value) {
-          var i, name, data, elem = this[0], attrs = elem && elem.attributes;
+          var i5, name, data, elem = this[0], attrs = elem && elem.attributes;
           if (key === void 0) {
             if (this.length) {
               data = dataUser.get(elem);
               if (elem.nodeType === 1 && !dataPriv.get(elem, "hasDataAttrs")) {
-                i = attrs.length;
-                while (i--) {
-                  if (attrs[i]) {
-                    name = attrs[i].name;
+                i5 = attrs.length;
+                while (i5--) {
+                  if (attrs[i5]) {
+                    name = attrs[i5].name;
                     if (name.indexOf("data-") === 0) {
                       name = camelCase(name.slice(5));
                       dataAttr(elem, name, data[name]);
@@ -2550,7 +2558,7 @@ var require_jquery = __commonJS({
         // Get a promise resolved when queues of a certain type
         // are emptied (fx is the type by default)
         promise: function(type, obj) {
-          var tmp, count = 1, defer = jQuery4.Deferred(), elements = this, i = this.length, resolve = function() {
+          var tmp, count = 1, defer = jQuery4.Deferred(), elements = this, i5 = this.length, resolve = function() {
             if (!--count) {
               defer.resolveWith(elements, [elements]);
             }
@@ -2560,8 +2568,8 @@ var require_jquery = __commonJS({
             type = void 0;
           }
           type = type || "fx";
-          while (i--) {
-            tmp = dataPriv.get(elements[i], type + "queueHooks");
+          while (i5--) {
+            tmp = dataPriv.get(elements[i5], type + "queueHooks");
             if (tmp && tmp.empty) {
               count++;
               tmp.empty.add(resolve);
@@ -2735,20 +2743,20 @@ var require_jquery = __commonJS({
         return ret;
       }
       function setGlobalEval(elems, refElements) {
-        var i = 0, l = elems.length;
-        for (; i < l; i++) {
+        var i5 = 0, l3 = elems.length;
+        for (; i5 < l3; i5++) {
           dataPriv.set(
-            elems[i],
+            elems[i5],
             "globalEval",
-            !refElements || dataPriv.get(refElements[i], "globalEval")
+            !refElements || dataPriv.get(refElements[i5], "globalEval")
           );
         }
       }
       var rhtml = /<|&#?\w+;/;
       function buildFragment(elems, context, scripts, selection, ignored) {
-        var elem, tmp, tag, wrap, attached, j, fragment = context.createDocumentFragment(), nodes = [], i = 0, l = elems.length;
-        for (; i < l; i++) {
-          elem = elems[i];
+        var elem, tmp, tag, wrap, attached, j2, fragment = context.createDocumentFragment(), nodes = [], i5 = 0, l3 = elems.length;
+        for (; i5 < l3; i5++) {
+          elem = elems[i5];
           if (elem || elem === 0) {
             if (toType(elem) === "object") {
               jQuery4.merge(nodes, elem.nodeType ? [elem] : elem);
@@ -2759,8 +2767,8 @@ var require_jquery = __commonJS({
               tag = (rtagName.exec(elem) || ["", ""])[1].toLowerCase();
               wrap = wrapMap[tag] || wrapMap._default;
               tmp.innerHTML = wrap[1] + jQuery4.htmlPrefilter(elem) + wrap[2];
-              j = wrap[0];
-              while (j--) {
+              j2 = wrap[0];
+              while (j2--) {
                 tmp = tmp.lastChild;
               }
               jQuery4.merge(nodes, tmp.childNodes);
@@ -2770,8 +2778,8 @@ var require_jquery = __commonJS({
           }
         }
         fragment.textContent = "";
-        i = 0;
-        while (elem = nodes[i++]) {
+        i5 = 0;
+        while (elem = nodes[i5++]) {
           if (selection && jQuery4.inArray(elem, selection) > -1) {
             if (ignored) {
               ignored.push(elem);
@@ -2784,8 +2792,8 @@ var require_jquery = __commonJS({
             setGlobalEval(tmp);
           }
           if (scripts) {
-            j = 0;
-            while (elem = tmp[j++]) {
+            j2 = 0;
+            while (elem = tmp[j2++]) {
               if (rscriptType.test(elem.type || "")) {
                 scripts.push(elem);
               }
@@ -2846,7 +2854,7 @@ var require_jquery = __commonJS({
       jQuery4.event = {
         global: {},
         add: function(elem, types, handler, data, selector) {
-          var handleObjIn, eventHandle, tmp, events, t, handleObj, special, handlers, type, namespaces, origType, elemData = dataPriv.get(elem);
+          var handleObjIn, eventHandle, tmp, events, t4, handleObj, special, handlers, type, namespaces, origType, elemData = dataPriv.get(elem);
           if (!acceptData(elem)) {
             return;
           }
@@ -2865,14 +2873,14 @@ var require_jquery = __commonJS({
             events = elemData.events = /* @__PURE__ */ Object.create(null);
           }
           if (!(eventHandle = elemData.handle)) {
-            eventHandle = elemData.handle = function(e) {
-              return typeof jQuery4 !== "undefined" && jQuery4.event.triggered !== e.type ? jQuery4.event.dispatch.apply(elem, arguments) : void 0;
+            eventHandle = elemData.handle = function(e5) {
+              return typeof jQuery4 !== "undefined" && jQuery4.event.triggered !== e5.type ? jQuery4.event.dispatch.apply(elem, arguments) : void 0;
             };
           }
           types = (types || "").match(rnothtmlwhite) || [""];
-          t = types.length;
-          while (t--) {
-            tmp = rtypenamespace.exec(types[t]) || [];
+          t4 = types.length;
+          while (t4--) {
+            tmp = rtypenamespace.exec(types[t4]) || [];
             type = origType = tmp[1];
             namespaces = (tmp[2] || "").split(".").sort();
             if (!type) {
@@ -2916,19 +2924,19 @@ var require_jquery = __commonJS({
         },
         // Detach an event or set of events from an element
         remove: function(elem, types, handler, selector, mappedTypes) {
-          var j, origCount, tmp, events, t, handleObj, special, handlers, type, namespaces, origType, elemData = dataPriv.hasData(elem) && dataPriv.get(elem);
+          var j2, origCount, tmp, events, t4, handleObj, special, handlers, type, namespaces, origType, elemData = dataPriv.hasData(elem) && dataPriv.get(elem);
           if (!elemData || !(events = elemData.events)) {
             return;
           }
           types = (types || "").match(rnothtmlwhite) || [""];
-          t = types.length;
-          while (t--) {
-            tmp = rtypenamespace.exec(types[t]) || [];
+          t4 = types.length;
+          while (t4--) {
+            tmp = rtypenamespace.exec(types[t4]) || [];
             type = origType = tmp[1];
             namespaces = (tmp[2] || "").split(".").sort();
             if (!type) {
               for (type in events) {
-                jQuery4.event.remove(elem, type + types[t], handler, selector, true);
+                jQuery4.event.remove(elem, type + types[t4], handler, selector, true);
               }
               continue;
             }
@@ -2936,11 +2944,11 @@ var require_jquery = __commonJS({
             type = (selector ? special.delegateType : special.bindType) || type;
             handlers = events[type] || [];
             tmp = tmp[2] && new RegExp("(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)");
-            origCount = j = handlers.length;
-            while (j--) {
-              handleObj = handlers[j];
+            origCount = j2 = handlers.length;
+            while (j2--) {
+              handleObj = handlers[j2];
               if ((mappedTypes || origType === handleObj.origType) && (!handler || handler.guid === handleObj.guid) && (!tmp || tmp.test(handleObj.namespace)) && (!selector || selector === handleObj.selector || selector === "**" && handleObj.selector)) {
-                handlers.splice(j, 1);
+                handlers.splice(j2, 1);
                 if (handleObj.selector) {
                   handlers.delegateCount--;
                 }
@@ -2961,21 +2969,21 @@ var require_jquery = __commonJS({
           }
         },
         dispatch: function(nativeEvent) {
-          var i, j, ret, matched, handleObj, handlerQueue, args = new Array(arguments.length), event = jQuery4.event.fix(nativeEvent), handlers = (dataPriv.get(this, "events") || /* @__PURE__ */ Object.create(null))[event.type] || [], special = jQuery4.event.special[event.type] || {};
+          var i5, j2, ret, matched, handleObj, handlerQueue, args = new Array(arguments.length), event = jQuery4.event.fix(nativeEvent), handlers = (dataPriv.get(this, "events") || /* @__PURE__ */ Object.create(null))[event.type] || [], special = jQuery4.event.special[event.type] || {};
           args[0] = event;
-          for (i = 1; i < arguments.length; i++) {
-            args[i] = arguments[i];
+          for (i5 = 1; i5 < arguments.length; i5++) {
+            args[i5] = arguments[i5];
           }
           event.delegateTarget = this;
           if (special.preDispatch && special.preDispatch.call(this, event) === false) {
             return;
           }
           handlerQueue = jQuery4.event.handlers.call(this, event, handlers);
-          i = 0;
-          while ((matched = handlerQueue[i++]) && !event.isPropagationStopped()) {
+          i5 = 0;
+          while ((matched = handlerQueue[i5++]) && !event.isPropagationStopped()) {
             event.currentTarget = matched.elem;
-            j = 0;
-            while ((handleObj = matched.handlers[j++]) && !event.isImmediatePropagationStopped()) {
+            j2 = 0;
+            while ((handleObj = matched.handlers[j2++]) && !event.isImmediatePropagationStopped()) {
               if (!event.rnamespace || handleObj.namespace === false || event.rnamespace.test(handleObj.namespace)) {
                 event.handleObj = handleObj;
                 event.data = handleObj.data;
@@ -2995,7 +3003,7 @@ var require_jquery = __commonJS({
           return event.result;
         },
         handlers: function(event, handlers) {
-          var i, handleObj, sel, matchedHandlers, matchedSelectors, handlerQueue = [], delegateCount = handlers.delegateCount, cur = event.target;
+          var i5, handleObj, sel, matchedHandlers, matchedSelectors, handlerQueue = [], delegateCount = handlers.delegateCount, cur = event.target;
           if (delegateCount && // Support: IE <=9
           // Black-hole SVG <use> instance trees (trac-13180)
           cur.nodeType && // Support: Firefox <=42
@@ -3008,8 +3016,8 @@ var require_jquery = __commonJS({
               if (cur.nodeType === 1 && !(event.type === "click" && cur.disabled === true)) {
                 matchedHandlers = [];
                 matchedSelectors = {};
-                for (i = 0; i < delegateCount; i++) {
-                  handleObj = handlers[i];
+                for (i5 = 0; i5 < delegateCount; i5++) {
+                  handleObj = handlers[i5];
                   sel = handleObj.selector + " ";
                   if (matchedSelectors[sel] === void 0) {
                     matchedSelectors[sel] = handleObj.needsContext ? jQuery4(sel, this).index(cur) > -1 : jQuery4.find(sel, this, null, [cur]).length;
@@ -3165,24 +3173,24 @@ var require_jquery = __commonJS({
         isImmediatePropagationStopped: returnFalse,
         isSimulated: false,
         preventDefault: function() {
-          var e = this.originalEvent;
+          var e5 = this.originalEvent;
           this.isDefaultPrevented = returnTrue;
-          if (e && !this.isSimulated) {
-            e.preventDefault();
+          if (e5 && !this.isSimulated) {
+            e5.preventDefault();
           }
         },
         stopPropagation: function() {
-          var e = this.originalEvent;
+          var e5 = this.originalEvent;
           this.isPropagationStopped = returnTrue;
-          if (e && !this.isSimulated) {
-            e.stopPropagation();
+          if (e5 && !this.isSimulated) {
+            e5.stopPropagation();
           }
         },
         stopImmediatePropagation: function() {
-          var e = this.originalEvent;
+          var e5 = this.originalEvent;
           this.isImmediatePropagationStopped = returnTrue;
-          if (e && !this.isSimulated) {
-            e.stopImmediatePropagation();
+          if (e5 && !this.isSimulated) {
+            e5.stopImmediatePropagation();
           }
           this.stopPropagation();
         }
@@ -3381,7 +3389,7 @@ var require_jquery = __commonJS({
         return elem;
       }
       function cloneCopyEvent(src, dest) {
-        var i, l, type, pdataOld, udataOld, udataCur, events;
+        var i5, l3, type, pdataOld, udataOld, udataCur, events;
         if (dest.nodeType !== 1) {
           return;
         }
@@ -3391,8 +3399,8 @@ var require_jquery = __commonJS({
           if (events) {
             dataPriv.remove(dest, "handle events");
             for (type in events) {
-              for (i = 0, l = events[type].length; i < l; i++) {
-                jQuery4.event.add(dest, type, events[type][i]);
+              for (i5 = 0, l3 = events[type].length; i5 < l3; i5++) {
+                jQuery4.event.add(dest, type, events[type][i5]);
               }
             }
           }
@@ -3413,8 +3421,8 @@ var require_jquery = __commonJS({
       }
       function domManip(collection, args, callback, ignored) {
         args = flat(args);
-        var fragment, first, scripts, hasScripts, node, doc, i = 0, l = collection.length, iNoClone = l - 1, value = args[0], valueIsFunction = isFunction2(value);
-        if (valueIsFunction || l > 1 && typeof value === "string" && !support.checkClone && rchecked.test(value)) {
+        var fragment, first, scripts, hasScripts, node, doc, i5 = 0, l3 = collection.length, iNoClone = l3 - 1, value = args[0], valueIsFunction = isFunction2(value);
+        if (valueIsFunction || l3 > 1 && typeof value === "string" && !support.checkClone && rchecked.test(value)) {
           return collection.each(function(index) {
             var self = collection.eq(index);
             if (valueIsFunction) {
@@ -3423,7 +3431,7 @@ var require_jquery = __commonJS({
             domManip(self, args, callback, ignored);
           });
         }
-        if (l) {
+        if (l3) {
           fragment = buildFragment(args, collection[0].ownerDocument, false, collection, ignored);
           first = fragment.firstChild;
           if (fragment.childNodes.length === 1) {
@@ -3432,21 +3440,21 @@ var require_jquery = __commonJS({
           if (first || ignored) {
             scripts = jQuery4.map(getAll(fragment, "script"), disableScript);
             hasScripts = scripts.length;
-            for (; i < l; i++) {
+            for (; i5 < l3; i5++) {
               node = fragment;
-              if (i !== iNoClone) {
+              if (i5 !== iNoClone) {
                 node = jQuery4.clone(node, true, true);
                 if (hasScripts) {
                   jQuery4.merge(scripts, getAll(node, "script"));
                 }
               }
-              callback.call(collection[i], node, i);
+              callback.call(collection[i5], node, i5);
             }
             if (hasScripts) {
               doc = scripts[scripts.length - 1].ownerDocument;
               jQuery4.map(scripts, restoreScript);
-              for (i = 0; i < hasScripts; i++) {
-                node = scripts[i];
+              for (i5 = 0; i5 < hasScripts; i5++) {
+                node = scripts[i5];
                 if (rscriptType.test(node.type || "") && !dataPriv.access(node, "globalEval") && jQuery4.contains(doc, node)) {
                   if (node.src && (node.type || "").toLowerCase() !== "module") {
                     if (jQuery4._evalUrl && !node.noModule) {
@@ -3465,8 +3473,8 @@ var require_jquery = __commonJS({
         return collection;
       }
       function remove(elem, selector, keepData) {
-        var node, nodes = selector ? jQuery4.filter(selector, elem) : elem, i = 0;
-        for (; (node = nodes[i]) != null; i++) {
+        var node, nodes = selector ? jQuery4.filter(selector, elem) : elem, i5 = 0;
+        for (; (node = nodes[i5]) != null; i5++) {
           if (!keepData && node.nodeType === 1) {
             jQuery4.cleanData(getAll(node));
           }
@@ -3484,20 +3492,20 @@ var require_jquery = __commonJS({
           return html;
         },
         clone: function(elem, dataAndEvents, deepDataAndEvents) {
-          var i, l, srcElements, destElements, clone = elem.cloneNode(true), inPage = isAttached(elem);
+          var i5, l3, srcElements, destElements, clone = elem.cloneNode(true), inPage = isAttached(elem);
           if (!support.noCloneChecked && (elem.nodeType === 1 || elem.nodeType === 11) && !jQuery4.isXMLDoc(elem)) {
             destElements = getAll(clone);
             srcElements = getAll(elem);
-            for (i = 0, l = srcElements.length; i < l; i++) {
-              fixInput(srcElements[i], destElements[i]);
+            for (i5 = 0, l3 = srcElements.length; i5 < l3; i5++) {
+              fixInput(srcElements[i5], destElements[i5]);
             }
           }
           if (dataAndEvents) {
             if (deepDataAndEvents) {
               srcElements = srcElements || getAll(elem);
               destElements = destElements || getAll(clone);
-              for (i = 0, l = srcElements.length; i < l; i++) {
-                cloneCopyEvent(srcElements[i], destElements[i]);
+              for (i5 = 0, l3 = srcElements.length; i5 < l3; i5++) {
+                cloneCopyEvent(srcElements[i5], destElements[i5]);
               }
             } else {
               cloneCopyEvent(elem, clone);
@@ -3510,8 +3518,8 @@ var require_jquery = __commonJS({
           return clone;
         },
         cleanData: function(elems) {
-          var data, elem, type, special = jQuery4.event.special, i = 0;
-          for (; (elem = elems[i]) !== void 0; i++) {
+          var data, elem, type, special = jQuery4.event.special, i5 = 0;
+          for (; (elem = elems[i5]) !== void 0; i5++) {
             if (acceptData(elem)) {
               if (data = elem[dataPriv.expando]) {
                 if (data.events) {
@@ -3579,8 +3587,8 @@ var require_jquery = __commonJS({
           });
         },
         empty: function() {
-          var elem, i = 0;
-          for (; (elem = this[i]) != null; i++) {
+          var elem, i5 = 0;
+          for (; (elem = this[i5]) != null; i5++) {
             if (elem.nodeType === 1) {
               jQuery4.cleanData(getAll(elem, false));
               elem.textContent = "";
@@ -3597,22 +3605,22 @@ var require_jquery = __commonJS({
         },
         html: function(value) {
           return access(this, function(value2) {
-            var elem = this[0] || {}, i = 0, l = this.length;
+            var elem = this[0] || {}, i5 = 0, l3 = this.length;
             if (value2 === void 0 && elem.nodeType === 1) {
               return elem.innerHTML;
             }
             if (typeof value2 === "string" && !rnoInnerhtml.test(value2) && !wrapMap[(rtagName.exec(value2) || ["", ""])[1].toLowerCase()]) {
               value2 = jQuery4.htmlPrefilter(value2);
               try {
-                for (; i < l; i++) {
-                  elem = this[i] || {};
+                for (; i5 < l3; i5++) {
+                  elem = this[i5] || {};
                   if (elem.nodeType === 1) {
                     jQuery4.cleanData(getAll(elem, false));
                     elem.innerHTML = value2;
                   }
                 }
                 elem = 0;
-              } catch (e) {
+              } catch (e5) {
               }
             }
             if (elem) {
@@ -3641,10 +3649,10 @@ var require_jquery = __commonJS({
         replaceAll: "replaceWith"
       }, function(name, original) {
         jQuery4.fn[name] = function(selector) {
-          var elems, ret = [], insert = jQuery4(selector), last = insert.length - 1, i = 0;
-          for (; i <= last; i++) {
-            elems = i === last ? this : this.clone(true);
-            jQuery4(insert[i])[original](elems);
+          var elems, ret = [], insert = jQuery4(selector), last = insert.length - 1, i5 = 0;
+          for (; i5 <= last; i5++) {
+            elems = i5 === last ? this : this.clone(true);
+            jQuery4(insert[i5])[original](elems);
             push.apply(ret, elems.get());
           }
           return this.pushStack(ret);
@@ -3792,9 +3800,9 @@ var require_jquery = __commonJS({
       }
       var cssPrefixes = ["Webkit", "Moz", "ms"], emptyStyle = document2.createElement("div").style, vendorProps = {};
       function vendorPropName(name) {
-        var capName = name[0].toUpperCase() + name.slice(1), i = cssPrefixes.length;
-        while (i--) {
-          name = cssPrefixes[i] + capName;
+        var capName = name[0].toUpperCase() + name.slice(1), i5 = cssPrefixes.length;
+        while (i5--) {
+          name = cssPrefixes[i5] + capName;
           if (name in emptyStyle) {
             return name;
           }
@@ -3822,27 +3830,27 @@ var require_jquery = __commonJS({
         ) : value;
       }
       function boxModelAdjustment(elem, dimension, box, isBorderBox, styles, computedVal) {
-        var i = dimension === "width" ? 1 : 0, extra = 0, delta = 0, marginDelta = 0;
+        var i5 = dimension === "width" ? 1 : 0, extra = 0, delta = 0, marginDelta = 0;
         if (box === (isBorderBox ? "border" : "content")) {
           return 0;
         }
-        for (; i < 4; i += 2) {
+        for (; i5 < 4; i5 += 2) {
           if (box === "margin") {
-            marginDelta += jQuery4.css(elem, box + cssExpand[i], true, styles);
+            marginDelta += jQuery4.css(elem, box + cssExpand[i5], true, styles);
           }
           if (!isBorderBox) {
-            delta += jQuery4.css(elem, "padding" + cssExpand[i], true, styles);
+            delta += jQuery4.css(elem, "padding" + cssExpand[i5], true, styles);
             if (box !== "padding") {
-              delta += jQuery4.css(elem, "border" + cssExpand[i] + "Width", true, styles);
+              delta += jQuery4.css(elem, "border" + cssExpand[i5] + "Width", true, styles);
             } else {
-              extra += jQuery4.css(elem, "border" + cssExpand[i] + "Width", true, styles);
+              extra += jQuery4.css(elem, "border" + cssExpand[i5] + "Width", true, styles);
             }
           } else {
             if (box === "content") {
-              delta -= jQuery4.css(elem, "padding" + cssExpand[i], true, styles);
+              delta -= jQuery4.css(elem, "padding" + cssExpand[i5], true, styles);
             }
             if (box !== "margin") {
-              delta -= jQuery4.css(elem, "border" + cssExpand[i] + "Width", true, styles);
+              delta -= jQuery4.css(elem, "border" + cssExpand[i5] + "Width", true, styles);
             }
           }
         }
@@ -4051,9 +4059,9 @@ var require_jquery = __commonJS({
       }, function(prefix, suffix) {
         jQuery4.cssHooks[prefix + suffix] = {
           expand: function(value) {
-            var i = 0, expanded = {}, parts = typeof value === "string" ? value.split(" ") : [value];
-            for (; i < 4; i++) {
-              expanded[prefix + cssExpand[i] + suffix] = parts[i] || parts[i - 2] || parts[0];
+            var i5 = 0, expanded = {}, parts = typeof value === "string" ? value.split(" ") : [value];
+            for (; i5 < 4; i5++) {
+              expanded[prefix + cssExpand[i5] + suffix] = parts[i5] || parts[i5 - 2] || parts[0];
             }
             return expanded;
           }
@@ -4065,12 +4073,12 @@ var require_jquery = __commonJS({
       jQuery4.fn.extend({
         css: function(name, value) {
           return access(this, function(elem, name2, value2) {
-            var styles, len, map = {}, i = 0;
+            var styles, len, map = {}, i5 = 0;
             if (Array.isArray(name2)) {
               styles = getStyles(elem);
               len = name2.length;
-              for (; i < len; i++) {
-                map[name2[i]] = jQuery4.css(elem, name2[i], false, styles);
+              for (; i5 < len; i5++) {
+                map[name2[i5]] = jQuery4.css(elem, name2[i5], false, styles);
               }
               return map;
             }
@@ -4152,11 +4160,11 @@ var require_jquery = __commonJS({
         }
       };
       jQuery4.easing = {
-        linear: function(p) {
-          return p;
+        linear: function(p3) {
+          return p3;
         },
-        swing: function(p) {
-          return 0.5 - Math.cos(p * Math.PI) / 2;
+        swing: function(p3) {
+          return 0.5 - Math.cos(p3 * Math.PI) / 2;
         },
         _default: "swing"
       };
@@ -4180,10 +4188,10 @@ var require_jquery = __commonJS({
         return fxNow = Date.now();
       }
       function genFx(type, includeWidth) {
-        var which, i = 0, attrs = { height: type };
+        var which, i5 = 0, attrs = { height: type };
         includeWidth = includeWidth ? 1 : 0;
-        for (; i < 4; i += 2 - includeWidth) {
-          which = cssExpand[i];
+        for (; i5 < 4; i5 += 2 - includeWidth) {
+          which = cssExpand[i5];
           attrs["margin" + which] = attrs["padding" + which] = type;
         }
         if (includeWidth) {
@@ -4592,12 +4600,12 @@ var require_jquery = __commonJS({
       });
       jQuery4.timers = [];
       jQuery4.fx.tick = function() {
-        var timer, i = 0, timers = jQuery4.timers;
+        var timer, i5 = 0, timers = jQuery4.timers;
         fxNow = Date.now();
-        for (; i < timers.length; i++) {
-          timer = timers[i];
-          if (!timer() && timers[i] === timer) {
-            timers.splice(i--, 1);
+        for (; i5 < timers.length; i5++) {
+          timer = timers[i5];
+          if (!timer() && timers[i5] === timer) {
+            timers.splice(i5--, 1);
           }
         }
         if (!timers.length) {
@@ -4701,9 +4709,9 @@ var require_jquery = __commonJS({
           }
         },
         removeAttr: function(elem, value) {
-          var name, i = 0, attrNames = value && value.match(rnothtmlwhite);
+          var name, i5 = 0, attrNames = value && value.match(rnothtmlwhite);
           if (attrNames && elem.nodeType === 1) {
-            while (name = attrNames[i++]) {
+            while (name = attrNames[i5++]) {
               elem.removeAttribute(name);
             }
           }
@@ -4835,10 +4843,10 @@ var require_jquery = __commonJS({
       }
       jQuery4.fn.extend({
         addClass: function(value) {
-          var classNames, cur, curValue, className, i, finalValue;
+          var classNames, cur, curValue, className, i5, finalValue;
           if (isFunction2(value)) {
-            return this.each(function(j) {
-              jQuery4(this).addClass(value.call(this, j, getClass(this)));
+            return this.each(function(j2) {
+              jQuery4(this).addClass(value.call(this, j2, getClass(this)));
             });
           }
           classNames = classesToArray(value);
@@ -4847,8 +4855,8 @@ var require_jquery = __commonJS({
               curValue = getClass(this);
               cur = this.nodeType === 1 && " " + stripAndCollapse(curValue) + " ";
               if (cur) {
-                for (i = 0; i < classNames.length; i++) {
-                  className = classNames[i];
+                for (i5 = 0; i5 < classNames.length; i5++) {
+                  className = classNames[i5];
                   if (cur.indexOf(" " + className + " ") < 0) {
                     cur += className + " ";
                   }
@@ -4863,10 +4871,10 @@ var require_jquery = __commonJS({
           return this;
         },
         removeClass: function(value) {
-          var classNames, cur, curValue, className, i, finalValue;
+          var classNames, cur, curValue, className, i5, finalValue;
           if (isFunction2(value)) {
-            return this.each(function(j) {
-              jQuery4(this).removeClass(value.call(this, j, getClass(this)));
+            return this.each(function(j2) {
+              jQuery4(this).removeClass(value.call(this, j2, getClass(this)));
             });
           }
           if (!arguments.length) {
@@ -4878,8 +4886,8 @@ var require_jquery = __commonJS({
               curValue = getClass(this);
               cur = this.nodeType === 1 && " " + stripAndCollapse(curValue) + " ";
               if (cur) {
-                for (i = 0; i < classNames.length; i++) {
-                  className = classNames[i];
+                for (i5 = 0; i5 < classNames.length; i5++) {
+                  className = classNames[i5];
                   while (cur.indexOf(" " + className + " ") > -1) {
                     cur = cur.replace(" " + className + " ", " ");
                   }
@@ -4894,11 +4902,11 @@ var require_jquery = __commonJS({
           return this;
         },
         toggleClass: function(value, stateVal) {
-          var classNames, className, i, self, type = typeof value, isValidValue = type === "string" || Array.isArray(value);
+          var classNames, className, i5, self, type = typeof value, isValidValue = type === "string" || Array.isArray(value);
           if (isFunction2(value)) {
-            return this.each(function(i2) {
+            return this.each(function(i6) {
               jQuery4(this).toggleClass(
-                value.call(this, i2, getClass(this), stateVal),
+                value.call(this, i6, getClass(this), stateVal),
                 stateVal
               );
             });
@@ -4910,8 +4918,8 @@ var require_jquery = __commonJS({
           return this.each(function() {
             if (isValidValue) {
               self = jQuery4(this);
-              for (i = 0; i < classNames.length; i++) {
-                className = classNames[i];
+              for (i5 = 0; i5 < classNames.length; i5++) {
+                className = classNames[i5];
                 if (self.hasClass(className)) {
                   self.removeClass(className);
                 } else {
@@ -4933,9 +4941,9 @@ var require_jquery = __commonJS({
           });
         },
         hasClass: function(selector) {
-          var className, elem, i = 0;
+          var className, elem, i5 = 0;
           className = " " + selector + " ";
-          while (elem = this[i++]) {
+          while (elem = this[i5++]) {
             if (elem.nodeType === 1 && (" " + stripAndCollapse(getClass(elem)) + " ").indexOf(className) > -1) {
               return true;
             }
@@ -4962,13 +4970,13 @@ var require_jquery = __commonJS({
             return;
           }
           valueIsFunction = isFunction2(value);
-          return this.each(function(i) {
+          return this.each(function(i5) {
             var val;
             if (this.nodeType !== 1) {
               return;
             }
             if (valueIsFunction) {
-              val = value.call(this, i, jQuery4(this).val());
+              val = value.call(this, i5, jQuery4(this).val());
             } else {
               val = value;
             }
@@ -5004,15 +5012,15 @@ var require_jquery = __commonJS({
           },
           select: {
             get: function(elem) {
-              var value, option, i, options = elem.options, index = elem.selectedIndex, one = elem.type === "select-one", values = one ? null : [], max = one ? index + 1 : options.length;
+              var value, option, i5, options = elem.options, index = elem.selectedIndex, one = elem.type === "select-one", values = one ? null : [], max = one ? index + 1 : options.length;
               if (index < 0) {
-                i = max;
+                i5 = max;
               } else {
-                i = one ? index : 0;
+                i5 = one ? index : 0;
               }
-              for (; i < max; i++) {
-                option = options[i];
-                if ((option.selected || i === index) && // Don't return options that are disabled or in a disabled optgroup
+              for (; i5 < max; i5++) {
+                option = options[i5];
+                if ((option.selected || i5 === index) && // Don't return options that are disabled or in a disabled optgroup
                 !option.disabled && (!option.parentNode.disabled || !nodeName(option.parentNode, "optgroup"))) {
                   value = jQuery4(option).val();
                   if (one) {
@@ -5024,9 +5032,9 @@ var require_jquery = __commonJS({
               return values;
             },
             set: function(elem, value) {
-              var optionSet, option, options = elem.options, values = jQuery4.makeArray(value), i = options.length;
-              while (i--) {
-                option = options[i];
+              var optionSet, option, options = elem.options, values = jQuery4.makeArray(value), i5 = options.length;
+              while (i5--) {
+                option = options[i5];
                 if (option.selected = jQuery4.inArray(jQuery4.valHooks.option.get(option), values) > -1) {
                   optionSet = true;
                 }
@@ -5063,7 +5071,7 @@ var require_jquery = __commonJS({
         }
         try {
           xml = new window2.DOMParser().parseFromString(data, "text/xml");
-        } catch (e) {
+        } catch (e5) {
         }
         parserErrorElem = xml && xml.getElementsByTagName("parsererror")[0];
         if (!xml || parserErrorElem) {
@@ -5073,12 +5081,12 @@ var require_jquery = __commonJS({
         }
         return xml;
       };
-      var rfocusMorph = /^(?:focusinfocus|focusoutblur)$/, stopPropagationCallback = function(e) {
-        e.stopPropagation();
+      var rfocusMorph = /^(?:focusinfocus|focusoutblur)$/, stopPropagationCallback = function(e5) {
+        e5.stopPropagation();
       };
       jQuery4.extend(jQuery4.event, {
         trigger: function(event, data, elem, onlyHandlers) {
-          var i, cur, tmp, bubbleType, ontype, handle, special, lastElement, eventPath = [elem || document2], type = hasOwn.call(event, "type") ? event.type : event, namespaces = hasOwn.call(event, "namespace") ? event.namespace.split(".") : [];
+          var i5, cur, tmp, bubbleType, ontype, handle, special, lastElement, eventPath = [elem || document2], type = hasOwn.call(event, "type") ? event.type : event, namespaces = hasOwn.call(event, "namespace") ? event.namespace.split(".") : [];
           cur = lastElement = tmp = elem = elem || document2;
           if (elem.nodeType === 3 || elem.nodeType === 8) {
             return;
@@ -5118,10 +5126,10 @@ var require_jquery = __commonJS({
               eventPath.push(tmp.defaultView || tmp.parentWindow || window2);
             }
           }
-          i = 0;
-          while ((cur = eventPath[i++]) && !event.isPropagationStopped()) {
+          i5 = 0;
+          while ((cur = eventPath[i5++]) && !event.isPropagationStopped()) {
             lastElement = cur;
-            event.type = i > 1 ? bubbleType : special.bindType || type;
+            event.type = i5 > 1 ? bubbleType : special.bindType || type;
             handle = (dataPriv.get(cur, "events") || /* @__PURE__ */ Object.create(null))[event.type] && dataPriv.get(cur, "handle");
             if (handle) {
               handle.apply(cur, data);
@@ -5162,7 +5170,7 @@ var require_jquery = __commonJS({
         // Piggyback on a donor event to simulate a different one
         // Used only for `focus(in | out)` events
         simulate: function(type, elem, event) {
-          var e = jQuery4.extend(
+          var e5 = jQuery4.extend(
             new jQuery4.Event(),
             event,
             {
@@ -5170,7 +5178,7 @@ var require_jquery = __commonJS({
               isSimulated: true
             }
           );
-          jQuery4.event.trigger(e, null, elem);
+          jQuery4.event.trigger(e5, null, elem);
         }
       });
       jQuery4.fn.extend({
@@ -5190,13 +5198,13 @@ var require_jquery = __commonJS({
       function buildParams(prefix, obj, traditional, add) {
         var name;
         if (Array.isArray(obj)) {
-          jQuery4.each(obj, function(i, v) {
+          jQuery4.each(obj, function(i5, v2) {
             if (traditional || rbracket.test(prefix)) {
-              add(prefix, v);
+              add(prefix, v2);
             } else {
               buildParams(
-                prefix + "[" + (typeof v === "object" && v != null ? i : "") + "]",
-                v,
+                prefix + "[" + (typeof v2 === "object" && v2 != null ? i5 : "") + "]",
+                v2,
                 traditional,
                 add
               );
@@ -5210,24 +5218,24 @@ var require_jquery = __commonJS({
           add(prefix, obj);
         }
       }
-      jQuery4.param = function(a, traditional) {
-        var prefix, s = [], add = function(key, valueOrFunction) {
+      jQuery4.param = function(a3, traditional) {
+        var prefix, s4 = [], add = function(key, valueOrFunction) {
           var value = isFunction2(valueOrFunction) ? valueOrFunction() : valueOrFunction;
-          s[s.length] = encodeURIComponent(key) + "=" + encodeURIComponent(value == null ? "" : value);
+          s4[s4.length] = encodeURIComponent(key) + "=" + encodeURIComponent(value == null ? "" : value);
         };
-        if (a == null) {
+        if (a3 == null) {
           return "";
         }
-        if (Array.isArray(a) || a.jquery && !jQuery4.isPlainObject(a)) {
-          jQuery4.each(a, function() {
+        if (Array.isArray(a3) || a3.jquery && !jQuery4.isPlainObject(a3)) {
+          jQuery4.each(a3, function() {
             add(this.name, this.value);
           });
         } else {
-          for (prefix in a) {
-            buildParams(prefix, a[prefix], traditional, add);
+          for (prefix in a3) {
+            buildParams(prefix, a3[prefix], traditional, add);
           }
         }
-        return s.join("&");
+        return s4.join("&");
       };
       jQuery4.fn.extend({
         serialize: function() {
@@ -5262,9 +5270,9 @@ var require_jquery = __commonJS({
             func = dataTypeExpression;
             dataTypeExpression = "*";
           }
-          var dataType, i = 0, dataTypes = dataTypeExpression.toLowerCase().match(rnothtmlwhite) || [];
+          var dataType, i5 = 0, dataTypes = dataTypeExpression.toLowerCase().match(rnothtmlwhite) || [];
           if (isFunction2(func)) {
-            while (dataType = dataTypes[i++]) {
+            while (dataType = dataTypes[i5++]) {
               if (dataType[0] === "+") {
                 dataType = dataType.slice(1) || "*";
                 (structure[dataType] = structure[dataType] || []).unshift(func);
@@ -5280,7 +5288,7 @@ var require_jquery = __commonJS({
         function inspect(dataType) {
           var selected;
           inspected[dataType] = true;
-          jQuery4.each(structure[dataType] || [], function(_, prefilterOrFactory) {
+          jQuery4.each(structure[dataType] || [], function(_2, prefilterOrFactory) {
             var dataTypeOrTransport = prefilterOrFactory(options, originalOptions, jqXHR);
             if (typeof dataTypeOrTransport === "string" && !seekingTransport && !inspected[dataTypeOrTransport]) {
               options.dataTypes.unshift(dataTypeOrTransport);
@@ -5306,12 +5314,12 @@ var require_jquery = __commonJS({
         }
         return target;
       }
-      function ajaxHandleResponses(s, jqXHR, responses) {
-        var ct, type, finalDataType, firstDataType, contents = s.contents, dataTypes = s.dataTypes;
+      function ajaxHandleResponses(s4, jqXHR, responses) {
+        var ct, type, finalDataType, firstDataType, contents = s4.contents, dataTypes = s4.dataTypes;
         while (dataTypes[0] === "*") {
           dataTypes.shift();
           if (ct === void 0) {
-            ct = s.mimeType || jqXHR.getResponseHeader("Content-Type");
+            ct = s4.mimeType || jqXHR.getResponseHeader("Content-Type");
           }
         }
         if (ct) {
@@ -5326,7 +5334,7 @@ var require_jquery = __commonJS({
           finalDataType = dataTypes[0];
         } else {
           for (type in responses) {
-            if (!dataTypes[0] || s.converters[type + " " + dataTypes[0]]) {
+            if (!dataTypes[0] || s4.converters[type + " " + dataTypes[0]]) {
               finalDataType = type;
               break;
             }
@@ -5343,20 +5351,20 @@ var require_jquery = __commonJS({
           return responses[finalDataType];
         }
       }
-      function ajaxConvert(s, response, jqXHR, isSuccess) {
-        var conv2, current, conv, tmp, prev, converters = {}, dataTypes = s.dataTypes.slice();
+      function ajaxConvert(s4, response, jqXHR, isSuccess) {
+        var conv2, current, conv, tmp, prev, converters = {}, dataTypes = s4.dataTypes.slice();
         if (dataTypes[1]) {
-          for (conv in s.converters) {
-            converters[conv.toLowerCase()] = s.converters[conv];
+          for (conv in s4.converters) {
+            converters[conv.toLowerCase()] = s4.converters[conv];
           }
         }
         current = dataTypes.shift();
         while (current) {
-          if (s.responseFields[current]) {
-            jqXHR[s.responseFields[current]] = response;
+          if (s4.responseFields[current]) {
+            jqXHR[s4.responseFields[current]] = response;
           }
-          if (!prev && isSuccess && s.dataFilter) {
-            response = s.dataFilter(response, s.dataType);
+          if (!prev && isSuccess && s4.dataFilter) {
+            response = s4.dataFilter(response, s4.dataType);
           }
           prev = current;
           current = dataTypes.shift();
@@ -5383,15 +5391,15 @@ var require_jquery = __commonJS({
                 }
               }
               if (conv !== true) {
-                if (conv && s.throws) {
+                if (conv && s4.throws) {
                   response = conv(response);
                 } else {
                   try {
                     response = conv(response);
-                  } catch (e) {
+                  } catch (e5) {
                     return {
                       state: "parsererror",
-                      error: conv ? e : "No conversion from " + prev + " to " + current
+                      error: conv ? e5 : "No conversion from " + prev + " to " + current
                     };
                   }
                 }
@@ -5485,7 +5493,7 @@ var require_jquery = __commonJS({
             url = void 0;
           }
           options = options || {};
-          var transport, cacheURL, responseHeadersString, responseHeaders, timeoutTimer, urlAnchor, completed2, fireGlobals, i, uncached, s = jQuery4.ajaxSetup({}, options), callbackContext = s.context || s, globalEventContext = s.context && (callbackContext.nodeType || callbackContext.jquery) ? jQuery4(callbackContext) : jQuery4.event, deferred = jQuery4.Deferred(), completeDeferred = jQuery4.Callbacks("once memory"), statusCode = s.statusCode || {}, requestHeaders = {}, requestHeadersNames = {}, strAbort = "canceled", jqXHR = {
+          var transport, cacheURL, responseHeadersString, responseHeaders, timeoutTimer, urlAnchor, completed2, fireGlobals, i5, uncached, s4 = jQuery4.ajaxSetup({}, options), callbackContext = s4.context || s4, globalEventContext = s4.context && (callbackContext.nodeType || callbackContext.jquery) ? jQuery4(callbackContext) : jQuery4.event, deferred = jQuery4.Deferred(), completeDeferred = jQuery4.Callbacks("once memory"), statusCode = s4.statusCode || {}, requestHeaders = {}, requestHeadersNames = {}, strAbort = "canceled", jqXHR = {
             readyState: 0,
             // Builds headers hashtable if needed
             getResponseHeader: function(key) {
@@ -5516,7 +5524,7 @@ var require_jquery = __commonJS({
             // Overrides response content-type header
             overrideMimeType: function(type) {
               if (completed2 == null) {
-                s.mimeType = type;
+                s4.mimeType = type;
               }
               return this;
             },
@@ -5545,48 +5553,48 @@ var require_jquery = __commonJS({
             }
           };
           deferred.promise(jqXHR);
-          s.url = ((url || s.url || location2.href) + "").replace(rprotocol, location2.protocol + "//");
-          s.type = options.method || options.type || s.method || s.type;
-          s.dataTypes = (s.dataType || "*").toLowerCase().match(rnothtmlwhite) || [""];
-          if (s.crossDomain == null) {
+          s4.url = ((url || s4.url || location2.href) + "").replace(rprotocol, location2.protocol + "//");
+          s4.type = options.method || options.type || s4.method || s4.type;
+          s4.dataTypes = (s4.dataType || "*").toLowerCase().match(rnothtmlwhite) || [""];
+          if (s4.crossDomain == null) {
             urlAnchor = document2.createElement("a");
             try {
-              urlAnchor.href = s.url;
+              urlAnchor.href = s4.url;
               urlAnchor.href = urlAnchor.href;
-              s.crossDomain = originAnchor.protocol + "//" + originAnchor.host !== urlAnchor.protocol + "//" + urlAnchor.host;
-            } catch (e) {
-              s.crossDomain = true;
+              s4.crossDomain = originAnchor.protocol + "//" + originAnchor.host !== urlAnchor.protocol + "//" + urlAnchor.host;
+            } catch (e5) {
+              s4.crossDomain = true;
             }
           }
-          if (s.data && s.processData && typeof s.data !== "string") {
-            s.data = jQuery4.param(s.data, s.traditional);
+          if (s4.data && s4.processData && typeof s4.data !== "string") {
+            s4.data = jQuery4.param(s4.data, s4.traditional);
           }
-          inspectPrefiltersOrTransports(prefilters, s, options, jqXHR);
+          inspectPrefiltersOrTransports(prefilters, s4, options, jqXHR);
           if (completed2) {
             return jqXHR;
           }
-          fireGlobals = jQuery4.event && s.global;
+          fireGlobals = jQuery4.event && s4.global;
           if (fireGlobals && jQuery4.active++ === 0) {
             jQuery4.event.trigger("ajaxStart");
           }
-          s.type = s.type.toUpperCase();
-          s.hasContent = !rnoContent.test(s.type);
-          cacheURL = s.url.replace(rhash, "");
-          if (!s.hasContent) {
-            uncached = s.url.slice(cacheURL.length);
-            if (s.data && (s.processData || typeof s.data === "string")) {
-              cacheURL += (rquery.test(cacheURL) ? "&" : "?") + s.data;
-              delete s.data;
+          s4.type = s4.type.toUpperCase();
+          s4.hasContent = !rnoContent.test(s4.type);
+          cacheURL = s4.url.replace(rhash, "");
+          if (!s4.hasContent) {
+            uncached = s4.url.slice(cacheURL.length);
+            if (s4.data && (s4.processData || typeof s4.data === "string")) {
+              cacheURL += (rquery.test(cacheURL) ? "&" : "?") + s4.data;
+              delete s4.data;
             }
-            if (s.cache === false) {
+            if (s4.cache === false) {
               cacheURL = cacheURL.replace(rantiCache, "$1");
               uncached = (rquery.test(cacheURL) ? "&" : "?") + "_=" + nonce.guid++ + uncached;
             }
-            s.url = cacheURL + uncached;
-          } else if (s.data && s.processData && (s.contentType || "").indexOf("application/x-www-form-urlencoded") === 0) {
-            s.data = s.data.replace(r20, "+");
+            s4.url = cacheURL + uncached;
+          } else if (s4.data && s4.processData && (s4.contentType || "").indexOf("application/x-www-form-urlencoded") === 0) {
+            s4.data = s4.data.replace(r20, "+");
           }
-          if (s.ifModified) {
+          if (s4.ifModified) {
             if (jQuery4.lastModified[cacheURL]) {
               jqXHR.setRequestHeader("If-Modified-Since", jQuery4.lastModified[cacheURL]);
             }
@@ -5594,47 +5602,47 @@ var require_jquery = __commonJS({
               jqXHR.setRequestHeader("If-None-Match", jQuery4.etag[cacheURL]);
             }
           }
-          if (s.data && s.hasContent && s.contentType !== false || options.contentType) {
-            jqXHR.setRequestHeader("Content-Type", s.contentType);
+          if (s4.data && s4.hasContent && s4.contentType !== false || options.contentType) {
+            jqXHR.setRequestHeader("Content-Type", s4.contentType);
           }
           jqXHR.setRequestHeader(
             "Accept",
-            s.dataTypes[0] && s.accepts[s.dataTypes[0]] ? s.accepts[s.dataTypes[0]] + (s.dataTypes[0] !== "*" ? ", " + allTypes + "; q=0.01" : "") : s.accepts["*"]
+            s4.dataTypes[0] && s4.accepts[s4.dataTypes[0]] ? s4.accepts[s4.dataTypes[0]] + (s4.dataTypes[0] !== "*" ? ", " + allTypes + "; q=0.01" : "") : s4.accepts["*"]
           );
-          for (i in s.headers) {
-            jqXHR.setRequestHeader(i, s.headers[i]);
+          for (i5 in s4.headers) {
+            jqXHR.setRequestHeader(i5, s4.headers[i5]);
           }
-          if (s.beforeSend && (s.beforeSend.call(callbackContext, jqXHR, s) === false || completed2)) {
+          if (s4.beforeSend && (s4.beforeSend.call(callbackContext, jqXHR, s4) === false || completed2)) {
             return jqXHR.abort();
           }
           strAbort = "abort";
-          completeDeferred.add(s.complete);
-          jqXHR.done(s.success);
-          jqXHR.fail(s.error);
-          transport = inspectPrefiltersOrTransports(transports, s, options, jqXHR);
+          completeDeferred.add(s4.complete);
+          jqXHR.done(s4.success);
+          jqXHR.fail(s4.error);
+          transport = inspectPrefiltersOrTransports(transports, s4, options, jqXHR);
           if (!transport) {
             done(-1, "No Transport");
           } else {
             jqXHR.readyState = 1;
             if (fireGlobals) {
-              globalEventContext.trigger("ajaxSend", [jqXHR, s]);
+              globalEventContext.trigger("ajaxSend", [jqXHR, s4]);
             }
             if (completed2) {
               return jqXHR;
             }
-            if (s.async && s.timeout > 0) {
+            if (s4.async && s4.timeout > 0) {
               timeoutTimer = window2.setTimeout(function() {
                 jqXHR.abort("timeout");
-              }, s.timeout);
+              }, s4.timeout);
             }
             try {
               completed2 = false;
               transport.send(requestHeaders, done);
-            } catch (e) {
+            } catch (e5) {
               if (completed2) {
-                throw e;
+                throw e5;
               }
-              done(-1, e);
+              done(-1, e5);
             }
           }
           function done(status, nativeStatusText, responses, headers) {
@@ -5651,15 +5659,15 @@ var require_jquery = __commonJS({
             jqXHR.readyState = status > 0 ? 4 : 0;
             isSuccess = status >= 200 && status < 300 || status === 304;
             if (responses) {
-              response = ajaxHandleResponses(s, jqXHR, responses);
+              response = ajaxHandleResponses(s4, jqXHR, responses);
             }
-            if (!isSuccess && jQuery4.inArray("script", s.dataTypes) > -1 && jQuery4.inArray("json", s.dataTypes) < 0) {
-              s.converters["text script"] = function() {
+            if (!isSuccess && jQuery4.inArray("script", s4.dataTypes) > -1 && jQuery4.inArray("json", s4.dataTypes) < 0) {
+              s4.converters["text script"] = function() {
               };
             }
-            response = ajaxConvert(s, response, jqXHR, isSuccess);
+            response = ajaxConvert(s4, response, jqXHR, isSuccess);
             if (isSuccess) {
-              if (s.ifModified) {
+              if (s4.ifModified) {
                 modified = jqXHR.getResponseHeader("Last-Modified");
                 if (modified) {
                   jQuery4.lastModified[cacheURL] = modified;
@@ -5669,7 +5677,7 @@ var require_jquery = __commonJS({
                   jQuery4.etag[cacheURL] = modified;
                 }
               }
-              if (status === 204 || s.type === "HEAD") {
+              if (status === 204 || s4.type === "HEAD") {
                 statusText = "nocontent";
               } else if (status === 304) {
                 statusText = "notmodified";
@@ -5700,12 +5708,12 @@ var require_jquery = __commonJS({
             if (fireGlobals) {
               globalEventContext.trigger(
                 isSuccess ? "ajaxSuccess" : "ajaxError",
-                [jqXHR, s, isSuccess ? success : error]
+                [jqXHR, s4, isSuccess ? success : error]
               );
             }
             completeDeferred.fireWith(callbackContext, [jqXHR, statusText]);
             if (fireGlobals) {
-              globalEventContext.trigger("ajaxComplete", [jqXHR, s]);
+              globalEventContext.trigger("ajaxComplete", [jqXHR, s4]);
               if (!--jQuery4.active) {
                 jQuery4.event.trigger("ajaxStop");
               }
@@ -5736,11 +5744,11 @@ var require_jquery = __commonJS({
           }, jQuery4.isPlainObject(url) && url));
         };
       });
-      jQuery4.ajaxPrefilter(function(s) {
-        var i;
-        for (i in s.headers) {
-          if (i.toLowerCase() === "content-type") {
-            s.contentType = s.headers[i] || "";
+      jQuery4.ajaxPrefilter(function(s4) {
+        var i5;
+        for (i5 in s4.headers) {
+          if (i5.toLowerCase() === "content-type") {
+            s4.contentType = s4.headers[i5] || "";
           }
         }
       });
@@ -5788,8 +5796,8 @@ var require_jquery = __commonJS({
         },
         wrapInner: function(html) {
           if (isFunction2(html)) {
-            return this.each(function(i) {
-              jQuery4(this).wrapInner(html.call(this, i));
+            return this.each(function(i5) {
+              jQuery4(this).wrapInner(html.call(this, i5));
             });
           }
           return this.each(function() {
@@ -5803,8 +5811,8 @@ var require_jquery = __commonJS({
         },
         wrap: function(html) {
           var htmlIsFunction = isFunction2(html);
-          return this.each(function(i) {
-            jQuery4(this).wrapAll(htmlIsFunction ? html.call(this, i) : html);
+          return this.each(function(i5) {
+            jQuery4(this).wrapAll(htmlIsFunction ? html.call(this, i5) : html);
           });
         },
         unwrap: function(selector) {
@@ -5823,7 +5831,7 @@ var require_jquery = __commonJS({
       jQuery4.ajaxSettings.xhr = function() {
         try {
           return new window2.XMLHttpRequest();
-        } catch (e) {
+        } catch (e5) {
         }
       };
       var xhrSuccessStatus = {
@@ -5840,7 +5848,7 @@ var require_jquery = __commonJS({
         if (support.cors || xhrSupported && !options.crossDomain) {
           return {
             send: function(headers, complete) {
-              var i, xhr = options.xhr();
+              var i5, xhr = options.xhr();
               xhr.open(
                 options.type,
                 options.url,
@@ -5849,8 +5857,8 @@ var require_jquery = __commonJS({
                 options.password
               );
               if (options.xhrFields) {
-                for (i in options.xhrFields) {
-                  xhr[i] = options.xhrFields[i];
+                for (i5 in options.xhrFields) {
+                  xhr[i5] = options.xhrFields[i5];
                 }
               }
               if (options.mimeType && xhr.overrideMimeType) {
@@ -5859,8 +5867,8 @@ var require_jquery = __commonJS({
               if (!options.crossDomain && !headers["X-Requested-With"]) {
                 headers["X-Requested-With"] = "XMLHttpRequest";
               }
-              for (i in headers) {
-                xhr.setRequestHeader(i, headers[i]);
+              for (i5 in headers) {
+                xhr.setRequestHeader(i5, headers[i5]);
               }
               callback = function(type) {
                 return function() {
@@ -5910,9 +5918,9 @@ var require_jquery = __commonJS({
               callback = callback("abort");
               try {
                 xhr.send(options.hasContent && options.data || null);
-              } catch (e) {
+              } catch (e5) {
                 if (callback) {
-                  throw e;
+                  throw e5;
                 }
               }
             },
@@ -5924,9 +5932,9 @@ var require_jquery = __commonJS({
           };
         }
       });
-      jQuery4.ajaxPrefilter(function(s) {
-        if (s.crossDomain) {
-          s.contents.script = false;
+      jQuery4.ajaxPrefilter(function(s4) {
+        if (s4.crossDomain) {
+          s4.contents.script = false;
         }
       });
       jQuery4.ajaxSetup({
@@ -5943,20 +5951,20 @@ var require_jquery = __commonJS({
           }
         }
       });
-      jQuery4.ajaxPrefilter("script", function(s) {
-        if (s.cache === void 0) {
-          s.cache = false;
+      jQuery4.ajaxPrefilter("script", function(s4) {
+        if (s4.cache === void 0) {
+          s4.cache = false;
         }
-        if (s.crossDomain) {
-          s.type = "GET";
+        if (s4.crossDomain) {
+          s4.type = "GET";
         }
       });
-      jQuery4.ajaxTransport("script", function(s) {
-        if (s.crossDomain || s.scriptAttrs) {
+      jQuery4.ajaxTransport("script", function(s4) {
+        if (s4.crossDomain || s4.scriptAttrs) {
           var script, callback;
           return {
-            send: function(_, complete) {
-              script = jQuery4("<script>").attr(s.scriptAttrs || {}).prop({ charset: s.scriptCharset, src: s.url }).on("load error", callback = function(evt) {
+            send: function(_2, complete) {
+              script = jQuery4("<script>").attr(s4.scriptAttrs || {}).prop({ charset: s4.scriptCharset, src: s4.url }).on("load error", callback = function(evt) {
                 script.remove();
                 callback = null;
                 if (evt) {
@@ -5982,22 +5990,22 @@ var require_jquery = __commonJS({
           return callback;
         }
       });
-      jQuery4.ajaxPrefilter("json jsonp", function(s, originalSettings, jqXHR) {
-        var callbackName, overwritten, responseContainer, jsonProp = s.jsonp !== false && (rjsonp.test(s.url) ? "url" : typeof s.data === "string" && (s.contentType || "").indexOf("application/x-www-form-urlencoded") === 0 && rjsonp.test(s.data) && "data");
-        if (jsonProp || s.dataTypes[0] === "jsonp") {
-          callbackName = s.jsonpCallback = isFunction2(s.jsonpCallback) ? s.jsonpCallback() : s.jsonpCallback;
+      jQuery4.ajaxPrefilter("json jsonp", function(s4, originalSettings, jqXHR) {
+        var callbackName, overwritten, responseContainer, jsonProp = s4.jsonp !== false && (rjsonp.test(s4.url) ? "url" : typeof s4.data === "string" && (s4.contentType || "").indexOf("application/x-www-form-urlencoded") === 0 && rjsonp.test(s4.data) && "data");
+        if (jsonProp || s4.dataTypes[0] === "jsonp") {
+          callbackName = s4.jsonpCallback = isFunction2(s4.jsonpCallback) ? s4.jsonpCallback() : s4.jsonpCallback;
           if (jsonProp) {
-            s[jsonProp] = s[jsonProp].replace(rjsonp, "$1" + callbackName);
-          } else if (s.jsonp !== false) {
-            s.url += (rquery.test(s.url) ? "&" : "?") + s.jsonp + "=" + callbackName;
+            s4[jsonProp] = s4[jsonProp].replace(rjsonp, "$1" + callbackName);
+          } else if (s4.jsonp !== false) {
+            s4.url += (rquery.test(s4.url) ? "&" : "?") + s4.jsonp + "=" + callbackName;
           }
-          s.converters["script json"] = function() {
+          s4.converters["script json"] = function() {
             if (!responseContainer) {
               jQuery4.error(callbackName + " was not called");
             }
             return responseContainer[0];
           };
-          s.dataTypes[0] = "json";
+          s4.dataTypes[0] = "json";
           overwritten = window2[callbackName];
           window2[callbackName] = function() {
             responseContainer = arguments;
@@ -6008,8 +6016,8 @@ var require_jquery = __commonJS({
             } else {
               window2[callbackName] = overwritten;
             }
-            if (s[callbackName]) {
-              s.jsonpCallback = originalSettings.jsonpCallback;
+            if (s4[callbackName]) {
+              s4.jsonpCallback = originalSettings.jsonpCallback;
               oldCallbacks.push(callbackName);
             }
             if (responseContainer && isFunction2(overwritten)) {
@@ -6100,7 +6108,7 @@ var require_jquery = __commonJS({
         }).length;
       };
       jQuery4.offset = {
-        setOffset: function(elem, options, i) {
+        setOffset: function(elem, options, i5) {
           var curPosition, curLeft, curCSSTop, curTop, curOffset, curCSSLeft, calculatePosition, position = jQuery4.css(elem, "position"), curElem = jQuery4(elem), props = {};
           if (position === "static") {
             elem.style.position = "relative";
@@ -6118,7 +6126,7 @@ var require_jquery = __commonJS({
             curLeft = parseFloat(curCSSLeft) || 0;
           }
           if (isFunction2(options)) {
-            options = options.call(elem, i, jQuery4.extend({}, curOffset));
+            options = options.call(elem, i5, jQuery4.extend({}, curOffset));
           }
           if (options.top != null) {
             props.top = options.top - curOffset.top + curTop;
@@ -6137,8 +6145,8 @@ var require_jquery = __commonJS({
         // offset() relates an element's border box to the document origin
         offset: function(options) {
           if (arguments.length) {
-            return options === void 0 ? this : this.each(function(i) {
-              jQuery4.offset.setOffset(this, options, i);
+            return options === void 0 ? this : this.each(function(i5) {
+              jQuery4.offset.setOffset(this, options, i5);
             });
           }
           var rect, win, elem = this[0];
@@ -6389,7 +6397,7 @@ var require_bootstrap_select = __commonJS({
         factory(root["jQuery"]);
       }
     })(exports, function(jQuery4) {
-      (function($) {
+      (function($2) {
         "use strict";
         var DISALLOWED_ATTRIBUTES = ["sanitize", "whiteList", "sanitizeFn"];
         var uriAttrs = [
@@ -6440,17 +6448,17 @@ var require_bootstrap_select = __commonJS({
         var DATA_URL_PATTERN = /^data:(?:image\/(?:bmp|gif|jpeg|jpg|png|tiff|webp)|video\/(?:mpeg|mp4|ogg|webm)|audio\/(?:mp3|oga|ogg|opus));base64,[a-z0-9+/]+=*$/i;
         function allowedAttribute(attr, allowedAttributeList) {
           var attrName = attr.nodeName.toLowerCase();
-          if ($.inArray(attrName, allowedAttributeList) !== -1) {
-            if ($.inArray(attrName, uriAttrs) !== -1) {
+          if ($2.inArray(attrName, allowedAttributeList) !== -1) {
+            if ($2.inArray(attrName, uriAttrs) !== -1) {
               return Boolean(attr.nodeValue.match(SAFE_URL_PATTERN) || attr.nodeValue.match(DATA_URL_PATTERN));
             }
             return true;
           }
-          var regExp = $(allowedAttributeList).filter(function(index, value) {
+          var regExp = $2(allowedAttributeList).filter(function(index, value) {
             return value instanceof RegExp;
           });
-          for (var i = 0, l = regExp.length; i < l; i++) {
-            if (attrName.match(regExp[i])) {
+          for (var i5 = 0, l3 = regExp.length; i5 < l3; i5++) {
+            if (attrName.match(regExp[i5])) {
               return true;
             }
           }
@@ -6461,10 +6469,10 @@ var require_bootstrap_select = __commonJS({
             return sanitizeFn(unsafeElements);
           }
           var whitelistKeys = Object.keys(whiteList);
-          for (var i = 0, len = unsafeElements.length; i < len; i++) {
-            var elements = unsafeElements[i].querySelectorAll("*");
-            for (var j = 0, len2 = elements.length; j < len2; j++) {
-              var el = elements[j];
+          for (var i5 = 0, len = unsafeElements.length; i5 < len; i5++) {
+            var elements = unsafeElements[i5].querySelectorAll("*");
+            for (var j2 = 0, len2 = elements.length; j2 < len2; j2++) {
+              var el = elements[j2];
               var elName = el.nodeName.toLowerCase();
               if (whitelistKeys.indexOf(elName) === -1) {
                 el.parentNode.removeChild(el);
@@ -6472,8 +6480,8 @@ var require_bootstrap_select = __commonJS({
               }
               var attributeList = [].slice.call(el.attributes);
               var whitelistedAttributes = [].concat(whiteList["*"] || [], whiteList[elName] || []);
-              for (var k = 0, len3 = attributeList.length; k < len3; k++) {
-                var attr = attributeList[k];
+              for (var k2 = 0, len3 = attributeList.length; k2 < len3; k2++) {
+                var attr = attributeList[k2];
                 if (!allowedAttribute(attr, whitelistedAttributes)) {
                   el.removeAttribute(attr.nodeName);
                 }
@@ -6485,7 +6493,7 @@ var require_bootstrap_select = __commonJS({
           (function(view) {
             if (!("Element" in view)) return;
             var classListProp = "classList", protoProp = "prototype", elemCtrProto = view.Element[protoProp], objCtr = Object, classListGetter = function() {
-              var $elem = $(this);
+              var $elem = $2(this);
               return {
                 add: function(classes) {
                   classes = Array.prototype.slice.call(arguments).join(" ");
@@ -6604,12 +6612,12 @@ var require_bootstrap_select = __commonJS({
           })();
         }
         if (!Object.keys) {
-          Object.keys = function(o, k, r) {
-            r = [];
-            for (k in o) {
-              r.hasOwnProperty.call(o, k) && r.push(k);
+          Object.keys = function(o6, k2, r5) {
+            r5 = [];
+            for (k2 in o6) {
+              r5.hasOwnProperty.call(o6, k2) && r5.push(k2);
             }
-            return r;
+            return r5;
           };
         }
         if (HTMLSelectElement && !HTMLSelectElement.prototype.hasOwnProperty("selectedOptions")) {
@@ -6622,8 +6630,8 @@ var require_bootstrap_select = __commonJS({
         function getSelectedOptions(select, ignoreDisabled) {
           var selectedOptions = select.selectedOptions, options = [], opt;
           if (ignoreDisabled) {
-            for (var i = 0, len = selectedOptions.length; i < len; i++) {
-              opt = selectedOptions[i];
+            for (var i5 = 0, len = selectedOptions.length; i5 < len; i5++) {
+              opt = selectedOptions[i5];
               if (!(opt.disabled || opt.parentNode.tagName === "OPTGROUP" && opt.parentNode.disabled)) {
                 options.push(opt);
               }
@@ -6634,8 +6642,8 @@ var require_bootstrap_select = __commonJS({
         }
         function getSelectValues(select, selectedOptions) {
           var value = [], options = selectedOptions || select.selectedOptions, opt;
-          for (var i = 0, len = options.length; i < len; i++) {
-            opt = options[i];
+          for (var i5 = 0, len = options.length; i5 < len; i5++) {
+            opt = options[i5];
             if (!(opt.disabled || opt.parentNode.tagName === "OPTGROUP" && opt.parentNode.disabled)) {
               value.push(opt.value);
             }
@@ -6647,10 +6655,10 @@ var require_bootstrap_select = __commonJS({
         }
         var valHooks = {
           useDefault: false,
-          _set: $.valHooks.select.set
+          _set: $2.valHooks.select.set
         };
-        $.valHooks.select.set = function(elem, value) {
-          if (value && !valHooks.useDefault) $(elem).data("selected", true);
+        $2.valHooks.select.set = function(elem, value) {
+          if (value && !valHooks.useDefault) $2(elem).data("selected", true);
           return valHooks._set.apply(this, arguments);
         };
         var changedArguments = null;
@@ -6658,11 +6666,11 @@ var require_bootstrap_select = __commonJS({
           try {
             new Event("change");
             return true;
-          } catch (e) {
+          } catch (e5) {
             return false;
           }
         })();
-        $.fn.triggerNative = function(eventName) {
+        $2.fn.triggerNative = function(eventName) {
           var el = this[0], event;
           if (el.dispatchEvent) {
             if (EventIsSupported) {
@@ -6688,8 +6696,8 @@ var require_bootstrap_select = __commonJS({
             "subtext",
             "tokens"
           ], searchSuccess = false;
-          for (var i = 0; i < stringTypes.length; i++) {
-            var stringType = stringTypes[i], string = li[stringType];
+          for (var i5 = 0; i5 < stringTypes.length; i5++) {
+            var stringType = stringTypes[i5], string = li[stringType];
             if (string) {
               string = string.toString();
               if (stringType === "display") {
@@ -7006,7 +7014,7 @@ var require_bootstrap_select = __commonJS({
           major: "3"
         };
         try {
-          version.full = ($.fn.dropdown.Constructor.VERSION || "").split(" ")[0].split(".");
+          version.full = ($2.fn.dropdown.Constructor.VERSION || "").split(" ")[0].split(".");
           version.major = version.full[0];
           version.success = true;
         } catch (err) {
@@ -7065,17 +7073,17 @@ var require_bootstrap_select = __commonJS({
             return li;
           },
           a: function(text, classes, inline) {
-            var a = elementTemplates.a.cloneNode(true);
+            var a3 = elementTemplates.a.cloneNode(true);
             if (text) {
               if (text.nodeType === 11) {
-                a.appendChild(text);
+                a3.appendChild(text);
               } else {
-                a.insertAdjacentHTML("beforeend", text);
+                a3.insertAdjacentHTML("beforeend", text);
               }
             }
-            if (typeof classes !== "undefined" && classes !== "") a.classList.add.apply(a.classList, classes.split(/\s+/));
-            if (inline) a.setAttribute("style", inline);
-            return a;
+            if (typeof classes !== "undefined" && classes !== "") a3.classList.add.apply(a3.classList, classes.split(/\s+/));
+            if (inline) a3.setAttribute("style", inline);
+            return a3;
           },
           text: function(options, useFragment) {
             var textElement = elementTemplates.text.cloneNode(false), subtextElement, iconElement;
@@ -7133,10 +7141,10 @@ var require_bootstrap_select = __commonJS({
         var Selectpicker = function(element, options) {
           var that = this;
           if (!valHooks.useDefault) {
-            $.valHooks.select.set = valHooks._set;
+            $2.valHooks.select.set = valHooks._set;
             valHooks.useDefault = true;
           }
-          this.$element = $(element);
+          this.$element = $2(element);
           this.$newElement = null;
           this.$button = null;
           this.$menu = null;
@@ -7286,17 +7294,17 @@ var require_bootstrap_select = __commonJS({
             this.$newElement.data("this", this);
             if (this.options.mobile) this.mobile();
             this.$newElement.on({
-              "hide.bs.dropdown": function(e) {
-                that.$element.trigger("hide" + EVENT_KEY, e);
+              "hide.bs.dropdown": function(e5) {
+                that.$element.trigger("hide" + EVENT_KEY, e5);
               },
-              "hidden.bs.dropdown": function(e) {
-                that.$element.trigger("hidden" + EVENT_KEY, e);
+              "hidden.bs.dropdown": function(e5) {
+                that.$element.trigger("hidden" + EVENT_KEY, e5);
               },
-              "show.bs.dropdown": function(e) {
-                that.$element.trigger("show" + EVENT_KEY, e);
+              "show.bs.dropdown": function(e5) {
+                that.$element.trigger("show" + EVENT_KEY, e5);
               },
-              "shown.bs.dropdown": function(e) {
-                that.$element.trigger("shown" + EVENT_KEY, e);
+              "shown.bs.dropdown": function(e5) {
+                that.$element.trigger("shown" + EVENT_KEY, e5);
               }
             });
             if (element.hasAttribute("required")) {
@@ -7338,14 +7346,14 @@ var require_bootstrap_select = __commonJS({
               donebutton = '<div class="bs-donebutton"><div class="btn-group btn-block"><button type="button" class="btn btn-sm ' + classNames.BUTTONCLASS + '">' + this.options.doneButtonText + "</button></div></div>";
             }
             drop = '<div class="dropdown bootstrap-select' + showTick + inputGroup + '"><button type="button" tabindex="-1" class="' + this.options.styleBase + ' dropdown-toggle" ' + (this.options.display === "static" ? 'data-display="static"' : "") + 'data-toggle="dropdown"' + autofocus + ' role="combobox" aria-owns="' + this.selectId + '" aria-haspopup="listbox" aria-expanded="false"><div class="filter-option"><div class="filter-option-inner"><div class="filter-option-inner-inner"></div></div> </div>' + (version.major === "4" ? "" : '<span class="bs-caret">' + this.options.template.caret + "</span>") + '</button><div class="' + classNames.MENU + " " + (version.major === "4" ? "" : classNames.SHOW) + '">' + header + searchbox + actionsbox + '<div class="inner ' + classNames.SHOW + '" role="listbox" id="' + this.selectId + '" tabindex="-1" ' + multiselectable + '><ul class="' + classNames.MENU + " inner " + (version.major === "4" ? classNames.SHOW : "") + '" role="presentation"></ul></div>' + donebutton + "</div></div>";
-            return $(drop);
+            return $2(drop);
           },
           setPositionData: function() {
             this.selectpicker.view.canHighlight = [];
             this.selectpicker.view.size = 0;
             this.selectpicker.view.firstHighlightIndex = false;
-            for (var i = 0; i < this.selectpicker.current.data.length; i++) {
-              var li = this.selectpicker.current.data[i], canHighlight = true;
+            for (var i5 = 0; i5 < this.selectpicker.current.data.length; i5++) {
+              var li = this.selectpicker.current.data[i5], canHighlight = true;
               if (li.type === "divider") {
                 canHighlight = false;
                 li.height = this.sizeInfo.dividerHeight;
@@ -7360,9 +7368,9 @@ var require_bootstrap_select = __commonJS({
               if (canHighlight) {
                 this.selectpicker.view.size++;
                 li.posinset = this.selectpicker.view.size;
-                if (this.selectpicker.view.firstHighlightIndex === false) this.selectpicker.view.firstHighlightIndex = i;
+                if (this.selectpicker.view.firstHighlightIndex === false) this.selectpicker.view.firstHighlightIndex = i5;
               }
-              li.position = (i === 0 ? 0 : this.selectpicker.current.data[i - 1].position) + li.height;
+              li.position = (i5 === 0 ? 0 : this.selectpicker.current.data[i5 - 1].position) + li.height;
             }
           },
           isVirtual: function() {
@@ -7387,7 +7395,7 @@ var require_bootstrap_select = __commonJS({
               }
             }
             scroll(scrollTop, true);
-            this.$menuInner.off("scroll.createView").on("scroll.createView", function(e, updateValue) {
+            this.$menuInner.off("scroll.createView").on("scroll.createView", function(e5, updateValue) {
               if (!that.noScroll) scroll(this.scrollTop, updateValue);
               that.noScroll = false;
             });
@@ -7396,18 +7404,18 @@ var require_bootstrap_select = __commonJS({
               that.selectpicker.view.scrollTop = scrollTop2;
               chunkSize = Math.ceil(that.sizeInfo.menuInnerHeight / that.sizeInfo.liHeight * 1.5);
               chunkCount = Math.round(size / chunkSize) || 1;
-              for (var i = 0; i < chunkCount; i++) {
-                var endOfChunk = (i + 1) * chunkSize;
-                if (i === chunkCount - 1) {
+              for (var i5 = 0; i5 < chunkCount; i5++) {
+                var endOfChunk = (i5 + 1) * chunkSize;
+                if (i5 === chunkCount - 1) {
                   endOfChunk = size;
                 }
-                chunks[i] = [
-                  i * chunkSize + (!i ? 0 : 1),
+                chunks[i5] = [
+                  i5 * chunkSize + (!i5 ? 0 : 1),
                   endOfChunk
                 ];
                 if (!size) break;
                 if (currentChunk === void 0 && scrollTop2 - 1 <= that.selectpicker.current.data[endOfChunk - 1].position - that.sizeInfo.menuInnerHeight) {
-                  currentChunk = i;
+                  currentChunk = i5;
                 }
               }
               if (currentChunk === void 0) currentChunk = 0;
@@ -7446,12 +7454,12 @@ var require_bootstrap_select = __commonJS({
                 if ((init3 || isVirtual === true) && menuIsDifferent) {
                   var menuInner = that.$menuInner[0], menuFragment = document.createDocumentFragment(), emptyMenu = menuInner.firstChild.cloneNode(false), marginTop, marginBottom, elements = that.selectpicker.view.visibleElements, toSanitize = [];
                   menuInner.replaceChild(emptyMenu, menuInner.firstChild);
-                  for (var i = 0, visibleElementsLen = elements.length; i < visibleElementsLen; i++) {
-                    var element2 = elements[i], elText, elementData;
+                  for (var i5 = 0, visibleElementsLen = elements.length; i5 < visibleElementsLen; i5++) {
+                    var element2 = elements[i5], elText, elementData;
                     if (that.options.sanitize) {
                       elText = element2.lastChild;
                       if (elText) {
-                        elementData = that.selectpicker.current.data[i + that.selectpicker.view.position0];
+                        elementData = that.selectpicker.current.data[i5 + that.selectpicker.view.position0];
                         if (elementData && elementData.content && !elementData.sanitized) {
                           toSanitize.push(elText);
                           elementData.sanitized = true;
@@ -7503,7 +7511,7 @@ var require_bootstrap_select = __commonJS({
                 that.focusItem(newActive);
               }
             }
-            $(window).off("resize" + EVENT_KEY + "." + this.selectId + ".createView").on("resize" + EVENT_KEY + "." + this.selectId + ".createView", function() {
+            $2(window).off("resize" + EVENT_KEY + "." + this.selectId + ".createView").on("resize" + EVENT_KEY + "." + this.selectId + ".createView", function() {
               var isActive = that.$newElement.hasClass(classNames.SHOW);
               if (isActive) scroll(that.$menuInner[0].scrollTop);
             });
@@ -7511,14 +7519,14 @@ var require_bootstrap_select = __commonJS({
           focusItem: function(li, liData, noStyle) {
             if (li) {
               liData = liData || this.selectpicker.main.data[this.activeIndex];
-              var a = li.firstChild;
-              if (a) {
-                a.setAttribute("aria-setsize", this.selectpicker.view.size);
-                a.setAttribute("aria-posinset", liData.posinset);
+              var a3 = li.firstChild;
+              if (a3) {
+                a3.setAttribute("aria-setsize", this.selectpicker.view.size);
+                a3.setAttribute("aria-posinset", liData.posinset);
                 if (noStyle !== true) {
-                  this.focusedParent.setAttribute("aria-activedescendant", a.id);
+                  this.focusedParent.setAttribute("aria-activedescendant", a3.id);
                   li.classList.add("active");
-                  a.classList.add("active");
+                  a3.classList.add("active");
                 }
               }
             }
@@ -7609,9 +7617,9 @@ var require_bootstrap_select = __commonJS({
               }
               config.optID = optID;
               mainData.push(config);
-              for (var j = 0, len2 = options.length; j < len2; j++) {
-                var option = options[j];
-                if (j === 0) {
+              for (var j2 = 0, len2 = options.length; j2 < len2; j2++) {
+                var option = options[j2];
+                if (j2 === 0) {
                   headerIndex = mainData.length - 1;
                   lastIndex = headerIndex + len2;
                 }
@@ -7627,12 +7635,12 @@ var require_bootstrap_select = __commonJS({
                 addDivider({ optID });
               }
             }
-            for (var len = selectOptions.length, i = startIndex; i < len; i++) {
-              var item = selectOptions[i];
+            for (var len = selectOptions.length, i5 = startIndex; i5 < len; i5++) {
+              var item = selectOptions[i5];
               if (item.tagName !== "OPTGROUP") {
                 addOption(item, {});
               } else {
-                addOptgroup(i, selectOptions);
+                addOptgroup(i5, selectOptions);
               }
             }
             this.selectpicker.main.data = this.selectpicker.current.data = mainData;
@@ -7685,8 +7693,8 @@ var require_bootstrap_select = __commonJS({
                 that.selectpicker.view.widestOption = mainElements[mainElements.length - 1];
               }
             }
-            for (var len = selectData.length, i = 0; i < len; i++) {
-              var item = selectData[i];
+            for (var len = selectData.length, i5 = 0; i5 < len; i5++) {
+              var item = selectData[i5];
               buildElement(item);
             }
             this.selectpicker.main.elements = this.selectpicker.current.elements = mainElements;
@@ -7804,10 +7812,10 @@ var require_bootstrap_select = __commonJS({
           },
           liHeight: function(refresh) {
             if (!refresh && (this.options.size === false || Object.keys(this.sizeInfo).length)) return;
-            var newElement = elementTemplates.div.cloneNode(false), menu = elementTemplates.div.cloneNode(false), menuInner = elementTemplates.div.cloneNode(false), menuInnerInner = document.createElement("ul"), divider = elementTemplates.li.cloneNode(false), dropdownHeader = elementTemplates.li.cloneNode(false), li, a = elementTemplates.a.cloneNode(false), text = elementTemplates.span.cloneNode(false), header = this.options.header && this.$menu.find("." + classNames.POPOVERHEADER).length > 0 ? this.$menu.find("." + classNames.POPOVERHEADER)[0].cloneNode(true) : null, search = this.options.liveSearch ? elementTemplates.div.cloneNode(false) : null, actions = this.options.actionsBox && this.multiple && this.$menu.find(".bs-actionsbox").length > 0 ? this.$menu.find(".bs-actionsbox")[0].cloneNode(true) : null, doneButton = this.options.doneButton && this.multiple && this.$menu.find(".bs-donebutton").length > 0 ? this.$menu.find(".bs-donebutton")[0].cloneNode(true) : null, firstOption = this.$element.find("option")[0];
+            var newElement = elementTemplates.div.cloneNode(false), menu = elementTemplates.div.cloneNode(false), menuInner = elementTemplates.div.cloneNode(false), menuInnerInner = document.createElement("ul"), divider = elementTemplates.li.cloneNode(false), dropdownHeader = elementTemplates.li.cloneNode(false), li, a3 = elementTemplates.a.cloneNode(false), text = elementTemplates.span.cloneNode(false), header = this.options.header && this.$menu.find("." + classNames.POPOVERHEADER).length > 0 ? this.$menu.find("." + classNames.POPOVERHEADER)[0].cloneNode(true) : null, search = this.options.liveSearch ? elementTemplates.div.cloneNode(false) : null, actions = this.options.actionsBox && this.multiple && this.$menu.find(".bs-actionsbox").length > 0 ? this.$menu.find(".bs-actionsbox")[0].cloneNode(true) : null, doneButton = this.options.doneButton && this.multiple && this.$menu.find(".bs-donebutton").length > 0 ? this.$menu.find(".bs-donebutton")[0].cloneNode(true) : null, firstOption = this.$element.find("option")[0];
             this.sizeInfo.selectWidth = this.$newElement[0].offsetWidth;
             text.className = "text";
-            a.className = "dropdown-item " + (firstOption ? firstOption.className : "");
+            a3.className = "dropdown-item " + (firstOption ? firstOption.className : "");
             newElement.className = this.$menu[0].parentNode.className + " " + classNames.SHOW;
             newElement.style.width = 0;
             if (this.options.width === "auto") menu.style.minWidth = 0;
@@ -7818,8 +7826,8 @@ var require_bootstrap_select = __commonJS({
             dropdownHeader.className = "dropdown-header";
             text.appendChild(document.createTextNode("\u200B"));
             if (this.selectpicker.current.data.length) {
-              for (var i = 0; i < this.selectpicker.current.data.length; i++) {
-                var data = this.selectpicker.current.data[i];
+              for (var i5 = 0; i5 < this.selectpicker.current.data.length; i5++) {
+                var data = this.selectpicker.current.data[i5];
                 if (data.type === "option") {
                   li = data.element;
                   break;
@@ -7827,8 +7835,8 @@ var require_bootstrap_select = __commonJS({
               }
             } else {
               li = elementTemplates.li.cloneNode(false);
-              a.appendChild(text);
-              li.appendChild(a);
+              a3.appendChild(text);
+              li.appendChild(a3);
             }
             dropdownHeader.appendChild(text.cloneNode(true));
             if (this.selectpicker.view.widestOption) {
@@ -7851,7 +7859,7 @@ var require_bootstrap_select = __commonJS({
             if (doneButton) menu.appendChild(doneButton);
             newElement.appendChild(menu);
             document.body.appendChild(newElement);
-            var liHeight = li.offsetHeight, dropdownHeaderHeight = dropdownHeader ? dropdownHeader.offsetHeight : 0, headerHeight = header ? header.offsetHeight : 0, searchHeight = search ? search.offsetHeight : 0, actionsHeight = actions ? actions.offsetHeight : 0, doneButtonHeight = doneButton ? doneButton.offsetHeight : 0, dividerHeight = $(divider).outerHeight(true), menuStyle = window.getComputedStyle ? window.getComputedStyle(menu) : false, menuWidth = menu.offsetWidth, $menu = menuStyle ? null : $(menu), menuPadding = {
+            var liHeight = li.offsetHeight, dropdownHeaderHeight = dropdownHeader ? dropdownHeader.offsetHeight : 0, headerHeight = header ? header.offsetHeight : 0, searchHeight = search ? search.offsetHeight : 0, actionsHeight = actions ? actions.offsetHeight : 0, doneButtonHeight = doneButton ? doneButton.offsetHeight : 0, dividerHeight = $2(divider).outerHeight(true), menuStyle = window.getComputedStyle ? window.getComputedStyle(menu) : false, menuWidth = menu.offsetWidth, $menu = menuStyle ? null : $2(menu), menuPadding = {
               vert: toInteger(menuStyle ? menuStyle.paddingTop : $menu.css("paddingTop")) + toInteger(menuStyle ? menuStyle.paddingBottom : $menu.css("paddingBottom")) + toInteger(menuStyle ? menuStyle.borderTopWidth : $menu.css("borderTopWidth")) + toInteger(menuStyle ? menuStyle.borderBottomWidth : $menu.css("borderBottomWidth")),
               horiz: toInteger(menuStyle ? menuStyle.paddingLeft : $menu.css("paddingLeft")) + toInteger(menuStyle ? menuStyle.paddingRight : $menu.css("paddingRight")) + toInteger(menuStyle ? menuStyle.borderLeftWidth : $menu.css("borderLeftWidth")) + toInteger(menuStyle ? menuStyle.borderRightWidth : $menu.css("borderRightWidth"))
             }, menuExtras = {
@@ -7878,7 +7886,7 @@ var require_bootstrap_select = __commonJS({
             this.setPositionData();
           },
           getSelectPosition: function() {
-            var that = this, $window = $(window), pos = that.$newElement.offset(), $container = $(that.options.container), containerPos;
+            var that = this, $window = $2(window), pos = that.$newElement.offset(), $container = $2(that.options.container), containerPos;
             if (that.options.container && $container.length && !$container.is("body")) {
               containerPos = $container.offset();
               containerPos.top += parseInt($container.css("borderTopWidth"));
@@ -7917,8 +7925,8 @@ var require_bootstrap_select = __commonJS({
               maxHeight = menuHeight;
               menuInnerHeight = menuHeight - headerHeight - searchHeight - actionsHeight - doneButtonHeight - menuPadding.vert;
             } else if (this.options.size && this.options.size != "auto" && this.selectpicker.current.elements.length > this.options.size) {
-              for (var i = 0; i < this.options.size; i++) {
-                if (this.selectpicker.current.data[i].type === "divider") divLength++;
+              for (var i5 = 0; i5 < this.options.size; i5++) {
+                if (this.selectpicker.current.data[i5].type === "divider") divLength++;
               }
               menuHeight = liHeight * this.options.size + divLength * divHeight + menuPadding.vert;
               menuInnerHeight = menuHeight - menuPadding.vert;
@@ -7949,7 +7957,7 @@ var require_bootstrap_select = __commonJS({
             this.liHeight(refresh);
             if (this.options.header) this.$menu.css("padding-top", 0);
             if (this.options.size !== false) {
-              var that = this, $window = $(window);
+              var that = this, $window = $2(window);
               this.setMenuSize();
               if (this.options.liveSearch) {
                 this.$searchbox.off("input.setMenuSize propertychange.setMenuSize").on("input.setMenuSize propertychange.setMenuSize", function() {
@@ -7995,10 +8003,10 @@ var require_bootstrap_select = __commonJS({
             }
           },
           selectPosition: function() {
-            this.$bsContainer = $('<div class="bs-container" />');
-            var that = this, $container = $(this.options.container), pos, containerPos, actualHeight, getPlacement = function($element) {
+            this.$bsContainer = $2('<div class="bs-container" />');
+            var that = this, $container = $2(this.options.container), pos, containerPos, actualHeight, getPlacement = function($element) {
               var containerPosition = {}, display = that.options.display || // Bootstrap 3 doesn't have $.fn.dropdown.Constructor.Default
-              ($.fn.dropdown.Constructor.Default ? $.fn.dropdown.Constructor.Default.display : false);
+              ($2.fn.dropdown.Constructor.Default ? $2.fn.dropdown.Constructor.Default.display : false);
               that.$bsContainer.addClass($element.attr("class").replace(/form-control|fit-width/gi, "")).toggleClass(classNames.DROPUP, $element.hasClass(classNames.DROPUP));
               pos = $element.offset();
               if (!$container.is("body")) {
@@ -8023,7 +8031,7 @@ var require_bootstrap_select = __commonJS({
               getPlacement(that.$newElement);
               that.$bsContainer.appendTo(that.options.container).toggleClass(classNames.SHOW, !that.$button.hasClass(classNames.SHOW)).append(that.$menu);
             });
-            $(window).off("resize" + EVENT_KEY + "." + this.selectId + " scroll" + EVENT_KEY + "." + this.selectId).on("resize" + EVENT_KEY + "." + this.selectId + " scroll" + EVENT_KEY + "." + this.selectId, function() {
+            $2(window).off("resize" + EVENT_KEY + "." + this.selectId + " scroll" + EVENT_KEY + "." + this.selectId).on("resize" + EVENT_KEY + "." + this.selectId + " scroll" + EVENT_KEY + "." + this.selectId, function() {
               var isActive = that.$newElement.hasClass(classNames.SHOW);
               if (isActive) getPlacement(that.$newElement);
             });
@@ -8036,8 +8044,8 @@ var require_bootstrap_select = __commonJS({
             var that = this;
             that.noScroll = false;
             if (that.selectpicker.view.visibleElements && that.selectpicker.view.visibleElements.length) {
-              for (var i = 0; i < that.selectpicker.view.visibleElements.length; i++) {
-                var liData = that.selectpicker.current.data[i + that.selectpicker.view.position0], option = liData.option;
+              for (var i5 = 0; i5 < that.selectpicker.view.visibleElements.length; i5++) {
+                var liData = that.selectpicker.current.data[i5 + that.selectpicker.view.position0], option = liData.option;
                 if (option) {
                   if (selectedOnly !== true) {
                     that.setDisabled(
@@ -8058,9 +8066,9 @@ var require_bootstrap_select = __commonJS({
            * @param {boolean} selected - true if the option is being selected, false if being deselected
            */
           setSelected: function(index, selected) {
-            var li = this.selectpicker.main.elements[index], liData = this.selectpicker.main.data[index], activeIndexIsSet = this.activeIndex !== void 0, thisIsActive = this.activeIndex === index, prevActive, a, keepActive = thisIsActive || selected && !this.multiple && !activeIndexIsSet;
+            var li = this.selectpicker.main.elements[index], liData = this.selectpicker.main.data[index], activeIndexIsSet = this.activeIndex !== void 0, thisIsActive = this.activeIndex === index, prevActive, a3, keepActive = thisIsActive || selected && !this.multiple && !activeIndexIsSet;
             liData.selected = selected;
-            a = li.firstChild;
+            a3 = li.firstChild;
             if (selected) {
               this.selectedIndex = index;
             }
@@ -8072,15 +8080,15 @@ var require_bootstrap_select = __commonJS({
             } else {
               this.defocusItem(li);
             }
-            if (a) {
-              a.classList.toggle("selected", selected);
+            if (a3) {
+              a3.classList.toggle("selected", selected);
               if (selected) {
-                a.setAttribute("aria-selected", true);
+                a3.setAttribute("aria-selected", true);
               } else {
                 if (this.multiple) {
-                  a.setAttribute("aria-selected", false);
+                  a3.setAttribute("aria-selected", false);
                 } else {
-                  a.removeAttribute("aria-selected");
+                  a3.removeAttribute("aria-selected");
                 }
               }
             }
@@ -8094,18 +8102,18 @@ var require_bootstrap_select = __commonJS({
            * @param {boolean} disabled - true if the option is being disabled, false if being enabled
            */
           setDisabled: function(index, disabled) {
-            var li = this.selectpicker.main.elements[index], a;
+            var li = this.selectpicker.main.elements[index], a3;
             this.selectpicker.main.data[index].disabled = disabled;
-            a = li.firstChild;
+            a3 = li.firstChild;
             li.classList.toggle(classNames.DISABLED, disabled);
-            if (a) {
-              if (version.major === "4") a.classList.toggle(classNames.DISABLED, disabled);
+            if (a3) {
+              if (version.major === "4") a3.classList.toggle(classNames.DISABLED, disabled);
               if (disabled) {
-                a.setAttribute("aria-disabled", disabled);
-                a.setAttribute("tabindex", -1);
+                a3.setAttribute("aria-disabled", disabled);
+                a3.setAttribute("tabindex", -1);
               } else {
-                a.removeAttribute("aria-disabled");
-                a.setAttribute("tabindex", 0);
+                a3.removeAttribute("aria-disabled");
+                a3.setAttribute("tabindex", 0);
               }
             }
           },
@@ -8124,11 +8132,11 @@ var require_bootstrap_select = __commonJS({
             }
           },
           clickListener: function() {
-            var that = this, $document = $(document);
+            var that = this, $document = $2(document);
             $document.data("spaceSelect", false);
-            this.$button.on("keyup", function(e) {
-              if (/(32)/.test(e.keyCode.toString(10)) && $document.data("spaceSelect")) {
-                e.preventDefault();
+            this.$button.on("keyup", function(e5) {
+              if (/(32)/.test(e5.keyCode.toString(10)) && $document.data("spaceSelect")) {
+                e5.preventDefault();
                 $document.data("spaceSelect", false);
               }
             });
@@ -8167,18 +8175,18 @@ var require_bootstrap_select = __commonJS({
                 setFocus();
               }
             });
-            this.$menuInner.on("mouseenter", "li a", function(e) {
+            this.$menuInner.on("mouseenter", "li a", function(e5) {
               var hoverLi = this.parentElement, position0 = that.isVirtual() ? that.selectpicker.view.position0 : 0, index = Array.prototype.indexOf.call(hoverLi.parentElement.children, hoverLi), hoverData = that.selectpicker.current.data[index + position0];
               that.focusItem(hoverLi, hoverData, true);
             });
-            this.$menuInner.on("click", "li a", function(e, retainActive) {
-              var $this = $(this), element = that.$element[0], position0 = that.isVirtual() ? that.selectpicker.view.position0 : 0, clickedData = that.selectpicker.current.data[$this.parent().index() + position0], clickedIndex = clickedData.index, prevValue = getSelectValues(element), prevIndex = element.selectedIndex, prevOption = element.options[prevIndex], triggerChange = true;
+            this.$menuInner.on("click", "li a", function(e5, retainActive) {
+              var $this = $2(this), element = that.$element[0], position0 = that.isVirtual() ? that.selectpicker.view.position0 : 0, clickedData = that.selectpicker.current.data[$this.parent().index() + position0], clickedIndex = clickedData.index, prevValue = getSelectValues(element), prevIndex = element.selectedIndex, prevOption = element.options[prevIndex], triggerChange = true;
               if (that.multiple && that.options.maxOptions !== 1) {
-                e.stopPropagation();
+                e5.stopPropagation();
               }
-              e.preventDefault();
+              e5.preventDefault();
               if (!that.isDisabled() && !$this.parent().hasClass(classNames.DISABLED)) {
-                var option = clickedData.option, $option = $(option), state = option.selected, $optgroup = $option.parent("optgroup"), $optgroupOptions = $optgroup.find("option"), maxOptions = that.options.maxOptions, maxOptionsGrp = $optgroup.data("maxOptions") || false;
+                var option = clickedData.option, $option = $2(option), state = option.selected, $optgroup = $option.parent("optgroup"), $optgroupOptions = $optgroup.find("option"), maxOptions = that.options.maxOptions, maxOptionsGrp = $optgroup.data("maxOptions") || false;
                 if (clickedIndex === that.activeIndex) retainActive = true;
                 if (!retainActive) {
                   that.prevActiveIndex = that.activeIndex;
@@ -8200,15 +8208,15 @@ var require_bootstrap_select = __commonJS({
                         option.selected = true;
                         that.setOptionStatus(true);
                       } else if (maxOptionsGrp && maxOptionsGrp == 1) {
-                        for (var i = 0; i < $optgroupOptions.length; i++) {
-                          var _option = $optgroupOptions[i];
+                        for (var i5 = 0; i5 < $optgroupOptions.length; i5++) {
+                          var _option = $optgroupOptions[i5];
                           _option.selected = false;
                           that.setSelected(_option.liIndex, false);
                         }
                         option.selected = true;
                         that.setSelected(clickedIndex, true);
                       } else {
-                        var maxOptionsText = typeof that.options.maxOptionsText === "string" ? [that.options.maxOptionsText, that.options.maxOptionsText] : that.options.maxOptionsText, maxOptionsArr = typeof maxOptionsText === "function" ? maxOptionsText(maxOptions, maxOptionsGrp) : maxOptionsText, maxTxt = maxOptionsArr[0].replace("{n}", maxOptions), maxTxtGrp = maxOptionsArr[1].replace("{n}", maxOptionsGrp), $notify = $('<div class="notify"></div>');
+                        var maxOptionsText = typeof that.options.maxOptionsText === "string" ? [that.options.maxOptionsText, that.options.maxOptionsText] : that.options.maxOptionsText, maxOptionsArr = typeof maxOptionsText === "function" ? maxOptionsText(maxOptions, maxOptionsGrp) : maxOptionsText, maxTxt = maxOptionsArr[0].replace("{n}", maxOptions), maxTxtGrp = maxOptionsArr[1].replace("{n}", maxOptionsGrp), $notify = $2('<div class="notify"></div>');
                         if (maxOptionsArr[2]) {
                           maxTxt = maxTxt.replace("{var}", maxOptionsArr[2][maxOptions > 1 ? 0 : 1]);
                           maxTxtGrp = maxTxtGrp.replace("{var}", maxOptionsArr[2][maxOptionsGrp > 1 ? 0 : 1]);
@@ -8216,12 +8224,12 @@ var require_bootstrap_select = __commonJS({
                         option.selected = false;
                         that.$menu.append($notify);
                         if (maxOptions && maxReached) {
-                          $notify.append($("<div>" + maxTxt + "</div>"));
+                          $notify.append($2("<div>" + maxTxt + "</div>"));
                           triggerChange = false;
                           that.$element.trigger("maxReached" + EVENT_KEY);
                         }
                         if (maxOptionsGrp && maxReachedGrp) {
-                          $notify.append($("<div>" + maxTxtGrp + "</div>"));
+                          $notify.append($2("<div>" + maxTxtGrp + "</div>"));
                           triggerChange = false;
                           that.$element.trigger("maxReachedGrp" + EVENT_KEY);
                         }
@@ -8249,20 +8257,20 @@ var require_bootstrap_select = __commonJS({
                 }
               }
             });
-            this.$menu.on("click", "li." + classNames.DISABLED + " a, ." + classNames.POPOVERHEADER + ", ." + classNames.POPOVERHEADER + " :not(.close)", function(e) {
-              if (e.currentTarget == this) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (that.options.liveSearch && !$(e.target).hasClass("close")) {
+            this.$menu.on("click", "li." + classNames.DISABLED + " a, ." + classNames.POPOVERHEADER + ", ." + classNames.POPOVERHEADER + " :not(.close)", function(e5) {
+              if (e5.currentTarget == this) {
+                e5.preventDefault();
+                e5.stopPropagation();
+                if (that.options.liveSearch && !$2(e5.target).hasClass("close")) {
                   that.$searchbox.trigger("focus");
                 } else {
                   that.$button.trigger("focus");
                 }
               }
             });
-            this.$menuInner.on("click", ".divider, .dropdown-header", function(e) {
-              e.preventDefault();
-              e.stopPropagation();
+            this.$menuInner.on("click", ".divider, .dropdown-header", function(e5) {
+              e5.preventDefault();
+              e5.stopPropagation();
               if (that.options.liveSearch) {
                 that.$searchbox.trigger("focus");
               } else {
@@ -8272,32 +8280,32 @@ var require_bootstrap_select = __commonJS({
             this.$menu.on("click", "." + classNames.POPOVERHEADER + " .close", function() {
               that.$button.trigger("click");
             });
-            this.$searchbox.on("click", function(e) {
-              e.stopPropagation();
+            this.$searchbox.on("click", function(e5) {
+              e5.stopPropagation();
             });
-            this.$menu.on("click", ".actions-btn", function(e) {
+            this.$menu.on("click", ".actions-btn", function(e5) {
               if (that.options.liveSearch) {
                 that.$searchbox.trigger("focus");
               } else {
                 that.$button.trigger("focus");
               }
-              e.preventDefault();
-              e.stopPropagation();
-              if ($(this).hasClass("bs-select-all")) {
+              e5.preventDefault();
+              e5.stopPropagation();
+              if ($2(this).hasClass("bs-select-all")) {
                 that.selectAll();
               } else {
                 that.deselectAll();
               }
             });
-            this.$button.on("focus" + EVENT_KEY, function(e) {
+            this.$button.on("focus" + EVENT_KEY, function(e5) {
               var tabindex = that.$element[0].getAttribute("tabindex");
-              if (tabindex !== void 0 && e.originalEvent && e.originalEvent.isTrusted) {
+              if (tabindex !== void 0 && e5.originalEvent && e5.originalEvent.isTrusted) {
                 this.setAttribute("tabindex", tabindex);
                 that.$element[0].setAttribute("tabindex", -1);
                 that.selectpicker.view.tabindex = tabindex;
               }
-            }).on("blur" + EVENT_KEY, function(e) {
-              if (that.selectpicker.view.tabindex !== void 0 && e.originalEvent && e.originalEvent.isTrusted) {
+            }).on("blur" + EVENT_KEY, function(e5) {
+              if (that.selectpicker.view.tabindex !== void 0 && e5.originalEvent && e5.originalEvent.isTrusted) {
                 that.$element[0].setAttribute("tabindex", that.selectpicker.view.tabindex);
                 this.setAttribute("tabindex", -1);
                 that.selectpicker.view.tabindex = void 0;
@@ -8319,22 +8327,22 @@ var require_bootstrap_select = __commonJS({
                 that.selectpicker.search.previousValue = void 0;
               }
             });
-            this.$searchbox.on("click.bs.dropdown.data-api focus.bs.dropdown.data-api touchend.bs.dropdown.data-api", function(e) {
-              e.stopPropagation();
+            this.$searchbox.on("click.bs.dropdown.data-api focus.bs.dropdown.data-api touchend.bs.dropdown.data-api", function(e5) {
+              e5.stopPropagation();
             });
             this.$searchbox.on("input propertychange", function() {
               var searchValue = that.$searchbox[0].value;
               that.selectpicker.search.elements = [];
               that.selectpicker.search.data = [];
               if (searchValue) {
-                var i, searchMatch = [], q = searchValue.toUpperCase(), cache = {}, cacheArr = [], searchStyle = that._searchStyle(), normalizeSearch = that.options.liveSearchNormalize;
+                var i5, searchMatch = [], q = searchValue.toUpperCase(), cache = {}, cacheArr = [], searchStyle = that._searchStyle(), normalizeSearch = that.options.liveSearchNormalize;
                 if (normalizeSearch) q = normalizeToBase(q);
-                for (var i = 0; i < that.selectpicker.main.data.length; i++) {
-                  var li = that.selectpicker.main.data[i];
-                  if (!cache[i]) {
-                    cache[i] = stringSearch(li, q, searchStyle, normalizeSearch);
+                for (var i5 = 0; i5 < that.selectpicker.main.data.length; i5++) {
+                  var li = that.selectpicker.main.data[i5];
+                  if (!cache[i5]) {
+                    cache[i5] = stringSearch(li, q, searchStyle, normalizeSearch);
                   }
-                  if (cache[i] && li.headerIndex !== void 0 && cacheArr.indexOf(li.headerIndex) === -1) {
+                  if (cache[i5] && li.headerIndex !== void 0 && cacheArr.indexOf(li.headerIndex) === -1) {
                     if (li.headerIndex > 0) {
                       cache[li.headerIndex - 1] = true;
                       cacheArr.push(li.headerIndex - 1);
@@ -8343,11 +8351,11 @@ var require_bootstrap_select = __commonJS({
                     cacheArr.push(li.headerIndex);
                     cache[li.lastIndex + 1] = true;
                   }
-                  if (cache[i] && li.type !== "optgroup-label") cacheArr.push(i);
+                  if (cache[i5] && li.type !== "optgroup-label") cacheArr.push(i5);
                 }
-                for (var i = 0, cacheLen = cacheArr.length; i < cacheLen; i++) {
-                  var index = cacheArr[i], prevIndex = cacheArr[i - 1], li = that.selectpicker.main.data[index], liPrev = that.selectpicker.main.data[prevIndex];
-                  if (li.type !== "divider" || li.type === "divider" && liPrev && liPrev.type !== "divider" && cacheLen - 1 !== i) {
+                for (var i5 = 0, cacheLen = cacheArr.length; i5 < cacheLen; i5++) {
+                  var index = cacheArr[i5], prevIndex = cacheArr[i5 - 1], li = that.selectpicker.main.data[index], liPrev = that.selectpicker.main.data[prevIndex];
+                  if (li.type !== "divider" || li.type === "divider" && liPrev && liPrev.type !== "divider" && cacheLen - 1 !== i5) {
                     that.selectpicker.search.data.push(li);
                     searchMatch.push(that.selectpicker.main.elements[index]);
                   }
@@ -8397,8 +8405,8 @@ var require_bootstrap_select = __commonJS({
             if (typeof status === "undefined") status = true;
             var element = this.$element[0], previousSelected = 0, currentSelected = 0, prevValue = getSelectValues(element);
             element.classList.add("bs-select-hidden");
-            for (var i = 0, data = this.selectpicker.current.data, len = data.length; i < len; i++) {
-              var liData = data[i], option = liData.option;
+            for (var i5 = 0, data = this.selectpicker.current.data, len = data.length; i5 < len; i5++) {
+              var liData = data[i5], option = liData.option;
               if (option && !liData.disabled && liData.type !== "divider") {
                 if (liData.selected) previousSelected++;
                 option.selected = status;
@@ -8417,24 +8425,24 @@ var require_bootstrap_select = __commonJS({
           deselectAll: function() {
             return this.changeAll(false);
           },
-          toggle: function(e) {
-            e = e || window.event;
-            if (e) e.stopPropagation();
+          toggle: function(e5) {
+            e5 = e5 || window.event;
+            if (e5) e5.stopPropagation();
             this.$button.trigger("click.bs.dropdown.data-api");
           },
-          keydown: function(e) {
-            var $this = $(this), isToggle = $this.hasClass("dropdown-toggle"), $parent = isToggle ? $this.closest(".dropdown") : $this.closest(Selector.MENU), that = $parent.data("this"), $items = that.findLis(), index, isActive, liActive, activeLi, offset, updateScroll = false, downOnTab = e.which === keyCodes.TAB && !isToggle && !that.options.selectOnTab, isArrowKey = REGEXP_ARROW.test(e.which) || downOnTab, scrollTop = that.$menuInner[0].scrollTop, isVirtual = that.isVirtual(), position0 = isVirtual === true ? that.selectpicker.view.position0 : 0;
-            if (e.which >= 112 && e.which <= 123) return;
+          keydown: function(e5) {
+            var $this = $2(this), isToggle = $this.hasClass("dropdown-toggle"), $parent = isToggle ? $this.closest(".dropdown") : $this.closest(Selector.MENU), that = $parent.data("this"), $items = that.findLis(), index, isActive, liActive, activeLi, offset, updateScroll = false, downOnTab = e5.which === keyCodes.TAB && !isToggle && !that.options.selectOnTab, isArrowKey = REGEXP_ARROW.test(e5.which) || downOnTab, scrollTop = that.$menuInner[0].scrollTop, isVirtual = that.isVirtual(), position0 = isVirtual === true ? that.selectpicker.view.position0 : 0;
+            if (e5.which >= 112 && e5.which <= 123) return;
             isActive = that.$newElement.hasClass(classNames.SHOW);
-            if (!isActive && (isArrowKey || e.which >= 48 && e.which <= 57 || e.which >= 96 && e.which <= 105 || e.which >= 65 && e.which <= 90)) {
+            if (!isActive && (isArrowKey || e5.which >= 48 && e5.which <= 57 || e5.which >= 96 && e5.which <= 105 || e5.which >= 65 && e5.which <= 90)) {
               that.$button.trigger("click.bs.dropdown.data-api");
               if (that.options.liveSearch) {
                 that.$searchbox.trigger("focus");
                 return;
               }
             }
-            if (e.which === keyCodes.ESCAPE && isActive) {
-              e.preventDefault();
+            if (e5.which === keyCodes.ESCAPE && isActive) {
+              e5.preventDefault();
               that.$button.trigger("click.bs.dropdown.data-api").trigger("focus");
             }
             if (isArrowKey) {
@@ -8444,23 +8452,23 @@ var require_bootstrap_select = __commonJS({
               if (index !== -1) {
                 that.defocusItem(liActive);
               }
-              if (e.which === keyCodes.ARROW_UP) {
+              if (e5.which === keyCodes.ARROW_UP) {
                 if (index !== -1) index--;
                 if (index + position0 < 0) index += $items.length;
                 if (!that.selectpicker.view.canHighlight[index + position0]) {
                   index = that.selectpicker.view.canHighlight.slice(0, index + position0).lastIndexOf(true) - position0;
                   if (index === -1) index = $items.length - 1;
                 }
-              } else if (e.which === keyCodes.ARROW_DOWN || downOnTab) {
+              } else if (e5.which === keyCodes.ARROW_DOWN || downOnTab) {
                 index++;
                 if (index + position0 >= that.selectpicker.view.canHighlight.length) index = that.selectpicker.view.firstHighlightIndex;
                 if (!that.selectpicker.view.canHighlight[index + position0]) {
                   index = index + 1 + that.selectpicker.view.canHighlight.slice(index + position0 + 1).indexOf(true);
                 }
               }
-              e.preventDefault();
+              e5.preventDefault();
               var liActiveIndex = position0 + index;
-              if (e.which === keyCodes.ARROW_UP) {
+              if (e5.which === keyCodes.ARROW_UP) {
                 if (position0 === 0 && index === $items.length - 1) {
                   that.$menuInner[0].scrollTop = that.$menuInner[0].scrollHeight;
                   liActiveIndex = that.selectpicker.current.elements.length - 1;
@@ -8469,7 +8477,7 @@ var require_bootstrap_select = __commonJS({
                   offset = activeLi.position - activeLi.height;
                   updateScroll = offset < scrollTop;
                 }
-              } else if (e.which === keyCodes.ARROW_DOWN || downOnTab) {
+              } else if (e5.which === keyCodes.ARROW_DOWN || downOnTab) {
                 if (index === that.selectpicker.view.firstHighlightIndex) {
                   that.$menuInner[0].scrollTop = 0;
                   liActiveIndex = that.selectpicker.view.firstHighlightIndex;
@@ -8489,20 +8497,20 @@ var require_bootstrap_select = __commonJS({
               } else {
                 $this.trigger("focus");
               }
-            } else if (!$this.is("input") && !REGEXP_TAB_OR_ESCAPE.test(e.which) || e.which === keyCodes.SPACE && that.selectpicker.keydown.keyHistory) {
+            } else if (!$this.is("input") && !REGEXP_TAB_OR_ESCAPE.test(e5.which) || e5.which === keyCodes.SPACE && that.selectpicker.keydown.keyHistory) {
               var searchMatch, matches2 = [], keyHistory;
-              e.preventDefault();
-              that.selectpicker.keydown.keyHistory += keyCodeMap[e.which];
+              e5.preventDefault();
+              that.selectpicker.keydown.keyHistory += keyCodeMap[e5.which];
               if (that.selectpicker.keydown.resetKeyHistory.cancel) clearTimeout(that.selectpicker.keydown.resetKeyHistory.cancel);
               that.selectpicker.keydown.resetKeyHistory.cancel = that.selectpicker.keydown.resetKeyHistory.start();
               keyHistory = that.selectpicker.keydown.keyHistory;
               if (/^(.)\1+$/.test(keyHistory)) {
                 keyHistory = keyHistory.charAt(0);
               }
-              for (var i = 0; i < that.selectpicker.current.data.length; i++) {
-                var li = that.selectpicker.current.data[i], hasMatch;
+              for (var i5 = 0; i5 < that.selectpicker.current.data.length; i5++) {
+                var li = that.selectpicker.current.data[i5], hasMatch;
                 hasMatch = stringSearch(li, keyHistory, "startsWith", true);
-                if (hasMatch && that.selectpicker.view.canHighlight[i]) {
+                if (hasMatch && that.selectpicker.view.canHighlight[i5]) {
                   matches2.push(li.index);
                 }
               }
@@ -8534,14 +8542,14 @@ var require_bootstrap_select = __commonJS({
                 $this.trigger("focus");
               }
             }
-            if (isActive && (e.which === keyCodes.SPACE && !that.selectpicker.keydown.keyHistory || e.which === keyCodes.ENTER || e.which === keyCodes.TAB && that.options.selectOnTab)) {
-              if (e.which !== keyCodes.SPACE) e.preventDefault();
-              if (!that.options.liveSearch || e.which !== keyCodes.SPACE) {
+            if (isActive && (e5.which === keyCodes.SPACE && !that.selectpicker.keydown.keyHistory || e5.which === keyCodes.ENTER || e5.which === keyCodes.TAB && that.options.selectOnTab)) {
+              if (e5.which !== keyCodes.SPACE) e5.preventDefault();
+              if (!that.options.liveSearch || e5.which !== keyCodes.SPACE) {
                 that.$menuInner.find(".active a").trigger("click", true);
                 $this.trigger("focus");
                 if (!that.options.liveSearch) {
-                  e.preventDefault();
-                  $(document).data("spaceSelect", true);
+                  e5.preventDefault();
+                  $2(document).data("spaceSelect", true);
                 }
               }
             }
@@ -8551,7 +8559,7 @@ var require_bootstrap_select = __commonJS({
             this.$element[0].classList.add("mobile-device");
           },
           refresh: function() {
-            var config = $.extend({}, this.options, this.$element.data());
+            var config = $2.extend({}, this.options, this.$element.data());
             this.options = config;
             this.checkDisabled();
             this.buildData();
@@ -8583,7 +8591,7 @@ var require_bootstrap_select = __commonJS({
               this.selectpicker.view.titleOption.parentNode.removeChild(this.selectpicker.view.titleOption);
             }
             this.$element.off(EVENT_KEY).removeData("selectpicker").removeClass("bs-select-hidden selectpicker");
-            $(window).off(EVENT_KEY + "." + this.selectId);
+            $2(window).off(EVENT_KEY + "." + this.selectId);
           }
         };
         function Plugin(option) {
@@ -8592,7 +8600,7 @@ var require_bootstrap_select = __commonJS({
           [].shift.apply(args);
           if (!version.success) {
             try {
-              version.full = ($.fn.dropdown.Constructor.VERSION || "").split(" ")[0].split(".");
+              version.full = ($2.fn.dropdown.Constructor.VERSION || "").split(" ")[0].split(".");
             } catch (err) {
               if (Selectpicker.BootstrapVersion) {
                 version.full = Selectpicker.BootstrapVersion.split(" ")[0].split(".");
@@ -8618,30 +8626,30 @@ var require_bootstrap_select = __commonJS({
             classNames.POPOVERHEADER = "popover-header";
             classNames.ICONBASE = "";
             classNames.TICKICON = "bs-ok-default";
-            for (var i = 0; i < toUpdate.length; i++) {
-              var option = toUpdate[i];
+            for (var i5 = 0; i5 < toUpdate.length; i5++) {
+              var option = toUpdate[i5];
               Selectpicker.DEFAULTS[option.name] = classNames[option.className];
             }
           }
           var value;
           var chain = this.each(function() {
-            var $this = $(this);
+            var $this = $2(this);
             if ($this.is("select")) {
               var data = $this.data("selectpicker"), options = typeof _option == "object" && _option;
               if (!data) {
                 var dataAttributes = $this.data();
                 for (var dataAttr in dataAttributes) {
-                  if (Object.prototype.hasOwnProperty.call(dataAttributes, dataAttr) && $.inArray(dataAttr, DISALLOWED_ATTRIBUTES) !== -1) {
+                  if (Object.prototype.hasOwnProperty.call(dataAttributes, dataAttr) && $2.inArray(dataAttr, DISALLOWED_ATTRIBUTES) !== -1) {
                     delete dataAttributes[dataAttr];
                   }
                 }
-                var config = $.extend({}, Selectpicker.DEFAULTS, $.fn.selectpicker.defaults || {}, dataAttributes, options);
-                config.template = $.extend({}, Selectpicker.DEFAULTS.template, $.fn.selectpicker.defaults ? $.fn.selectpicker.defaults.template : {}, dataAttributes.template, options.template);
+                var config = $2.extend({}, Selectpicker.DEFAULTS, $2.fn.selectpicker.defaults || {}, dataAttributes, options);
+                config.template = $2.extend({}, Selectpicker.DEFAULTS.template, $2.fn.selectpicker.defaults ? $2.fn.selectpicker.defaults.template : {}, dataAttributes.template, options.template);
                 $this.data("selectpicker", data = new Selectpicker(this, config));
               } else if (options) {
-                for (var i2 in options) {
-                  if (Object.prototype.hasOwnProperty.call(options, i2)) {
-                    data.options[i2] = options[i2];
+                for (var i6 in options) {
+                  if (Object.prototype.hasOwnProperty.call(options, i6)) {
+                    data.options[i6] = options[i6];
                   }
                 }
               }
@@ -8660,25 +8668,25 @@ var require_bootstrap_select = __commonJS({
             return chain;
           }
         }
-        var old = $.fn.selectpicker;
-        $.fn.selectpicker = Plugin;
-        $.fn.selectpicker.Constructor = Selectpicker;
-        $.fn.selectpicker.noConflict = function() {
-          $.fn.selectpicker = old;
+        var old = $2.fn.selectpicker;
+        $2.fn.selectpicker = Plugin;
+        $2.fn.selectpicker.Constructor = Selectpicker;
+        $2.fn.selectpicker.noConflict = function() {
+          $2.fn.selectpicker = old;
           return this;
         };
         function keydownHandler() {
-          if ($.fn.dropdown) {
-            var bootstrapKeydown = $.fn.dropdown.Constructor._dataApiKeydownHandler || $.fn.dropdown.Constructor.prototype.keydown;
+          if ($2.fn.dropdown) {
+            var bootstrapKeydown = $2.fn.dropdown.Constructor._dataApiKeydownHandler || $2.fn.dropdown.Constructor.prototype.keydown;
             return bootstrapKeydown.apply(this, arguments);
           }
         }
-        $(document).off("keydown.bs.dropdown.data-api").on("keydown.bs.dropdown.data-api", ':not(.bootstrap-select) > [data-toggle="dropdown"]', keydownHandler).on("keydown.bs.dropdown.data-api", ":not(.bootstrap-select) > .dropdown-menu", keydownHandler).on("keydown" + EVENT_KEY, '.bootstrap-select [data-toggle="dropdown"], .bootstrap-select [role="listbox"], .bootstrap-select .bs-searchbox input', Selectpicker.prototype.keydown).on("focusin.modal", '.bootstrap-select [data-toggle="dropdown"], .bootstrap-select [role="listbox"], .bootstrap-select .bs-searchbox input', function(e) {
-          e.stopPropagation();
+        $2(document).off("keydown.bs.dropdown.data-api").on("keydown.bs.dropdown.data-api", ':not(.bootstrap-select) > [data-toggle="dropdown"]', keydownHandler).on("keydown.bs.dropdown.data-api", ":not(.bootstrap-select) > .dropdown-menu", keydownHandler).on("keydown" + EVENT_KEY, '.bootstrap-select [data-toggle="dropdown"], .bootstrap-select [role="listbox"], .bootstrap-select .bs-searchbox input', Selectpicker.prototype.keydown).on("focusin.modal", '.bootstrap-select [data-toggle="dropdown"], .bootstrap-select [role="listbox"], .bootstrap-select .bs-searchbox input', function(e5) {
+          e5.stopPropagation();
         });
-        $(window).on("load" + EVENT_KEY + ".data-api", function() {
-          $(".selectpicker").each(function() {
-            var $selectpicker = $(this);
+        $2(window).on("load" + EVENT_KEY + ".data-api", function() {
+          $2(".selectpicker").each(function() {
+            var $selectpicker = $2(this);
             Plugin.call($selectpicker, $selectpicker.data());
           });
         });
@@ -8698,19 +8706,19 @@ var import_bootstrap_select = __toESM(require_bootstrap_select());
 if (typeof jQuery === "undefined") {
   throw new Error("Bootstrap's JavaScript requires jQuery");
 }
-+(function($) {
++(function($2) {
   "use strict";
-  var version = $.fn.jquery.split(" ")[0].split(".");
+  var version = $2.fn.jquery.split(" ")[0].split(".");
   if (version[0] < 2 && version[1] < 9 || version[0] == 1 && version[1] == 9 && version[2] < 1 || version[0] > 3) {
     throw new Error("Bootstrap's JavaScript requires jQuery version 1.9.1 or higher, but lower than version 4");
   }
 })(jQuery);
-+(function($) {
++(function($2) {
   "use strict";
   var backdrop = ".dropdown-backdrop";
   var toggle = '[data-toggle="dropdown"]';
   var Dropdown = function(element) {
-    $(element).on("click.bs.dropdown", this.toggle);
+    $2(element).on("click.bs.dropdown", this.toggle);
   };
   Dropdown.VERSION = "3.4.1";
   function getParent($this) {
@@ -8719,80 +8727,80 @@ if (typeof jQuery === "undefined") {
       selector = $this.attr("href");
       selector = selector && /#[A-Za-z]/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, "");
     }
-    var $parent = selector !== "#" ? $(document).find(selector) : null;
+    var $parent = selector !== "#" ? $2(document).find(selector) : null;
     return $parent && $parent.length ? $parent : $this.parent();
   }
-  function clearMenus(e) {
-    if (e && e.which === 3) return;
-    $(backdrop).remove();
-    $(toggle).each(function() {
-      var $this = $(this);
+  function clearMenus(e5) {
+    if (e5 && e5.which === 3) return;
+    $2(backdrop).remove();
+    $2(toggle).each(function() {
+      var $this = $2(this);
       var $parent = getParent($this);
       var relatedTarget = { relatedTarget: this };
       if (!$parent.hasClass("open")) return;
-      if (e && e.type == "click" && /input|textarea/i.test(e.target.tagName) && $.contains($parent[0], e.target)) return;
-      $parent.trigger(e = $.Event("hide.bs.dropdown", relatedTarget));
-      if (e.isDefaultPrevented()) return;
+      if (e5 && e5.type == "click" && /input|textarea/i.test(e5.target.tagName) && $2.contains($parent[0], e5.target)) return;
+      $parent.trigger(e5 = $2.Event("hide.bs.dropdown", relatedTarget));
+      if (e5.isDefaultPrevented()) return;
       $this.attr("aria-expanded", "false");
-      $parent.removeClass("open").trigger($.Event("hidden.bs.dropdown", relatedTarget));
+      $parent.removeClass("open").trigger($2.Event("hidden.bs.dropdown", relatedTarget));
     });
   }
-  Dropdown.prototype.toggle = function(e) {
-    var $this = $(this);
+  Dropdown.prototype.toggle = function(e5) {
+    var $this = $2(this);
     if ($this.is(".disabled, :disabled")) return;
     var $parent = getParent($this);
     var isActive = $parent.hasClass("open");
     clearMenus();
     if (!isActive) {
       if ("ontouchstart" in document.documentElement && !$parent.closest(".navbar-nav").length) {
-        $(document.createElement("div")).addClass("dropdown-backdrop").insertAfter($(this)).on("click", clearMenus);
+        $2(document.createElement("div")).addClass("dropdown-backdrop").insertAfter($2(this)).on("click", clearMenus);
       }
       var relatedTarget = { relatedTarget: this };
-      $parent.trigger(e = $.Event("show.bs.dropdown", relatedTarget));
-      if (e.isDefaultPrevented()) return;
+      $parent.trigger(e5 = $2.Event("show.bs.dropdown", relatedTarget));
+      if (e5.isDefaultPrevented()) return;
       $this.trigger("focus").attr("aria-expanded", "true");
-      $parent.toggleClass("open").trigger($.Event("shown.bs.dropdown", relatedTarget));
+      $parent.toggleClass("open").trigger($2.Event("shown.bs.dropdown", relatedTarget));
     }
     return false;
   };
-  Dropdown.prototype.keydown = function(e) {
-    if (!/(38|40|27|32)/.test(e.which) || /input|textarea/i.test(e.target.tagName)) return;
-    var $this = $(this);
-    e.preventDefault();
-    e.stopPropagation();
+  Dropdown.prototype.keydown = function(e5) {
+    if (!/(38|40|27|32)/.test(e5.which) || /input|textarea/i.test(e5.target.tagName)) return;
+    var $this = $2(this);
+    e5.preventDefault();
+    e5.stopPropagation();
     if ($this.is(".disabled, :disabled")) return;
     var $parent = getParent($this);
     var isActive = $parent.hasClass("open");
-    if (!isActive && e.which != 27 || isActive && e.which == 27) {
-      if (e.which == 27) $parent.find(toggle).trigger("focus");
+    if (!isActive && e5.which != 27 || isActive && e5.which == 27) {
+      if (e5.which == 27) $parent.find(toggle).trigger("focus");
       return $this.trigger("click");
     }
     var desc = " li:not(.disabled):visible a";
     var $items = $parent.find(".dropdown-menu" + desc);
     if (!$items.length) return;
-    var index = $items.index(e.target);
-    if (e.which == 38 && index > 0) index--;
-    if (e.which == 40 && index < $items.length - 1) index++;
+    var index = $items.index(e5.target);
+    if (e5.which == 38 && index > 0) index--;
+    if (e5.which == 40 && index < $items.length - 1) index++;
     if (!~index) index = 0;
     $items.eq(index).trigger("focus");
   };
   function Plugin(option) {
     return this.each(function() {
-      var $this = $(this);
+      var $this = $2(this);
       var data = $this.data("bs.dropdown");
       if (!data) $this.data("bs.dropdown", data = new Dropdown(this));
       if (typeof option == "string") data[option].call($this);
     });
   }
-  var old = $.fn.dropdown;
-  $.fn.dropdown = Plugin;
-  $.fn.dropdown.Constructor = Dropdown;
-  $.fn.dropdown.noConflict = function() {
-    $.fn.dropdown = old;
+  var old = $2.fn.dropdown;
+  $2.fn.dropdown = Plugin;
+  $2.fn.dropdown.Constructor = Dropdown;
+  $2.fn.dropdown.noConflict = function() {
+    $2.fn.dropdown = old;
     return this;
   };
-  $(document).on("click.bs.dropdown.data-api", clearMenus).on("click.bs.dropdown.data-api", ".dropdown form", function(e) {
-    e.stopPropagation();
+  $2(document).on("click.bs.dropdown.data-api", clearMenus).on("click.bs.dropdown.data-api", ".dropdown form", function(e5) {
+    e5.stopPropagation();
   }).on("click.bs.dropdown.data-api", toggle, Dropdown.prototype.toggle).on("keydown.bs.dropdown.data-api", toggle, Dropdown.prototype.keydown).on("keydown.bs.dropdown.data-api", ".dropdown-menu", Dropdown.prototype.keydown);
 })(jQuery);
 
@@ -9211,8 +9219,8 @@ var htmx2 = (function() {
   }
   function getClosestAttributeValue(elt, attributeName) {
     let closestAttr = null;
-    getClosestMatch(elt, function(e) {
-      return !!(closestAttr = getAttributeValueWithDisinheritance(elt, asElement(e), attributeName));
+    getClosestMatch(elt, function(e5) {
+      return !!(closestAttr = getAttributeValueWithDisinheritance(elt, asElement(e5), attributeName));
     });
     if (closestAttr !== "unset") {
       return closestAttr;
@@ -9266,8 +9274,8 @@ var htmx2 = (function() {
           const parent = script.parentNode;
           try {
             parent.insertBefore(newScript, script);
-          } catch (e) {
-            logError(e);
+          } catch (e5) {
+            logError(e5);
           } finally {
             script.remove();
           }
@@ -9316,14 +9324,14 @@ var htmx2 = (function() {
       func();
     }
   }
-  function isType(o, type) {
-    return Object.prototype.toString.call(o) === "[object " + type + "]";
+  function isType(o6, type) {
+    return Object.prototype.toString.call(o6) === "[object " + type + "]";
   }
-  function isFunction(o) {
-    return typeof o === "function";
+  function isFunction(o6) {
+    return typeof o6 === "function";
   }
-  function isRawObject(o) {
-    return isType(o, "Object");
+  function isRawObject(o6) {
+    return isType(o6, "Object");
   }
   function getInternalData(elt) {
     const dataProp = "htmx-internal-data";
@@ -9336,16 +9344,16 @@ var htmx2 = (function() {
   function toArray(arr) {
     const returnArr = [];
     if (arr) {
-      for (let i = 0; i < arr.length; i++) {
-        returnArr.push(arr[i]);
+      for (let i5 = 0; i5 < arr.length; i5++) {
+        returnArr.push(arr[i5]);
       }
     }
     return returnArr;
   }
   function forEach(arr, func) {
     if (arr) {
-      for (let i = 0; i < arr.length; i++) {
-        func(arr[i]);
+      for (let i5 = 0; i5 < arr.length; i5++) {
+        func(arr[i5]);
       }
     }
   }
@@ -9383,7 +9391,7 @@ var htmx2 = (function() {
       sessionStorage.setItem(test, test);
       sessionStorage.removeItem(test);
       return true;
-    } catch (e) {
+    } catch (e5) {
       return false;
     }
   }
@@ -9536,16 +9544,16 @@ var htmx2 = (function() {
     {
       let chevronsCount = 0;
       let offset = 0;
-      for (let i = 0; i < selector.length; i++) {
-        const char = selector[i];
+      for (let i5 = 0; i5 < selector.length; i5++) {
+        const char = selector[i5];
         if (char === "," && chevronsCount === 0) {
-          parts.push(selector.substring(offset, i));
-          offset = i + 1;
+          parts.push(selector.substring(offset, i5));
+          offset = i5 + 1;
           continue;
         }
         if (char === "<") {
           chevronsCount++;
-        } else if (char === "/" && i < selector.length - 1 && selector[i + 1] === ">") {
+        } else if (char === "/" && i5 < selector.length - 1 && selector[i5 + 1] === ">") {
           chevronsCount--;
         }
       }
@@ -9597,8 +9605,8 @@ var htmx2 = (function() {
   }
   var scanForwardQuery = function(start, match, global) {
     const results = asParentNode(getRootNode(start, global)).querySelectorAll(match);
-    for (let i = 0; i < results.length; i++) {
-      const elt = results[i];
+    for (let i5 = 0; i5 < results.length; i5++) {
+      const elt = results[i5];
       if (elt.compareDocumentPosition(start) === Node.DOCUMENT_POSITION_PRECEDING) {
         return elt;
       }
@@ -9606,8 +9614,8 @@ var htmx2 = (function() {
   };
   var scanBackwardsQuery = function(start, match, global) {
     const results = asParentNode(getRootNode(start, global)).querySelectorAll(match);
-    for (let i = results.length - 1; i >= 0; i--) {
-      const elt = results[i];
+    for (let i5 = results.length - 1; i5 >= 0; i5--) {
+      const elt = results[i5];
       if (elt.compareDocumentPosition(start) === Node.DOCUMENT_POSITION_FOLLOWING) {
         return elt;
       }
@@ -9649,8 +9657,8 @@ var htmx2 = (function() {
       const eventArgs = processEventArgs(arg1, arg2, arg3, arg4);
       eventArgs.target.addEventListener(eventArgs.event, eventArgs.listener, eventArgs.options);
     });
-    const b = isFunction(arg2);
-    return b ? arg2 : arg3;
+    const b3 = isFunction(arg2);
+    return b3 ? arg2 : arg3;
   }
   function removeEventListenerImpl(arg1, arg2, arg3) {
     ready(function() {
@@ -9724,14 +9732,14 @@ var htmx2 = (function() {
   }
   function isInlineSwap(swapStyle, target) {
     const extensions2 = getExtensions(target);
-    for (let i = 0; i < extensions2.length; i++) {
-      const extension = extensions2[i];
+    for (let i5 = 0; i5 < extensions2.length; i5++) {
+      const extension = extensions2[i5];
       try {
         if (extension.isInlineSwap(swapStyle)) {
           return true;
         }
-      } catch (e) {
-        logError(e);
+      } catch (e5) {
+        logError(e5);
       }
     }
     return swapStyle === "outerHTML";
@@ -9863,8 +9871,8 @@ var htmx2 = (function() {
   }
   function attributeHash(elt) {
     let hash = 0;
-    for (let i = 0; i < elt.attributes.length; i++) {
-      const attribute = elt.attributes[i];
+    for (let i5 = 0; i5 < elt.attributes.length; i5++) {
+      const attribute = elt.attributes[i5];
       if (attribute.value) {
         hash = stringHash(attribute.name, hash);
         hash = stringHash(attribute.value, hash);
@@ -9875,8 +9883,8 @@ var htmx2 = (function() {
   function deInitOnHandlers(elt) {
     const internalData = getInternalData(elt);
     if (internalData.onHandlers) {
-      for (let i = 0; i < internalData.onHandlers.length; i++) {
-        const handlerInfo = internalData.onHandlers[i];
+      for (let i5 = 0; i5 < internalData.onHandlers.length; i5++) {
+        const handlerInfo = internalData.onHandlers[i5];
         removeEventListenerImpl(elt, handlerInfo.event, handlerInfo.listener);
       }
       delete internalData.onHandlers;
@@ -9922,8 +9930,8 @@ var htmx2 = (function() {
     } else {
       newElt = eltBeforeNewContent.nextSibling;
     }
-    settleInfo.elts = settleInfo.elts.filter(function(e) {
-      return e !== target;
+    settleInfo.elts = settleInfo.elts.filter(function(e5) {
+      return e5 !== target;
     });
     while (newElt && newElt !== target) {
       if (newElt instanceof Element) {
@@ -9989,14 +9997,14 @@ var htmx2 = (function() {
         return;
       default:
         var extensions2 = getExtensions(elt);
-        for (let i = 0; i < extensions2.length; i++) {
-          const ext = extensions2[i];
+        for (let i5 = 0; i5 < extensions2.length; i5++) {
+          const ext = extensions2[i5];
           try {
             const newElements = ext.handleSwap(swapStyle, target, fragment, settleInfo);
             if (newElements) {
               if (Array.isArray(newElements)) {
-                for (let j = 0; j < newElements.length; j++) {
-                  const child = newElements[j];
+                for (let j2 = 0; j2 < newElements.length; j2++) {
+                  const child = newElements[j2];
                   if (child.nodeType !== Node.TEXT_NODE && child.nodeType !== Node.COMMENT_NODE) {
                     settleInfo.tasks.push(makeAjaxLoadTask(child));
                   }
@@ -10004,8 +10012,8 @@ var htmx2 = (function() {
               }
               return;
             }
-          } catch (e) {
-            logError(e);
+          } catch (e5) {
+            logError(e5);
           }
         }
         if (swapStyle === "innerHTML") {
@@ -10060,8 +10068,8 @@ var htmx2 = (function() {
         }
         if (swapOptions.selectOOB) {
           const oobSelectValues = swapOptions.selectOOB.split(",");
-          for (let i = 0; i < oobSelectValues.length; i++) {
-            const oobSelectValue = oobSelectValues[i].split(":", 2);
+          for (let i5 = 0; i5 < oobSelectValues.length; i5++) {
+            const oobSelectValue = oobSelectValues[i5].split(":", 2);
             let id = oobSelectValue[0].trim();
             if (id.indexOf("#") === 0) {
               id = id.substring(1);
@@ -10101,7 +10109,7 @@ var htmx2 = (function() {
           if (selectionInfo.start && newActiveElt.setSelectionRange) {
             try {
               newActiveElt.setSelectionRange(selectionInfo.start, selectionInfo.end);
-            } catch (e) {
+            } catch (e5) {
             }
           }
           newActiveElt.focus(focusOptions);
@@ -10169,10 +10177,10 @@ var htmx2 = (function() {
       } else {
         doSwap();
       }
-    } catch (e) {
+    } catch (e5) {
       triggerErrorEvent(elt, "htmx:swapError", swapOptions.eventInfo);
       maybeCall(settleReject);
-      throw e;
+      throw e5;
     }
   }
   function handleTriggerHeader(xhr, header, elt) {
@@ -10192,8 +10200,8 @@ var htmx2 = (function() {
       }
     } else {
       const eventNames = triggerBody.split(",");
-      for (let i = 0; i < eventNames.length; i++) {
-        triggerEvent(elt, eventNames[i].trim(), []);
+      for (let i5 = 0; i5 < eventNames.length; i5++) {
+        triggerEvent(elt, eventNames[i5].trim(), []);
       }
     }
   }
@@ -10265,8 +10273,8 @@ var htmx2 = (function() {
               );
               conditionFunction.source = conditionalSource;
               return conditionFunction;
-            } catch (e) {
-              triggerErrorEvent(getDocument().body, "htmx:syntax:error", { error: e, source: conditionalSource });
+            } catch (e5) {
+              triggerErrorEvent(getDocument().body, "htmx:syntax:error", { error: e5, source: conditionalSource });
               return null;
             }
           }
@@ -10487,9 +10495,9 @@ var htmx2 = (function() {
     if (eventFilter) {
       try {
         return eventFilter.call(elt, evt) !== true;
-      } catch (e) {
+      } catch (e5) {
         const source = eventFilter.source;
-        triggerErrorEvent(getDocument().body, "htmx:eventFilter:error", { error: e, source });
+        triggerErrorEvent(getDocument().body, "htmx:eventFilter:error", { error: e5, source });
         return true;
       }
     }
@@ -10678,8 +10686,8 @@ var htmx2 = (function() {
         observerOptions.threshold = parseFloat(triggerSpec.threshold);
       }
       const observer = new IntersectionObserver(function(entries) {
-        for (let i = 0; i < entries.length; i++) {
-          const entry = entries[i];
+        for (let i5 = 0; i5 < entries.length; i5++) {
+          const entry = entries[i5];
           if (entry.isIntersecting) {
             triggerEvent(elt, "intersect");
             break;
@@ -10705,8 +10713,8 @@ var htmx2 = (function() {
       return false;
     }
     const attributes = elt.attributes;
-    for (let j = 0; j < attributes.length; j++) {
-      const attrName = attributes[j].name;
+    for (let j2 = 0; j2 < attributes.length; j2++) {
+      const attrName = attributes[j2].name;
       if (startsWith(attrName, "hx-on:") || startsWith(attrName, "data-hx-on:") || startsWith(attrName, "hx-on-") || startsWith(attrName, "data-hx-on-")) {
         return true;
       }
@@ -10737,8 +10745,8 @@ var htmx2 = (function() {
     if (elt.querySelectorAll) {
       const boostedSelector = ", [hx-boost] a, [data-hx-boost] a, a[hx-boost], a[data-hx-boost]";
       const extensionSelectors = [];
-      for (const e in extensions) {
-        const extension = extensions[e];
+      for (const e5 in extensions) {
+        const extension = extensions[e5];
         if (extension.getSelectors) {
           var selectors = extension.getSelectors();
           if (selectors) {
@@ -10746,7 +10754,7 @@ var htmx2 = (function() {
           }
         }
       }
-      const results = elt.querySelectorAll(VERB_SELECTOR + boostedSelector + ", form, [type='submit'], [hx-ext], [data-hx-ext], [hx-trigger], [data-hx-trigger]" + extensionSelectors.flat().map((s) => ", " + s).join(""));
+      const results = elt.querySelectorAll(VERB_SELECTOR + boostedSelector + ", form, [type='submit'], [hx-ext], [data-hx-ext], [hx-trigger], [data-hx-trigger]" + extensionSelectors.flat().map((s4) => ", " + s4).join(""));
       return results;
     } else {
       return [];
@@ -10796,7 +10804,7 @@ var htmx2 = (function() {
       nodeData.onHandlers = [];
     }
     let func;
-    const listener = function(e) {
+    const listener = function(e5) {
       maybeEval(elt, function() {
         if (eltIsDisabled(elt)) {
           return;
@@ -10804,7 +10812,7 @@ var htmx2 = (function() {
         if (!func) {
           func = new Function("event", code);
         }
-        func.call(elt, e);
+        func.call(elt, e5);
       });
     };
     elt.addEventListener(eventName, listener);
@@ -10812,9 +10820,9 @@ var htmx2 = (function() {
   }
   function processHxOnWildcard(elt) {
     deInitOnHandlers(elt);
-    for (let i = 0; i < elt.attributes.length; i++) {
-      const name = elt.attributes[i].name;
-      const value = elt.attributes[i].value;
+    for (let i5 = 0; i5 < elt.attributes.length; i5++) {
+      const name = elt.attributes[i5].name;
+      const value = elt.attributes[i5].value;
       if (startsWith(name, "hx-on") || startsWith(name, "data-hx-on")) {
         const afterOnPosition = name.indexOf("-on") + 3;
         const nextChar = name.slice(afterOnPosition, afterOnPosition + 1);
@@ -10904,8 +10912,8 @@ var htmx2 = (function() {
     forEach(getExtensions(elt, [], extensionsToIgnore), function(extension) {
       try {
         toDo(extension);
-      } catch (e) {
-        logError(e);
+      } catch (e5) {
+        logError(e5);
       }
     });
   }
@@ -10962,9 +10970,9 @@ var htmx2 = (function() {
     }
     url = normalizePath(url);
     const historyCache = parseJSON(sessionStorage.getItem("htmx-history-cache")) || [];
-    for (let i = 0; i < historyCache.length; i++) {
-      if (historyCache[i].url === url) {
-        historyCache.splice(i, 1);
+    for (let i5 = 0; i5 < historyCache.length; i5++) {
+      if (historyCache[i5].url === url) {
+        historyCache.splice(i5, 1);
         break;
       }
     }
@@ -10978,8 +10986,8 @@ var htmx2 = (function() {
       try {
         sessionStorage.setItem("htmx-history-cache", JSON.stringify(historyCache));
         break;
-      } catch (e) {
-        triggerErrorEvent(getDocument().body, "htmx:historyCacheError", { cause: e, cache: historyCache });
+      } catch (e5) {
+        triggerErrorEvent(getDocument().body, "htmx:historyCacheError", { cause: e5, cache: historyCache });
         historyCache.shift();
       }
     }
@@ -10990,9 +10998,9 @@ var htmx2 = (function() {
     }
     url = normalizePath(url);
     const historyCache = parseJSON(sessionStorage.getItem("htmx-history-cache")) || [];
-    for (let i = 0; i < historyCache.length; i++) {
-      if (historyCache[i].url === url) {
-        return historyCache[i];
+    for (let i5 = 0; i5 < historyCache.length; i5++) {
+      if (historyCache[i5].url === url) {
+        return historyCache[i5];
       }
     }
     return null;
@@ -11148,8 +11156,8 @@ var htmx2 = (function() {
     });
   }
   function haveSeenNode(processed, elt) {
-    for (let i = 0; i < processed.length; i++) {
-      const node = processed[i];
+    for (let i5 = 0; i5 < processed.length; i5++) {
+      const node = processed[i5];
       if (node.isSameNode(elt)) {
         return true;
       }
@@ -11175,8 +11183,8 @@ var htmx2 = (function() {
   function addValueToFormData(name, value, formData) {
     if (name != null && value != null) {
       if (Array.isArray(value)) {
-        value.forEach(function(v) {
-          formData.append(name, v);
+        value.forEach(function(v2) {
+          formData.append(name, v2);
         });
       } else {
         formData.append(name, value);
@@ -11187,20 +11195,20 @@ var htmx2 = (function() {
     if (name != null && value != null) {
       let values = formData.getAll(name);
       if (Array.isArray(value)) {
-        values = values.filter((v) => value.indexOf(v) < 0);
+        values = values.filter((v2) => value.indexOf(v2) < 0);
       } else {
-        values = values.filter((v) => v !== value);
+        values = values.filter((v2) => v2 !== value);
       }
       formData.delete(name);
-      forEach(values, (v) => formData.append(name, v));
+      forEach(values, (v2) => formData.append(name, v2));
     }
   }
   function getValueFromInput(elt) {
     if (elt instanceof HTMLSelectElement && elt.multiple) {
-      return toArray(elt.querySelectorAll("option:checked")).map(function(e) {
+      return toArray(elt.querySelectorAll("option:checked")).map(function(e5) {
         return (
           /** @type HTMLOptionElement */
-          e.value
+          e5.value
         );
       });
     }
@@ -11310,8 +11318,8 @@ var htmx2 = (function() {
     if (String(realValue) === "[object Object]") {
       realValue = JSON.stringify(realValue);
     }
-    const s = encodeURIComponent(realValue);
-    returnStr += encodeURIComponent(name) + "=" + s;
+    const s4 = encodeURIComponent(realValue);
+    returnStr += encodeURIComponent(name) + "=" + s4;
     return returnStr;
   }
   function urlEncode(values) {
@@ -11384,8 +11392,8 @@ var htmx2 = (function() {
     if (swapInfo) {
       const split = splitOnWhitespace(swapInfo);
       if (split.length > 0) {
-        for (let i = 0; i < split.length; i++) {
-          const value = split[i];
+        for (let i5 = 0; i5 < split.length; i5++) {
+          const value = split[i5];
           if (value.indexOf("swap:") === 0) {
             swapSpec.swapDelay = parseInterval(value.slice(5));
           } else if (value.indexOf("settle:") === 0) {
@@ -11411,7 +11419,7 @@ var htmx2 = (function() {
           } else if (value.indexOf("focus-scroll:") === 0) {
             const focusScrollVal = value.slice("focus-scroll:".length);
             swapSpec.focusScroll = focusScrollVal == "true";
-          } else if (i == 0) {
+          } else if (i5 == 0) {
             swapSpec.swapStyle = value;
           } else {
             logError("Unknown modifier in hx-swap: " + value);
@@ -11556,7 +11564,7 @@ var htmx2 = (function() {
     if (headerValue !== null) {
       try {
         xhr.setRequestHeader(header, headerValue);
-      } catch (e) {
+      } catch (e5) {
         xhr.setRequestHeader(header, encodeURIComponent(headerValue));
         xhr.setRequestHeader(header + "-URI-AutoEncoded", "true");
       }
@@ -11567,7 +11575,7 @@ var htmx2 = (function() {
       try {
         const url = new URL(xhr.responseURL);
         return url.pathname + url.search;
-      } catch (e) {
+      } catch (e5) {
         triggerErrorEvent(getDocument().body, "htmx:badResponseUrl", { url: xhr.responseURL });
       }
     }
@@ -11639,8 +11647,8 @@ var htmx2 = (function() {
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         if (obj[key] && typeof obj[key].forEach === "function") {
-          obj[key].forEach(function(v) {
-            formData.append(key, v);
+          obj[key].forEach(function(v2) {
+            formData.append(key, v2);
           });
         } else if (typeof obj[key] === "object" && !(obj[key] instanceof Blob)) {
           formData.append(key, JSON.stringify(obj[key]));
@@ -11666,8 +11674,8 @@ var htmx2 = (function() {
           return function() {
             target[key].apply(target, arguments);
             formData.delete(name);
-            target.forEach(function(v) {
-              formData.append(name, v);
+            target.forEach(function(v2) {
+              formData.append(name, v2);
             });
           };
         }
@@ -11680,8 +11688,8 @@ var htmx2 = (function() {
       set: function(target, index, value) {
         target[index] = value;
         formData.delete(name);
-        target.forEach(function(v) {
-          formData.append(name, v);
+        target.forEach(function(v2) {
+          formData.append(name, v2);
         });
         return true;
       }
@@ -11725,8 +11733,8 @@ var htmx2 = (function() {
         }
         target.delete(name);
         if (value && typeof value.forEach === "function") {
-          value.forEach(function(v) {
-            target.append(name, v);
+          value.forEach(function(v2) {
+            target.append(name, v2);
           });
         } else if (typeof value === "object" && !(value instanceof Blob)) {
           target.append(name, JSON.stringify(value));
@@ -12033,9 +12041,9 @@ var htmx2 = (function() {
           }
         }
         maybeCall(resolve);
-      } catch (e) {
-        triggerErrorEvent(elt, "htmx:onLoadError", mergeObjects({ error: e }, responseInfo));
-        throw e;
+      } catch (e5) {
+        triggerErrorEvent(elt, "htmx:onLoadError", mergeObjects({ error: e5 }, responseInfo));
+        throw e5;
       } finally {
         endRequestLock();
       }
@@ -12148,8 +12156,8 @@ var htmx2 = (function() {
     return regExp.test(status.toString(10));
   }
   function resolveResponseHandling(xhr) {
-    for (var i = 0; i < htmx.config.responseHandling.length; i++) {
-      var responseHandlingElement = htmx.config.responseHandling[i];
+    for (var i5 = 0; i5 < htmx.config.responseHandling.length; i5++) {
+      var responseHandlingElement = htmx.config.responseHandling[i5];
       if (codeMatches(responseHandlingElement, xhr.status)) {
         return responseHandlingElement;
       }
@@ -12461,6 +12469,584 @@ var htmx_esm_default = htmx2;
 // web/codesearch_ui.tsx
 var import_jquery3 = __toESM(require_jquery());
 
+// ../../node_modules/@lit/reactive-element/css-tag.js
+var t = globalThis;
+var e = t.ShadowRoot && (void 0 === t.ShadyCSS || t.ShadyCSS.nativeShadow) && "adoptedStyleSheets" in Document.prototype && "replace" in CSSStyleSheet.prototype;
+var s = Symbol();
+var o = /* @__PURE__ */ new WeakMap();
+var n = class {
+  constructor(t4, e5, o6) {
+    if (this._$cssResult$ = true, o6 !== s) throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");
+    this.cssText = t4, this.t = e5;
+  }
+  get styleSheet() {
+    let t4 = this.o;
+    const s4 = this.t;
+    if (e && void 0 === t4) {
+      const e5 = void 0 !== s4 && 1 === s4.length;
+      e5 && (t4 = o.get(s4)), void 0 === t4 && ((this.o = t4 = new CSSStyleSheet()).replaceSync(this.cssText), e5 && o.set(s4, t4));
+    }
+    return t4;
+  }
+  toString() {
+    return this.cssText;
+  }
+};
+var r = (t4) => new n("string" == typeof t4 ? t4 : t4 + "", void 0, s);
+var S = (s4, o6) => {
+  if (e) s4.adoptedStyleSheets = o6.map(((t4) => t4 instanceof CSSStyleSheet ? t4 : t4.styleSheet));
+  else for (const e5 of o6) {
+    const o7 = document.createElement("style"), n5 = t.litNonce;
+    void 0 !== n5 && o7.setAttribute("nonce", n5), o7.textContent = e5.cssText, s4.appendChild(o7);
+  }
+};
+var c = e ? (t4) => t4 : (t4) => t4 instanceof CSSStyleSheet ? ((t5) => {
+  let e5 = "";
+  for (const s4 of t5.cssRules) e5 += s4.cssText;
+  return r(e5);
+})(t4) : t4;
+
+// ../../node_modules/@lit/reactive-element/reactive-element.js
+var { is: i2, defineProperty: e2, getOwnPropertyDescriptor: h, getOwnPropertyNames: r2, getOwnPropertySymbols: o2, getPrototypeOf: n2 } = Object;
+var a = globalThis;
+var c2 = a.trustedTypes;
+var l = c2 ? c2.emptyScript : "";
+var p = a.reactiveElementPolyfillSupport;
+var d = (t4, s4) => t4;
+var u = { toAttribute(t4, s4) {
+  switch (s4) {
+    case Boolean:
+      t4 = t4 ? l : null;
+      break;
+    case Object:
+    case Array:
+      t4 = null == t4 ? t4 : JSON.stringify(t4);
+  }
+  return t4;
+}, fromAttribute(t4, s4) {
+  let i5 = t4;
+  switch (s4) {
+    case Boolean:
+      i5 = null !== t4;
+      break;
+    case Number:
+      i5 = null === t4 ? null : Number(t4);
+      break;
+    case Object:
+    case Array:
+      try {
+        i5 = JSON.parse(t4);
+      } catch (t5) {
+        i5 = null;
+      }
+  }
+  return i5;
+} };
+var f = (t4, s4) => !i2(t4, s4);
+var b = { attribute: true, type: String, converter: u, reflect: false, useDefault: false, hasChanged: f };
+Symbol.metadata ??= Symbol("metadata"), a.litPropertyMetadata ??= /* @__PURE__ */ new WeakMap();
+var y = class extends HTMLElement {
+  static addInitializer(t4) {
+    this._$Ei(), (this.l ??= []).push(t4);
+  }
+  static get observedAttributes() {
+    return this.finalize(), this._$Eh && [...this._$Eh.keys()];
+  }
+  static createProperty(t4, s4 = b) {
+    if (s4.state && (s4.attribute = false), this._$Ei(), this.prototype.hasOwnProperty(t4) && ((s4 = Object.create(s4)).wrapped = true), this.elementProperties.set(t4, s4), !s4.noAccessor) {
+      const i5 = Symbol(), h3 = this.getPropertyDescriptor(t4, i5, s4);
+      void 0 !== h3 && e2(this.prototype, t4, h3);
+    }
+  }
+  static getPropertyDescriptor(t4, s4, i5) {
+    const { get: e5, set: r5 } = h(this.prototype, t4) ?? { get() {
+      return this[s4];
+    }, set(t5) {
+      this[s4] = t5;
+    } };
+    return { get: e5, set(s5) {
+      const h3 = e5?.call(this);
+      r5?.call(this, s5), this.requestUpdate(t4, h3, i5);
+    }, configurable: true, enumerable: true };
+  }
+  static getPropertyOptions(t4) {
+    return this.elementProperties.get(t4) ?? b;
+  }
+  static _$Ei() {
+    if (this.hasOwnProperty(d("elementProperties"))) return;
+    const t4 = n2(this);
+    t4.finalize(), void 0 !== t4.l && (this.l = [...t4.l]), this.elementProperties = new Map(t4.elementProperties);
+  }
+  static finalize() {
+    if (this.hasOwnProperty(d("finalized"))) return;
+    if (this.finalized = true, this._$Ei(), this.hasOwnProperty(d("properties"))) {
+      const t5 = this.properties, s4 = [...r2(t5), ...o2(t5)];
+      for (const i5 of s4) this.createProperty(i5, t5[i5]);
+    }
+    const t4 = this[Symbol.metadata];
+    if (null !== t4) {
+      const s4 = litPropertyMetadata.get(t4);
+      if (void 0 !== s4) for (const [t5, i5] of s4) this.elementProperties.set(t5, i5);
+    }
+    this._$Eh = /* @__PURE__ */ new Map();
+    for (const [t5, s4] of this.elementProperties) {
+      const i5 = this._$Eu(t5, s4);
+      void 0 !== i5 && this._$Eh.set(i5, t5);
+    }
+    this.elementStyles = this.finalizeStyles(this.styles);
+  }
+  static finalizeStyles(s4) {
+    const i5 = [];
+    if (Array.isArray(s4)) {
+      const e5 = new Set(s4.flat(1 / 0).reverse());
+      for (const s5 of e5) i5.unshift(c(s5));
+    } else void 0 !== s4 && i5.push(c(s4));
+    return i5;
+  }
+  static _$Eu(t4, s4) {
+    const i5 = s4.attribute;
+    return false === i5 ? void 0 : "string" == typeof i5 ? i5 : "string" == typeof t4 ? t4.toLowerCase() : void 0;
+  }
+  constructor() {
+    super(), this._$Ep = void 0, this.isUpdatePending = false, this.hasUpdated = false, this._$Em = null, this._$Ev();
+  }
+  _$Ev() {
+    this._$ES = new Promise(((t4) => this.enableUpdating = t4)), this._$AL = /* @__PURE__ */ new Map(), this._$E_(), this.requestUpdate(), this.constructor.l?.forEach(((t4) => t4(this)));
+  }
+  addController(t4) {
+    (this._$EO ??= /* @__PURE__ */ new Set()).add(t4), void 0 !== this.renderRoot && this.isConnected && t4.hostConnected?.();
+  }
+  removeController(t4) {
+    this._$EO?.delete(t4);
+  }
+  _$E_() {
+    const t4 = /* @__PURE__ */ new Map(), s4 = this.constructor.elementProperties;
+    for (const i5 of s4.keys()) this.hasOwnProperty(i5) && (t4.set(i5, this[i5]), delete this[i5]);
+    t4.size > 0 && (this._$Ep = t4);
+  }
+  createRenderRoot() {
+    const t4 = this.shadowRoot ?? this.attachShadow(this.constructor.shadowRootOptions);
+    return S(t4, this.constructor.elementStyles), t4;
+  }
+  connectedCallback() {
+    this.renderRoot ??= this.createRenderRoot(), this.enableUpdating(true), this._$EO?.forEach(((t4) => t4.hostConnected?.()));
+  }
+  enableUpdating(t4) {
+  }
+  disconnectedCallback() {
+    this._$EO?.forEach(((t4) => t4.hostDisconnected?.()));
+  }
+  attributeChangedCallback(t4, s4, i5) {
+    this._$AK(t4, i5);
+  }
+  _$ET(t4, s4) {
+    const i5 = this.constructor.elementProperties.get(t4), e5 = this.constructor._$Eu(t4, i5);
+    if (void 0 !== e5 && true === i5.reflect) {
+      const h3 = (void 0 !== i5.converter?.toAttribute ? i5.converter : u).toAttribute(s4, i5.type);
+      this._$Em = t4, null == h3 ? this.removeAttribute(e5) : this.setAttribute(e5, h3), this._$Em = null;
+    }
+  }
+  _$AK(t4, s4) {
+    const i5 = this.constructor, e5 = i5._$Eh.get(t4);
+    if (void 0 !== e5 && this._$Em !== e5) {
+      const t5 = i5.getPropertyOptions(e5), h3 = "function" == typeof t5.converter ? { fromAttribute: t5.converter } : void 0 !== t5.converter?.fromAttribute ? t5.converter : u;
+      this._$Em = e5;
+      const r5 = h3.fromAttribute(s4, t5.type);
+      this[e5] = r5 ?? this._$Ej?.get(e5) ?? r5, this._$Em = null;
+    }
+  }
+  requestUpdate(t4, s4, i5) {
+    if (void 0 !== t4) {
+      const e5 = this.constructor, h3 = this[t4];
+      if (i5 ??= e5.getPropertyOptions(t4), !((i5.hasChanged ?? f)(h3, s4) || i5.useDefault && i5.reflect && h3 === this._$Ej?.get(t4) && !this.hasAttribute(e5._$Eu(t4, i5)))) return;
+      this.C(t4, s4, i5);
+    }
+    false === this.isUpdatePending && (this._$ES = this._$EP());
+  }
+  C(t4, s4, { useDefault: i5, reflect: e5, wrapped: h3 }, r5) {
+    i5 && !(this._$Ej ??= /* @__PURE__ */ new Map()).has(t4) && (this._$Ej.set(t4, r5 ?? s4 ?? this[t4]), true !== h3 || void 0 !== r5) || (this._$AL.has(t4) || (this.hasUpdated || i5 || (s4 = void 0), this._$AL.set(t4, s4)), true === e5 && this._$Em !== t4 && (this._$Eq ??= /* @__PURE__ */ new Set()).add(t4));
+  }
+  async _$EP() {
+    this.isUpdatePending = true;
+    try {
+      await this._$ES;
+    } catch (t5) {
+      Promise.reject(t5);
+    }
+    const t4 = this.scheduleUpdate();
+    return null != t4 && await t4, !this.isUpdatePending;
+  }
+  scheduleUpdate() {
+    return this.performUpdate();
+  }
+  performUpdate() {
+    if (!this.isUpdatePending) return;
+    if (!this.hasUpdated) {
+      if (this.renderRoot ??= this.createRenderRoot(), this._$Ep) {
+        for (const [t6, s5] of this._$Ep) this[t6] = s5;
+        this._$Ep = void 0;
+      }
+      const t5 = this.constructor.elementProperties;
+      if (t5.size > 0) for (const [s5, i5] of t5) {
+        const { wrapped: t6 } = i5, e5 = this[s5];
+        true !== t6 || this._$AL.has(s5) || void 0 === e5 || this.C(s5, void 0, i5, e5);
+      }
+    }
+    let t4 = false;
+    const s4 = this._$AL;
+    try {
+      t4 = this.shouldUpdate(s4), t4 ? (this.willUpdate(s4), this._$EO?.forEach(((t5) => t5.hostUpdate?.())), this.update(s4)) : this._$EM();
+    } catch (s5) {
+      throw t4 = false, this._$EM(), s5;
+    }
+    t4 && this._$AE(s4);
+  }
+  willUpdate(t4) {
+  }
+  _$AE(t4) {
+    this._$EO?.forEach(((t5) => t5.hostUpdated?.())), this.hasUpdated || (this.hasUpdated = true, this.firstUpdated(t4)), this.updated(t4);
+  }
+  _$EM() {
+    this._$AL = /* @__PURE__ */ new Map(), this.isUpdatePending = false;
+  }
+  get updateComplete() {
+    return this.getUpdateComplete();
+  }
+  getUpdateComplete() {
+    return this._$ES;
+  }
+  shouldUpdate(t4) {
+    return true;
+  }
+  update(t4) {
+    this._$Eq &&= this._$Eq.forEach(((t5) => this._$ET(t5, this[t5]))), this._$EM();
+  }
+  updated(t4) {
+  }
+  firstUpdated(t4) {
+  }
+};
+y.elementStyles = [], y.shadowRootOptions = { mode: "open" }, y[d("elementProperties")] = /* @__PURE__ */ new Map(), y[d("finalized")] = /* @__PURE__ */ new Map(), p?.({ ReactiveElement: y }), (a.reactiveElementVersions ??= []).push("2.1.1");
+
+// ../../node_modules/lit-html/lit-html.js
+var t2 = globalThis;
+var i3 = t2.trustedTypes;
+var s2 = i3 ? i3.createPolicy("lit-html", { createHTML: (t4) => t4 }) : void 0;
+var e3 = "$lit$";
+var h2 = `lit$${Math.random().toFixed(9).slice(2)}$`;
+var o3 = "?" + h2;
+var n3 = `<${o3}>`;
+var r3 = document;
+var l2 = () => r3.createComment("");
+var c3 = (t4) => null === t4 || "object" != typeof t4 && "function" != typeof t4;
+var a2 = Array.isArray;
+var u2 = (t4) => a2(t4) || "function" == typeof t4?.[Symbol.iterator];
+var d2 = "[ 	\n\f\r]";
+var f2 = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g;
+var v = /-->/g;
+var _ = />/g;
+var m = RegExp(`>|${d2}(?:([^\\s"'>=/]+)(${d2}*=${d2}*(?:[^ 	
+\f\r"'\`<>=]|("|')|))|$)`, "g");
+var p2 = /'/g;
+var g = /"/g;
+var $ = /^(?:script|style|textarea|title)$/i;
+var y2 = (t4) => (i5, ...s4) => ({ _$litType$: t4, strings: i5, values: s4 });
+var x = y2(1);
+var b2 = y2(2);
+var w = y2(3);
+var T = Symbol.for("lit-noChange");
+var E = Symbol.for("lit-nothing");
+var A = /* @__PURE__ */ new WeakMap();
+var C = r3.createTreeWalker(r3, 129);
+function P(t4, i5) {
+  if (!a2(t4) || !t4.hasOwnProperty("raw")) throw Error("invalid template strings array");
+  return void 0 !== s2 ? s2.createHTML(i5) : i5;
+}
+var V = (t4, i5) => {
+  const s4 = t4.length - 1, o6 = [];
+  let r5, l3 = 2 === i5 ? "<svg>" : 3 === i5 ? "<math>" : "", c4 = f2;
+  for (let i6 = 0; i6 < s4; i6++) {
+    const s5 = t4[i6];
+    let a3, u3, d3 = -1, y3 = 0;
+    for (; y3 < s5.length && (c4.lastIndex = y3, u3 = c4.exec(s5), null !== u3); ) y3 = c4.lastIndex, c4 === f2 ? "!--" === u3[1] ? c4 = v : void 0 !== u3[1] ? c4 = _ : void 0 !== u3[2] ? ($.test(u3[2]) && (r5 = RegExp("</" + u3[2], "g")), c4 = m) : void 0 !== u3[3] && (c4 = m) : c4 === m ? ">" === u3[0] ? (c4 = r5 ?? f2, d3 = -1) : void 0 === u3[1] ? d3 = -2 : (d3 = c4.lastIndex - u3[2].length, a3 = u3[1], c4 = void 0 === u3[3] ? m : '"' === u3[3] ? g : p2) : c4 === g || c4 === p2 ? c4 = m : c4 === v || c4 === _ ? c4 = f2 : (c4 = m, r5 = void 0);
+    const x2 = c4 === m && t4[i6 + 1].startsWith("/>") ? " " : "";
+    l3 += c4 === f2 ? s5 + n3 : d3 >= 0 ? (o6.push(a3), s5.slice(0, d3) + e3 + s5.slice(d3) + h2 + x2) : s5 + h2 + (-2 === d3 ? i6 : x2);
+  }
+  return [P(t4, l3 + (t4[s4] || "<?>") + (2 === i5 ? "</svg>" : 3 === i5 ? "</math>" : "")), o6];
+};
+var N = class _N {
+  constructor({ strings: t4, _$litType$: s4 }, n5) {
+    let r5;
+    this.parts = [];
+    let c4 = 0, a3 = 0;
+    const u3 = t4.length - 1, d3 = this.parts, [f3, v2] = V(t4, s4);
+    if (this.el = _N.createElement(f3, n5), C.currentNode = this.el.content, 2 === s4 || 3 === s4) {
+      const t5 = this.el.content.firstChild;
+      t5.replaceWith(...t5.childNodes);
+    }
+    for (; null !== (r5 = C.nextNode()) && d3.length < u3; ) {
+      if (1 === r5.nodeType) {
+        if (r5.hasAttributes()) for (const t5 of r5.getAttributeNames()) if (t5.endsWith(e3)) {
+          const i5 = v2[a3++], s5 = r5.getAttribute(t5).split(h2), e5 = /([.?@])?(.*)/.exec(i5);
+          d3.push({ type: 1, index: c4, name: e5[2], strings: s5, ctor: "." === e5[1] ? H : "?" === e5[1] ? I : "@" === e5[1] ? L : k }), r5.removeAttribute(t5);
+        } else t5.startsWith(h2) && (d3.push({ type: 6, index: c4 }), r5.removeAttribute(t5));
+        if ($.test(r5.tagName)) {
+          const t5 = r5.textContent.split(h2), s5 = t5.length - 1;
+          if (s5 > 0) {
+            r5.textContent = i3 ? i3.emptyScript : "";
+            for (let i5 = 0; i5 < s5; i5++) r5.append(t5[i5], l2()), C.nextNode(), d3.push({ type: 2, index: ++c4 });
+            r5.append(t5[s5], l2());
+          }
+        }
+      } else if (8 === r5.nodeType) if (r5.data === o3) d3.push({ type: 2, index: c4 });
+      else {
+        let t5 = -1;
+        for (; -1 !== (t5 = r5.data.indexOf(h2, t5 + 1)); ) d3.push({ type: 7, index: c4 }), t5 += h2.length - 1;
+      }
+      c4++;
+    }
+  }
+  static createElement(t4, i5) {
+    const s4 = r3.createElement("template");
+    return s4.innerHTML = t4, s4;
+  }
+};
+function S2(t4, i5, s4 = t4, e5) {
+  if (i5 === T) return i5;
+  let h3 = void 0 !== e5 ? s4._$Co?.[e5] : s4._$Cl;
+  const o6 = c3(i5) ? void 0 : i5._$litDirective$;
+  return h3?.constructor !== o6 && (h3?._$AO?.(false), void 0 === o6 ? h3 = void 0 : (h3 = new o6(t4), h3._$AT(t4, s4, e5)), void 0 !== e5 ? (s4._$Co ??= [])[e5] = h3 : s4._$Cl = h3), void 0 !== h3 && (i5 = S2(t4, h3._$AS(t4, i5.values), h3, e5)), i5;
+}
+var M = class {
+  constructor(t4, i5) {
+    this._$AV = [], this._$AN = void 0, this._$AD = t4, this._$AM = i5;
+  }
+  get parentNode() {
+    return this._$AM.parentNode;
+  }
+  get _$AU() {
+    return this._$AM._$AU;
+  }
+  u(t4) {
+    const { el: { content: i5 }, parts: s4 } = this._$AD, e5 = (t4?.creationScope ?? r3).importNode(i5, true);
+    C.currentNode = e5;
+    let h3 = C.nextNode(), o6 = 0, n5 = 0, l3 = s4[0];
+    for (; void 0 !== l3; ) {
+      if (o6 === l3.index) {
+        let i6;
+        2 === l3.type ? i6 = new R(h3, h3.nextSibling, this, t4) : 1 === l3.type ? i6 = new l3.ctor(h3, l3.name, l3.strings, this, t4) : 6 === l3.type && (i6 = new z(h3, this, t4)), this._$AV.push(i6), l3 = s4[++n5];
+      }
+      o6 !== l3?.index && (h3 = C.nextNode(), o6++);
+    }
+    return C.currentNode = r3, e5;
+  }
+  p(t4) {
+    let i5 = 0;
+    for (const s4 of this._$AV) void 0 !== s4 && (void 0 !== s4.strings ? (s4._$AI(t4, s4, i5), i5 += s4.strings.length - 2) : s4._$AI(t4[i5])), i5++;
+  }
+};
+var R = class _R {
+  get _$AU() {
+    return this._$AM?._$AU ?? this._$Cv;
+  }
+  constructor(t4, i5, s4, e5) {
+    this.type = 2, this._$AH = E, this._$AN = void 0, this._$AA = t4, this._$AB = i5, this._$AM = s4, this.options = e5, this._$Cv = e5?.isConnected ?? true;
+  }
+  get parentNode() {
+    let t4 = this._$AA.parentNode;
+    const i5 = this._$AM;
+    return void 0 !== i5 && 11 === t4?.nodeType && (t4 = i5.parentNode), t4;
+  }
+  get startNode() {
+    return this._$AA;
+  }
+  get endNode() {
+    return this._$AB;
+  }
+  _$AI(t4, i5 = this) {
+    t4 = S2(this, t4, i5), c3(t4) ? t4 === E || null == t4 || "" === t4 ? (this._$AH !== E && this._$AR(), this._$AH = E) : t4 !== this._$AH && t4 !== T && this._(t4) : void 0 !== t4._$litType$ ? this.$(t4) : void 0 !== t4.nodeType ? this.T(t4) : u2(t4) ? this.k(t4) : this._(t4);
+  }
+  O(t4) {
+    return this._$AA.parentNode.insertBefore(t4, this._$AB);
+  }
+  T(t4) {
+    this._$AH !== t4 && (this._$AR(), this._$AH = this.O(t4));
+  }
+  _(t4) {
+    this._$AH !== E && c3(this._$AH) ? this._$AA.nextSibling.data = t4 : this.T(r3.createTextNode(t4)), this._$AH = t4;
+  }
+  $(t4) {
+    const { values: i5, _$litType$: s4 } = t4, e5 = "number" == typeof s4 ? this._$AC(t4) : (void 0 === s4.el && (s4.el = N.createElement(P(s4.h, s4.h[0]), this.options)), s4);
+    if (this._$AH?._$AD === e5) this._$AH.p(i5);
+    else {
+      const t5 = new M(e5, this), s5 = t5.u(this.options);
+      t5.p(i5), this.T(s5), this._$AH = t5;
+    }
+  }
+  _$AC(t4) {
+    let i5 = A.get(t4.strings);
+    return void 0 === i5 && A.set(t4.strings, i5 = new N(t4)), i5;
+  }
+  k(t4) {
+    a2(this._$AH) || (this._$AH = [], this._$AR());
+    const i5 = this._$AH;
+    let s4, e5 = 0;
+    for (const h3 of t4) e5 === i5.length ? i5.push(s4 = new _R(this.O(l2()), this.O(l2()), this, this.options)) : s4 = i5[e5], s4._$AI(h3), e5++;
+    e5 < i5.length && (this._$AR(s4 && s4._$AB.nextSibling, e5), i5.length = e5);
+  }
+  _$AR(t4 = this._$AA.nextSibling, i5) {
+    for (this._$AP?.(false, true, i5); t4 !== this._$AB; ) {
+      const i6 = t4.nextSibling;
+      t4.remove(), t4 = i6;
+    }
+  }
+  setConnected(t4) {
+    void 0 === this._$AM && (this._$Cv = t4, this._$AP?.(t4));
+  }
+};
+var k = class {
+  get tagName() {
+    return this.element.tagName;
+  }
+  get _$AU() {
+    return this._$AM._$AU;
+  }
+  constructor(t4, i5, s4, e5, h3) {
+    this.type = 1, this._$AH = E, this._$AN = void 0, this.element = t4, this.name = i5, this._$AM = e5, this.options = h3, s4.length > 2 || "" !== s4[0] || "" !== s4[1] ? (this._$AH = Array(s4.length - 1).fill(new String()), this.strings = s4) : this._$AH = E;
+  }
+  _$AI(t4, i5 = this, s4, e5) {
+    const h3 = this.strings;
+    let o6 = false;
+    if (void 0 === h3) t4 = S2(this, t4, i5, 0), o6 = !c3(t4) || t4 !== this._$AH && t4 !== T, o6 && (this._$AH = t4);
+    else {
+      const e6 = t4;
+      let n5, r5;
+      for (t4 = h3[0], n5 = 0; n5 < h3.length - 1; n5++) r5 = S2(this, e6[s4 + n5], i5, n5), r5 === T && (r5 = this._$AH[n5]), o6 ||= !c3(r5) || r5 !== this._$AH[n5], r5 === E ? t4 = E : t4 !== E && (t4 += (r5 ?? "") + h3[n5 + 1]), this._$AH[n5] = r5;
+    }
+    o6 && !e5 && this.j(t4);
+  }
+  j(t4) {
+    t4 === E ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, t4 ?? "");
+  }
+};
+var H = class extends k {
+  constructor() {
+    super(...arguments), this.type = 3;
+  }
+  j(t4) {
+    this.element[this.name] = t4 === E ? void 0 : t4;
+  }
+};
+var I = class extends k {
+  constructor() {
+    super(...arguments), this.type = 4;
+  }
+  j(t4) {
+    this.element.toggleAttribute(this.name, !!t4 && t4 !== E);
+  }
+};
+var L = class extends k {
+  constructor(t4, i5, s4, e5, h3) {
+    super(t4, i5, s4, e5, h3), this.type = 5;
+  }
+  _$AI(t4, i5 = this) {
+    if ((t4 = S2(this, t4, i5, 0) ?? E) === T) return;
+    const s4 = this._$AH, e5 = t4 === E && s4 !== E || t4.capture !== s4.capture || t4.once !== s4.once || t4.passive !== s4.passive, h3 = t4 !== E && (s4 === E || e5);
+    e5 && this.element.removeEventListener(this.name, this, s4), h3 && this.element.addEventListener(this.name, this, t4), this._$AH = t4;
+  }
+  handleEvent(t4) {
+    "function" == typeof this._$AH ? this._$AH.call(this.options?.host ?? this.element, t4) : this._$AH.handleEvent(t4);
+  }
+};
+var z = class {
+  constructor(t4, i5, s4) {
+    this.element = t4, this.type = 6, this._$AN = void 0, this._$AM = i5, this.options = s4;
+  }
+  get _$AU() {
+    return this._$AM._$AU;
+  }
+  _$AI(t4) {
+    S2(this, t4);
+  }
+};
+var j = t2.litHtmlPolyfillSupport;
+j?.(N, R), (t2.litHtmlVersions ??= []).push("3.3.1");
+var B = (t4, i5, s4) => {
+  const e5 = s4?.renderBefore ?? i5;
+  let h3 = e5._$litPart$;
+  if (void 0 === h3) {
+    const t5 = s4?.renderBefore ?? null;
+    e5._$litPart$ = h3 = new R(i5.insertBefore(l2(), t5), t5, void 0, s4 ?? {});
+  }
+  return h3._$AI(t4), h3;
+};
+
+// ../../node_modules/lit-element/lit-element.js
+var s3 = globalThis;
+var i4 = class extends y {
+  constructor() {
+    super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
+  }
+  createRenderRoot() {
+    const t4 = super.createRenderRoot();
+    return this.renderOptions.renderBefore ??= t4.firstChild, t4;
+  }
+  update(t4) {
+    const r5 = this.render();
+    this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(t4), this._$Do = B(r5, this.renderRoot, this.renderOptions);
+  }
+  connectedCallback() {
+    super.connectedCallback(), this._$Do?.setConnected(true);
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback(), this._$Do?.setConnected(false);
+  }
+  render() {
+    return T;
+  }
+};
+i4._$litElement$ = true, i4["finalized"] = true, s3.litElementHydrateSupport?.({ LitElement: i4 });
+var o4 = s3.litElementPolyfillSupport;
+o4?.({ LitElement: i4 });
+(s3.litElementVersions ??= []).push("4.2.1");
+
+// ../../node_modules/@lit/reactive-element/decorators/custom-element.js
+var t3 = (t4) => (e5, o6) => {
+  void 0 !== o6 ? o6.addInitializer((() => {
+    customElements.define(t4, e5);
+  })) : customElements.define(t4, e5);
+};
+
+// ../../node_modules/@lit/reactive-element/decorators/property.js
+var o5 = { attribute: true, type: String, converter: u, reflect: false, hasChanged: f };
+var r4 = (t4 = o5, e5, r5) => {
+  const { kind: n5, metadata: i5 } = r5;
+  let s4 = globalThis.litPropertyMetadata.get(i5);
+  if (void 0 === s4 && globalThis.litPropertyMetadata.set(i5, s4 = /* @__PURE__ */ new Map()), "setter" === n5 && ((t4 = Object.create(t4)).wrapped = true), s4.set(r5.name, t4), "accessor" === n5) {
+    const { name: o6 } = r5;
+    return { set(r6) {
+      const n6 = e5.get.call(this);
+      e5.set.call(this, r6), this.requestUpdate(o6, n6, t4);
+    }, init(e6) {
+      return void 0 !== e6 && this.C(o6, void 0, t4, e6), e6;
+    } };
+  }
+  if ("setter" === n5) {
+    const { name: o6 } = r5;
+    return function(r6) {
+      const n6 = this[o6];
+      e5.call(this, r6), this.requestUpdate(o6, n6, t4);
+    };
+  }
+  throw Error("Unsupported decorator location: " + n5);
+};
+function n4(t4) {
+  return (e5, o6) => "object" == typeof o6 ? r4(t4, e5, o6) : ((t5, e6, o7) => {
+    const r5 = e6.hasOwnProperty(o7);
+    return e6.constructor.createProperty(o7, t5), r5 ? Object.getOwnPropertyDescriptor(e6, o7) : void 0;
+  })(t4, e5, o6);
+}
+
 // web/repo_selector.ts
 var import_jquery2 = __toESM(require_jquery());
 function repoSelector() {
@@ -12506,15 +13092,15 @@ function updateOptions(newOptions) {
   repos.find("option").each(() => {
     currentOptions.push((0, import_jquery2.default)(this).attr("value"));
   });
-  if (currentOptions.length == newOptions.length && currentOptions.every((v, i) => v == newOptions[i])) {
+  if (currentOptions.length == newOptions.length && currentOptions.every((v2, i5) => v2 == newOptions[i5])) {
     return;
   }
   repos.empty();
   newOptions.sort();
   let groups = /* @__PURE__ */ new Map();
   groups.set("/", repos);
-  for (let i = 0; i < newOptions.length; i++) {
-    let path = newOptions[i].split("/");
+  for (let i5 = 0; i5 < newOptions.length; i5++) {
+    let path = newOptions[i5].split("/");
     let group = path.slice(0, path.length - 1).join("/") + "/";
     let option = path[path.length - 1];
     if (!groups.has(group)) {
@@ -12559,8 +13145,8 @@ var CodesearchUI;
     CodesearchUI2.input_regex.on("change", () => setPref("regex", CodesearchUI2.input_regex.prop("checked")));
     input_repos.on("change", () => setPref("repos", input_repos.val()));
     input_context.on("change", () => setPref("context", input_context.prop("checked")));
-    (0, import_jquery3.default)(".query-hint code").on("click", function(e) {
-      let ext = e.target.textContent;
+    (0, import_jquery3.default)(".query-hint code").on("click", function(e5) {
+      let ext = e5.target.textContent;
       if (!ext) return;
       let q = CodesearchUI2.input.val();
       if (!q.includes(ext) && (ext.indexOf("-") == 0 && !q.includes(ext.substring(1)) || ext.indexOf("-") != 0 && !q.includes("-" + ext.substring))) {
@@ -12578,7 +13164,7 @@ var CodesearchUI;
   function initQuery() {
     let parms = parseQueryParams();
     let hasParms = false;
-    for (let _ in parms) {
+    for (let _2 in parms) {
       hasParms = true;
       break;
     }
@@ -12604,8 +13190,8 @@ var CodesearchUI;
     }
     let backend = null;
     if (parms["backend"]) backend = parms["backend"];
-    let m = new RegExp("/search/([^/]+)/?").exec(window.location.pathname);
-    if (m) backend = m[1];
+    let m2 = new RegExp("/search/([^/]+)/?").exec(window.location.pathname);
+    if (m2) backend = m2[1];
     if (backend && CodesearchUI2.input_backend) {
       let old_backend = CodesearchUI2.input_backend.val();
       CodesearchUI2.input_backend.val(backend);
@@ -12646,12 +13232,12 @@ var CodesearchUI;
   }
   function parseQueryParams() {
     let urlParams = /* @__PURE__ */ new Map();
-    let e, a = /\+/g, r = /([^&=]+)=?([^&]*)/g, d = (s) => decodeURIComponent(s.replace(a, " ")), q = window.location.search.substring(1);
-    while (e = r.exec(q)) {
-      if (urlParams.get(d(e[1]))) {
-        urlParams[d(e[1])].push(d(e[2]));
+    let e5, a3 = /\+/g, r5 = /([^&=]+)=?([^&]*)/g, d3 = (s4) => decodeURIComponent(s4.replace(a3, " ")), q = window.location.search.substring(1);
+    while (e5 = r5.exec(q)) {
+      if (urlParams.get(d3(e5[1]))) {
+        urlParams[d3(e5[1])].push(d3(e5[2]));
       } else {
-        urlParams[d(e[1])] = [d(e[2])];
+        urlParams[d3(e5[1])] = [d3(e5[2])];
       }
     }
     return urlParams;
@@ -12674,27 +13260,39 @@ function init2(initData) {
   });
   CodesearchUI.onload();
 }
-function limitToExtension(e) {
-  let ext = e.target.textContent;
-  let input = htmx_esm_default.find("#searchbox");
-  var q = input.value;
-  if ((0, import_jquery3.default)("#regex").is(":checked")) {
-    q = "file:\\" + ext + "$ " + q;
-  } else {
-    q = "file:" + ext + " " + q;
+var SearchFilterButton = class extends i4 {
+  render() {
+    return x`
+            <button type="button" class="file-extension" @click="${this._apply}">
+                ${this.text}
+            </button>
+        `;
   }
-  input.value = q;
-  htmx_esm_default.trigger("#searchbox", "search");
-}
-htmx_esm_default.onLoad((target) => {
-  htmx_esm_default.findAll(target, ".file-extension").forEach((elt) => elt.onclick = limitToExtension);
+  _apply(e5) {
+    let input = htmx_esm_default.find("#searchbox");
+    input.value = ((0, import_jquery3.default)("#regex").is(":checked") ? this.regexFilter : this.rawFilter) + " " + input.value;
+    htmx_esm_default.trigger("#searchbox", "search");
+  }
+};
+__decorateClass([
+  n4()
+], SearchFilterButton.prototype, "text", 2);
+__decorateClass([
+  n4()
+], SearchFilterButton.prototype, "rawFilter", 2);
+__decorateClass([
+  n4()
+], SearchFilterButton.prototype, "regexFilter", 2);
+SearchFilterButton = __decorateClass([
+  t3("filter-button")
+], SearchFilterButton);
+document.addEventListener("DOMContentLoaded", () => {
+  let text = htmx_esm_default.find("#data").text;
+  let data = JSON.parse(text);
+  init2(data);
 });
-(0, import_jquery3.default)(() => {
-  init2(
-    JSON.parse(
-      document.getElementById("data").text
-    )
-  );
-});
+export {
+  SearchFilterButton
+};
 /*! For license information please see codesearch_ui.js.LEGAL.txt */
 //# sourceMappingURL=codesearch_ui.js.map
