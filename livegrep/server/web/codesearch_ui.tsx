@@ -14,8 +14,7 @@ import "./bootstrap/js/bootstrap";
 
 import "./codesearch.css";
 
-import htmx from "htmx.org";
-import "idiomorph";
+import htmx from "./3rdparty/htmx.esm.js";
 import jQuery from "jquery";
 import {LitElement, html, css} from "lit";
 import {classMap} from "lit/directives/class-map.js";

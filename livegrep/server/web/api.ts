@@ -1,5 +1,6 @@
 /* Do not change, this code is generated from Golang structs */
 
+
 export interface InnerError {
     code: string;
     message: string;
@@ -66,6 +67,11 @@ export interface ReplySearch {
     facets: Facet[];
     Backend: string;
 }
+
+
+
+
+
 
 export interface SearchScriptData {
     backend_repos: {[key: string]: string[]};

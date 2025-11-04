@@ -149,7 +149,7 @@ a:hover {
 #searcharea > div {
   flex: 1 1 auto;
 }
-.prefixed-input input[type=text] {
+.prefixed-input input[type=search] {
   vertical-align: bottom;
   border: none;
   border-bottom: solid 2px var(--color-prefixed-input-border);
@@ -157,21 +157,21 @@ a:hover {
   transition: border 150ms;
   width: 100%;
 }
-.prefixed-input input[type=text]:hover {
+.prefixed-input input[type=search]:hover {
   outline: none;
   border-color: var(--color-prefixed-input-border-hover);
 }
-.prefixed-input input[type=text]:focus {
+.prefixed-input input[type=search]:focus {
   outline: none;
   border-color: var(--color-prefixed-input-border-focus);
 }
-.prefixed-input input[type=text]:valid {
+.prefixed-input input[type=search]:valid {
   border-color: var(--color-prefixed-input-border-valid);
 }
-.prefixed-input input[type=text]:valid:hover {
+.prefixed-input input[type=search]:valid:hover {
   border-color: var(--color-prefixed-input-border-valid-hover);
 }
-.prefixed-input input[type=text]:valid:focus {
+.prefixed-input input[type=search]:valid:focus {
   border-color: var(--color-prefixed-input-border-valid-focus);
 }
 #searcharea #searchbox {
@@ -225,7 +225,7 @@ a:hover {
 .prefixed-input.filter-code .prefix-label {
   top: 14px;
 }
-.prefixed-input input[type=text] {
+.prefixed-input input[type=search] {
   text-indent: 50px;
   background-color: transparent;
 }

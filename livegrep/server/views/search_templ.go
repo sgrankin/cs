@@ -70,7 +70,7 @@ func Index(p Page, d IndexPageData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"searcharea\"><form method=\"get\" hx-get=\"/search\" hx-params=\"*\" hx-trigger=\"input from:input changed delay:150ms consume, change from:input consume, change from:select consume, search\" hx-select=\"#resultbox\" hx-target=\"#resultbox\" hx-swap=\"outerHTML\" hx-select-oob=\"#regex-error\" hx-sync=\"this:replace\" hx-push-url=\"true\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"searcharea\"><form method=\"get\" hx-get=\"/search\" hx-trigger=\"input from:input changed delay:16ms consume, change from:input consume, change from:select consume, search from:input consume\" hx-select=\"#resultbox\" hx-target=\"#resultbox\" hx-select-oob=\"#regex-error\" hx-push-url=\"true\" hx-sync=\"this:queue last\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -156,7 +156,7 @@ func countView(d *api.ReplySearch) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d+", d.Info.ResultsCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 69, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 67, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -166,7 +166,7 @@ func countView(d *api.ReplySearch) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", d.Info.ResultsCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 71, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 69, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -180,7 +180,7 @@ func countView(d *api.ReplySearch) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%dms", d.Info.QueryTime.Milliseconds()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 76, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 74, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -329,7 +329,7 @@ func matchStr(s string, bounds [2]int) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(s[0:bounds[0]])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 136, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 134, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -342,7 +342,7 @@ func matchStr(s string, bounds [2]int) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(s[bounds[0]:bounds[1]])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 136, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 134, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -355,7 +355,7 @@ func matchStr(s string, bounds [2]int) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(s[bounds[1]:])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 136, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 134, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -393,7 +393,7 @@ func filenameMatch(backend string, r *api.FileResult) templ.Component {
 		var templ_7745c5c3_Var15 templ.SafeURL
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(viewURL(backend, r.Tree, r.Version, r.Path, -1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 141, Col: 92}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 139, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -406,7 +406,7 @@ func filenameMatch(backend string, r *api.FileResult) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(r.Tree)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 142, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 140, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -419,7 +419,7 @@ func filenameMatch(backend string, r *api.FileResult) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(r.Version[:6])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 142, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 140, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -469,7 +469,7 @@ func fileContentMatch(backend string, r *api.Result) templ.Component {
 		var templ_7745c5c3_Var19 templ.SafeURL
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinURLErrs(viewURL(backend, r.Tree, r.Version, r.Path, -1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 151, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 149, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -482,7 +482,7 @@ func fileContentMatch(backend string, r *api.Result) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(r.Tree)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 152, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 150, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -495,7 +495,7 @@ func fileContentMatch(backend string, r *api.Result) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(r.Version[:6])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 152, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 150, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -508,7 +508,7 @@ func fileContentMatch(backend string, r *api.Result) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(path.Dir(r.Path))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 152, Col: 107}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 150, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -521,7 +521,7 @@ func fileContentMatch(backend string, r *api.Result) templ.Component {
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(path.Base(r.Path))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 152, Col: 152}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 150, Col: 152}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -604,7 +604,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(lno)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 175, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 173, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -617,7 +617,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(line)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 176, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 174, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -630,7 +630,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(viewURL(backend, r.Tree, r.Version, r.Path, lno))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 177, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 175, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
@@ -648,7 +648,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(match.LineNumber)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 181, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 179, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -661,7 +661,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(match.Line)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 181, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 179, Col: 46}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -674,7 +674,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(match.Bounds[0])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 182, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 180, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -687,7 +687,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(match.Bounds[1])
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 182, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 180, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -700,7 +700,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(viewURL(backend, r.Tree, r.Version, r.Path, match.LineNumber))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 183, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 181, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -719,7 +719,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(lno)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 188, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 186, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -732,7 +732,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(line)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 189, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 187, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -745,7 +745,7 @@ func matchView(backend string, r *api.Result, match api.LineResult) templ.Compon
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(viewURL(backend, r.Tree, r.Version, r.Path, lno))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 190, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 188, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
@@ -802,7 +802,7 @@ func extensionsButtons(extensions []string) templ.Component {
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(ex)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 203, Col: 13}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 201, Col: 13}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -815,7 +815,7 @@ func extensionsButtons(extensions []string) templ.Component {
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("file:%s", ex))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 204, Col: 42}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 202, Col: 42}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -828,7 +828,7 @@ func extensionsButtons(extensions []string) templ.Component {
 				var templ_7745c5c3_Var41 string
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("file:\\%s$", ex))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 205, Col: 47}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 203, Col: 47}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
@@ -898,7 +898,7 @@ func searchInputs(err error) templ.Component {
 			templ_7745c5c3_Var43 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"search-inputs\"><div class=\"prefixed-input filter-code\"><label class=\"prefix-label\" for=\"searchbox\">Query:</label> <input name=\"q\" type=\"text\" id=\"searchbox\" tabindex=\"1\"></div><div id=\"regex-error\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"search-inputs\"><div class=\"prefixed-input filter-code\"><label class=\"prefix-label\" for=\"searchbox\">Query:</label> <input name=\"q\" type=\"search\" incremental id=\"searchbox\" tabindex=\"1\"></div><div id=\"regex-error\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -910,7 +910,7 @@ func searchInputs(err error) templ.Component {
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 267, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 260, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 			if templ_7745c5c3_Err != nil {
@@ -967,7 +967,7 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 				var templ_7745c5c3_Var46 string
 				templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 304, Col: 23}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 297, Col: 23}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 				if templ_7745c5c3_Err != nil {
@@ -990,7 +990,7 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 				var templ_7745c5c3_Var47 string
 				templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 308, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 301, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 				if templ_7745c5c3_Err != nil {
@@ -1013,7 +1013,7 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 314, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 307, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -1026,7 +1026,7 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 			var templ_7745c5c3_Var49 string
 			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 314, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 307, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
@@ -1044,7 +1044,7 @@ func searchOptions(currentIndex string, indexes []cs.SearchIndex) templ.Componen
 				var templ_7745c5c3_Var50 string
 				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(indexes[0].Name())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 318, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 311, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 				if templ_7745c5c3_Err != nil {

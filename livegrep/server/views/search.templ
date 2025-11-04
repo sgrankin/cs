@@ -35,14 +35,12 @@ templ Index(p Page, d IndexPageData) {
 			<form
 				method="get"
 				hx-get="/search"
-				hx-params="*"
-				hx-trigger="input from:input changed delay:150ms consume, change from:input consume, change from:select consume, search"
+				hx-trigger="input from:input changed delay:16ms consume, change from:input consume, change from:select consume, search from:input consume"
 				hx-select="#resultbox"
 				hx-target="#resultbox"
-				hx-swap="outerHTML"
 				hx-select-oob="#regex-error"
-				hx-sync="this:replace"
 				hx-push-url="true"
+				hx-sync="this:queue last"
 			>
 				@searchInputs(d.SearchResultErr)
 				@searchOptions(d.Backend, d.Backends)
@@ -257,12 +255,7 @@ templ searchInputs(err error) {
 	<div class="search-inputs">
 		<div class="prefixed-input filter-code">
 			<label class="prefix-label" for="searchbox">Query:</label>
-			<input
-				name="q"
-				type="text"
-				id="searchbox"
-				tabindex="1"
-			/>
+			<input name="q" type="search" incremental id="searchbox" tabindex="1"/>
 		</div>
 		<div id="regex-error">
 			if err != nil {
