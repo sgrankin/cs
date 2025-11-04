@@ -23,6 +23,8 @@ import {customElement, property} from "lit/decorators.js";
 import {init as _init, updateOptions, updateSelected} from "./repo_selector.ts";
 import * as api from "./api.ts";
 
+htmx.config.transitions = false;
+
 type Query = {
     q: string;
     fold_case: boolean;

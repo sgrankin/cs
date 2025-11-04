@@ -11365,6 +11365,7 @@ function updateSelected(newSelected) {
 }
 
 // web/codesearch_ui.tsx
+htmx_esm_default.config.transitions = false;
 var CodesearchUI;
 ((CodesearchUI2) => {
   let input_repos;
