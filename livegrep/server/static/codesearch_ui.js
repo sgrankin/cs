@@ -11518,21 +11518,108 @@ __decorateClass([
 SearchFilterButton = __decorateClass([
   t4("filter-button")
 ], SearchFilterButton);
+var MatchStr = class extends i4 {
+  render() {
+    if (this.start != void 0 && this.end != void 0) {
+      return x`${this.text.substring(0, this.start)}<span class="matchstr"
+                    >${this.text.substring(this.start, this.end)}</span
+                >${this.text.substring(this.end)}`;
+    } else {
+      return x`${this.text}`;
+    }
+  }
+};
+MatchStr.styles = i`
+        .matchstr {
+            background: var(--color-background-matchstr);
+            color: var(--color-foreground-matchstr);
+            font-weight: bold;
+        }
+    `;
+__decorateClass([
+  n4()
+], MatchStr.prototype, "text", 2);
+__decorateClass([
+  n4({ type: Number })
+], MatchStr.prototype, "start", 2);
+__decorateClass([
+  n4({ type: Number })
+], MatchStr.prototype, "end", 2);
+MatchStr = __decorateClass([
+  t4("match-str")
+], MatchStr);
+var FilenameMatch = class extends i4 {
+  render() {
+    return x`<div class="filename-match">
+            <a class="label header result-path" href="${this.href}">
+                <span class="repo">${this.repo}:</span><span class="version">${this.version}:</span
+                ><match-str text="${this.text}" start=${this.start} end=${this.end}></match-str>
+            </a>
+        </div>`;
+  }
+};
+FilenameMatch.styles = i`
+        .label {
+            font-weight: bold;
+        }
+        .result-path .repo,
+        .result-path .version {
+            color: var(--color-foreground-muted);
+        }
+        .result-path {
+            color: var(--color-foreground-muted);
+            font-family: "Menlo", "Consolas", "Monaco", monospace;
+            font-size: 12px;
+            font-weight: normal;
+        }
+
+        .result-path .filename {
+            font-weight: bold;
+        }
+        a {
+            text-decoration: none;
+            color: var(--color-foreground-accent);
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: var(--color-foreground-accent);
+        }
+    `;
+__decorateClass([
+  n4()
+], FilenameMatch.prototype, "text", 2);
+__decorateClass([
+  n4()
+], FilenameMatch.prototype, "href", 2);
+__decorateClass([
+  n4({ type: Number })
+], FilenameMatch.prototype, "start", 2);
+__decorateClass([
+  n4({ type: Number })
+], FilenameMatch.prototype, "end", 2);
+__decorateClass([
+  n4()
+], FilenameMatch.prototype, "repo", 2);
+__decorateClass([
+  n4()
+], FilenameMatch.prototype, "version", 2);
+FilenameMatch = __decorateClass([
+  t4("filename-match")
+], FilenameMatch);
 var MatchLine = class extends i4 {
   render() {
     let isMatch = this.start != void 0 && this.end != void 0;
-    var matchLine = x`${this.line}`;
-    if (isMatch) {
-      matchLine = x`${this.line.substring(0, this.start)}<span class="matchstr"
-                    >${this.line.substring(this.start, this.end)}</span
-                >${this.line.substring(this.end)}`;
-    }
-    return x`<a
-                class="${e5({ "lno-link": true, matchlno: isMatch })}"
-                href="${this.href}"
+    return x`<a class=${e5({ "lno-link": true, matchlno: isMatch })} href="${this.href}"
                 ><span class="lno">${this.lineNo}</span></a
             >
-            <span class="${e5({ matchline: isMatch })}">${matchLine}</span>`;
+            <span class=${e5({ matchline: isMatch })}
+                >${isMatch ? x`<match-str
+                          text="${this.text}"
+                          start=${this.start}
+                          end=${this.end}
+                      ></match-str>` : this.text}</span
+            >`;
   }
 };
 MatchLine.styles = i`
@@ -11567,7 +11654,7 @@ __decorateClass([
 ], MatchLine.prototype, "lineNo", 2);
 __decorateClass([
   n4()
-], MatchLine.prototype, "line", 2);
+], MatchLine.prototype, "text", 2);
 __decorateClass([
   n4()
 ], MatchLine.prototype, "href", 2);
@@ -11586,7 +11673,9 @@ document.addEventListener("DOMContentLoaded", () => {
   init2(data);
 });
 export {
+  FilenameMatch,
   MatchLine,
+  MatchStr,
   SearchFilterButton
 };
 /*! For license information please see codesearch_ui.js.LEGAL.txt */

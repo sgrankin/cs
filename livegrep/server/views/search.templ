@@ -134,11 +134,14 @@ templ matchStr(s string, bounds [2]int) {
 }
 
 templ filenameMatch(r *api.FileResult) {
-	<div class="filename-match">
-		<a class="label header result-path" href={ viewURL(r.Tree, r.Version, r.Path, -1) }>
-			<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>@matchStr(r.Path, r.Bounds)
-		</a>
-	</div>
+	<filename-match
+		text={ r.Path }
+		start={ r.Bounds[0] }
+		end={ r.Bounds[1] }
+		repo={ r.Tree }
+		version={ r.Version[:6] }
+		href={ viewURL(r.Tree, r.Version, r.Path, -1) }
+	></filename-match>
 }
 
 templ fileContentMatch(r *api.Result) {
@@ -170,13 +173,13 @@ templ matchView(r *api.Result, match api.LineResult) {
 				{{ lno := match.LineNumber - len(match.ContextBefore) + i }}
 				<match-line
 					lineNo={ lno }
-					line={ line }
+					text={ line }
 					href={ viewURL(r.Tree, r.Version, r.Path, lno) }
 				></match-line>
 			}
 			<match-line
 				lineNo={ match.LineNumber }
-				line={ match.Line }
+				text={ match.Line }
 				start={ match.Bounds[0] }
 				end={ match.Bounds[1] }
 				href={ viewURL(r.Tree, r.Version, r.Path, match.LineNumber) }
@@ -185,7 +188,7 @@ templ matchView(r *api.Result, match api.LineResult) {
 				{{ lno := match.LineNumber + 1 + i }}
 				<match-line
 					lineNo={ lno }
-					line={ line }
+					text={ line }
 					href={ viewURL(r.Tree, r.Version, r.Path, lno) }
 				></match-line>
 			}
