@@ -65,7 +65,6 @@ export interface ReplySearch {
     search_type: string;
     query: Query;
     facets: Facet[];
-    Backend: string;
 }
 
 
@@ -74,7 +73,7 @@ export interface ReplySearch {
 
 
 export interface SearchScriptData {
-    backend_repos: {[key: string]: string[]};
+    repos: string[];
 }
 export interface FileViewData {
     repo_name: string;

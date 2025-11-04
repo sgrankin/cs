@@ -11384,9 +11384,8 @@ var CodesearchUI;
     }
     init();
     initQuery();
-    updateRepoOptions();
+    updateOptions(CodesearchUI2.repos);
     CodesearchUI2.input.trigger("focus");
-    if (CodesearchUI2.input_backend) CodesearchUI2.input_backend.on("change", selectBackend);
     CodesearchUI2.input_regex.on("change", () => setPref("regex", CodesearchUI2.input_regex.prop("checked")));
     input_repos.on("change", () => setPref("repos", input_repos.val()));
     input_context.on("change", () => setPref("context", input_context.prop("checked")));
@@ -11444,10 +11443,10 @@ var CodesearchUI;
         CodesearchUI2.input_backend.val(old_backend);
       }
     }
-    let repos = [];
-    if (parms["repo"]) repos = repos.concat(parms["repo"]);
-    if (parms["repo[]"]) repos = repos.concat(parms["repo[]"]);
-    updateSelected(repos);
+    let repos2 = [];
+    if (parms["repo"]) repos2 = repos2.concat(parms["repo"]);
+    if (parms["repo[]"]) repos2 = repos2.concat(parms["repo[]"]);
+    updateSelected(repos2);
   }
   function initControlsFromPrefs() {
     let prefs = JSON.parse(localStorage.getItem("prefs") || "{}");
@@ -11487,19 +11486,9 @@ var CodesearchUI;
     }
     return urlParams;
   }
-  function selectBackend() {
-    if (!CodesearchUI2.input_backend) return;
-    updateRepoOptions();
-  }
-  function updateRepoOptions() {
-    if (!CodesearchUI2.input_backend) return;
-    let backend = CodesearchUI2.input_backend.val();
-    setPref("backend", backend);
-    updateOptions(CodesearchUI2.backend_repos[backend]);
-  }
 })(CodesearchUI || (CodesearchUI = {}));
 function init2(initData) {
-  CodesearchUI.backend_repos = initData.backend_repos;
+  CodesearchUI.repos = initData.repos;
   CodesearchUI.onload();
 }
 var SearchFilterButton = class extends i4 {

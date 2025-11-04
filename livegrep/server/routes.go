@@ -18,9 +18,8 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	mux.Handle("GET /about", ctxHandlerFunc(srv.ServeAbout))
 	mux.Handle("GET /opensearch.xml", ctxHandlerFunc(srv.ServeOpensearch))
 	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSearch))
-	mux.Handle("GET /search/{backend}", ctxHandlerFunc(srv.ServeSearch))
 	mux.Handle("GET /static/", cs.EmbedFSServer(staticFS))
-	mux.Handle("GET /view/{backend}/{path...}", ctxHandlerFunc(srv.ServeFile))
+	mux.Handle("GET /view/{path...}", ctxHandlerFunc(srv.ServeFile))
 
 	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
 	mux.Handle("GET /debug/vars", expvar.Handler())

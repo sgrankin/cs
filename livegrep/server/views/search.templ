@@ -8,8 +8,7 @@ import (
 )
 
 type IndexPageData struct {
-	Backend         string
-	Backends        []cs.SearchIndex
+	Backend         cs.SearchIndex
 	SampleRepo      string
 	SearchResult    *api.ReplySearch
 	SearchResultErr error
@@ -43,7 +42,7 @@ templ Index(p Page, d IndexPageData) {
 				hx-sync="this:queue last"
 			>
 				@searchInputs(d.SearchResultErr)
-				@searchOptions(d.Backend, d.Backends)
+				@searchOptions(d.Backend)
 			</form>
 		</div>
 		<div id="resultbox">
@@ -99,11 +98,11 @@ templ matchesView(d *api.ReplySearch) {
 		}
 		<div class="path-results">
 			for _, r := range limitedFileResults(d) {
-				@filenameMatch(d.Backend, r)
+				@filenameMatch(r)
 			}
 		</div>
 		for _, r := range d.Results {
-			@fileContentMatch(d.Backend, r)
+			@fileContentMatch(r)
 		}
 	</div>
 }
@@ -122,8 +121,8 @@ func limitSlice[S ~[]E, E any](s S, limit int) S {
 	return s[:limit]
 }
 
-func viewURL(backend, tree, version, p string, lno int) templ.SafeURL {
-	url := path.Join("/view", backend, tree+"@"+version, "+", p)
+func viewURL(tree, version, p string, lno int) templ.SafeURL {
+	url := path.Join("/view", tree+"@"+version, "+", p)
 	if lno >= 0 {
 		url += "#L" + fmt.Sprintf("%d", lno)
 	}
@@ -134,31 +133,31 @@ templ matchStr(s string, bounds [2]int) {
 	{ s[0:bounds[0]] }<span class="matchstr">{ s[bounds[0]:bounds[1]] }</span>{ s[bounds[1]:] }
 }
 
-templ filenameMatch(backend string, r *api.FileResult) {
+templ filenameMatch(r *api.FileResult) {
 	<div class="filename-match">
-		<a class="label header result-path" href={ viewURL(backend, r.Tree, r.Version, r.Path, -1) }>
+		<a class="label header result-path" href={ viewURL(r.Tree, r.Version, r.Path, -1) }>
 			<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>@matchStr(r.Path, r.Bounds)
 		</a>
 	</div>
 }
 
-templ fileContentMatch(backend string, r *api.Result) {
+templ fileContentMatch(r *api.Result) {
 	<div class="file-group">
 		<div class="header">
 			<span class="header-path">
-				<a class="result-path" href={ viewURL(backend, r.Tree, r.Version, r.Path, -1) }>
+				<a class="result-path" href={ viewURL(r.Tree, r.Version, r.Path, -1) }>
 					<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>{ path.Dir(r.Path) }/<span class="filename">{ path.Base(r.Path) }</span>
 				</a>
 			</span>
 		</div>
 		for _, match := range r.Lines {
 			// TODO: fix handling of overlapping contexts.
-			@matchView(backend, r, match)
+			@matchView(r, match)
 		}
 	</div>
 }
 
-templ matchView(backend string, r *api.Result, match api.LineResult) {
+templ matchView(r *api.Result, match api.LineResult) {
 	<div
 		class={
 			"match",
@@ -172,7 +171,7 @@ templ matchView(backend string, r *api.Result, match api.LineResult) {
 				<match-line
 					lineNo={ lno }
 					line={ line }
-					href={ viewURL(backend, r.Tree, r.Version, r.Path, lno) }
+					href={ viewURL(r.Tree, r.Version, r.Path, lno) }
 				></match-line>
 			}
 			<match-line
@@ -180,14 +179,14 @@ templ matchView(backend string, r *api.Result, match api.LineResult) {
 				line={ match.Line }
 				start={ match.Bounds[0] }
 				end={ match.Bounds[1] }
-				href={ viewURL(backend, r.Tree, r.Version, r.Path, match.LineNumber) }
+				href={ viewURL(r.Tree, r.Version, r.Path, match.LineNumber) }
 			></match-line>
 			for i, line := range match.ContextAfter {
 				{{ lno := match.LineNumber + 1 + i }}
 				<match-line
 					lineNo={ lno }
 					line={ line }
-					href={ viewURL(backend, r.Tree, r.Version, r.Path, lno) }
+					href={ viewURL(r.Tree, r.Version, r.Path, lno) }
 				></match-line>
 			}
 		</div>
@@ -273,7 +272,7 @@ templ searchInputs(err error) {
 	</div>
 }
 
-templ searchOptions(currentIndex string, indexes []cs.SearchIndex) {
+templ searchOptions(index cs.SearchIndex) {
 	<div class="search-options">
 		<div class="search-option">
 			<span class="label">Case:</span>
@@ -290,30 +289,6 @@ templ searchOptions(currentIndex string, indexes []cs.SearchIndex) {
 			<input type="checkbox" name="regex" id="regex" tabindex="6"/>
 			<label for="regex">on</label>
 		</div>
-		if len(indexes) > 1 {
-			<div class="search-option">
-				<span class="label">Search:</span>
-				<select name="backend" id="backend" tabindex="7">
-					for _, b := range indexes {
-						<option
-							value={ b.Name() }
-							if b.Name() == currentIndex {
-								selected
-							}
-						>{ b.Name() } </option>
-					}
-				</select>
-			</div>
-		} else if len(indexes) > 0 {
-			<select name="backend" id="backend" style="display: none">
-				<option value={ indexes[0].Name() }>{ indexes[0].Name() }</option>
-			</select>
-			if indexes[0].Name() != "-" {
-				<div class="search-option">
-					<span class="label">Searching:</span>{ indexes[0].Name() }
-				</div>
-			}
-		}
 		<div class="search-option">
 			<span class="label">Repo:</span>
 			<select name="repo[]" id="repos" multiple></select>

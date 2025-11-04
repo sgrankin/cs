@@ -43,7 +43,7 @@ export function init() {
     });
 }
 
-export function updateOptions(newOptions: any[]) {
+export function updateOptions(newOptions: string[]) {
     // Skip update if the options are the same, to avoid losing selected state.
     let currentOptions: string[] = [];
     let repos = repoSelector();

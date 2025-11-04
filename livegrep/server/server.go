@@ -19,22 +19,16 @@ import (
 type server struct {
 	http.Handler
 
-	config  cs.ServeConfig
-	bk      map[string]cs.SearchIndex
-	bkOrder []string
+	config cs.ServeConfig
+	bk     cs.SearchIndex
 
 	Templates map[string]*template.Template
 }
 
-func New(cfg cs.ServeConfig, indexes []cs.SearchIndex) *server {
+func New(cfg cs.ServeConfig, index cs.SearchIndex) *server {
 	srv := &server{
 		config: cfg,
-		bk:     map[string]cs.SearchIndex{},
-	}
-
-	for _, idx := range indexes {
-		srv.bk[idx.Name()] = idx
-		srv.bkOrder = append(srv.bkOrder, idx.Name())
+		bk:     index,
 	}
 
 	mux := http.NewServeMux()

@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Indexes []IndexConfig `json:"indexes"`
-	Serve   ServeConfig   `json:"serve"`
+	Index IndexConfig `json:"index"`
+	Serve ServeConfig `json:"serve"`
 }
 
 type IndexConfig struct {

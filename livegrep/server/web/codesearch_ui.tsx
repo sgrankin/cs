@@ -60,7 +60,7 @@ function getSelectedText() {
 
 // TODO: this should be an instance of a singleton... maybe?
 namespace CodesearchUI {
-    export let backend_repos: {[x: string]: any};
+    export let repos: string[];
     export let input: JQuery<HTMLInputElement>;
     export let input_backend: JQuery<HTMLSelectElement> | null;
     export let input_regex: JQuery<HTMLInputElement>;
@@ -85,10 +85,9 @@ namespace CodesearchUI {
 
         _init();
         initQuery();
-        updateRepoOptions();
+        updateOptions(repos);
 
         input.trigger("focus");
-        if (input_backend) input_backend.on("change", selectBackend);
 
         input_regex.on("change", () => setPref("regex", input_regex.prop("checked")));
         input_repos.on("change", () => setPref("repos", input_repos.val()));
@@ -224,22 +223,10 @@ namespace CodesearchUI {
         }
         return urlParams;
     }
-
-    function selectBackend() {
-        if (!input_backend) return;
-        updateRepoOptions();
-    }
-
-    function updateRepoOptions() {
-        if (!input_backend) return;
-        let backend = input_backend.val() as string;
-        setPref("backend", backend);
-        updateOptions(backend_repos[backend]);
-    }
 }
 
 function init(initData: api.SearchScriptData) {
-    CodesearchUI.backend_repos = initData.backend_repos;
+    CodesearchUI.repos = initData.repos;
     CodesearchUI.onload();
 }
 

@@ -28,12 +28,11 @@ var supportedReadmeRegex = buildReadmeRegex([]string{
 })
 
 func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	backend := r.PathValue("backend")
 	path := r.PathValue("path")
 	repoName, path, _ := strings.Cut(path, "@")
 	commit, path, _ := strings.Cut(path, "/+/")
 
-	fileData, err := buildFileData(s.bk[backend], repoName, commit, path)
+	fileData, err := buildFileData(s.bk, repoName, commit, path)
 	if err != nil {
 		http.Error(w, "Error reading file: "+err.Error(), 500)
 		return
@@ -102,8 +101,8 @@ func gitParseTreeEntry(line string) gitTreeEntry {
 	}
 }
 
-func viewPath(backend, repo, commit string, name ...string) string {
-	return path.Join("/view/", backend, repo+"@"+commit+"/+/"+path.Join(name...))
+func viewPath(repo, commit string, name ...string) string {
+	return path.Join("/view/", repo+"@"+commit+"/+/"+path.Join(name...))
 }
 
 func buildReadmeRegex(supportedReadmeExtensions []string) *regexp.Regexp {
@@ -162,7 +161,7 @@ func mkPathSegments(backend cs.SearchIndex, repoName, commit, p string) []views.
 		}
 		segments[i] = views.BreadCrumbEntry{
 			Name: name,
-			Path: viewPath(backend.Name(), repoName, commit, parentPath, name) + slash,
+			Path: viewPath(repoName, commit, parentPath, name) + slash,
 		}
 	}
 	return segments
@@ -192,7 +191,7 @@ func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pat
 			// Subdirectory, and already handled.
 			continue
 		}
-		viewURL := viewPath(backend.Name(), repoName, commit, pathPrefix, base)
+		viewURL := viewPath(repoName, commit, pathPrefix, base)
 		if isdir {
 			viewURL += "/"
 		}

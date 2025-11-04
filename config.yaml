@@ -1,20 +1,20 @@
-indexes:
-  - path: data3
-    reposources:
-      github:
-        # - repo: sgrankin/yard-rack
-        # - repo: clojure/tools.macro
-        - org: "clojure"
-          reject: test\.regression$
-        # - org: "nerves-networking"
-        # - org: "nerves-project"
-        # - org: "tinygo-org"
-        # - repo: "FoundationDB/fdb-kubernetes-operator"
-        # - repo: "torvalds/linux"
-        # - user: "sgrankin"
-        # - org: "elixir-circuits"
-        # - org: "elixir-toolshed"
-  - path: data4
-    reposources:
-      github:
-        - repo: "FoundationDB/fdb-kubernetes-operator"
+index:
+  path: data3
+  reposources:
+    github:
+      # - repo: sgrankin/yard-rack
+      # - repo: clojure/tools.macro
+      - org: "clojure"
+        reject: test\.regression$
+      # - org: "nerves-networking"
+      # - org: "nerves-project"
+      # - org: "tinygo-org"
+      # - repo: "FoundationDB/fdb-kubernetes-operator"
+      # - repo: "torvalds/linux"
+      # - user: "sgrankin"
+      # - org: "elixir-circuits"
+      # - org: "elixir-toolshed"
+  # - path: data4
+  #   reposources:
+  #     github:
+  #       - repo: "FoundationDB/fdb-kubernetes-operator"

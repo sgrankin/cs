@@ -27,7 +27,6 @@ type ReplySearch struct {
 	SearchType  string        `json:"search_type"`
 	Query       cs.Query      `json:"query"`
 	Facets      []*Facet      `json:"facets"`
-	Backend     string
 }
 
 type Facet struct {
@@ -81,7 +80,7 @@ type FileResult struct {
 }
 
 type SearchScriptData struct {
-	BackendRepos map[string][]string `json:"backend_repos"`
+	Repos []string `json:"repos"`
 }
 
 type FileViewData struct {

@@ -36,13 +36,11 @@ func main() {
 			log.Fatalf("reading %s: %v", flag.Arg(0), err.Error())
 		}
 	}
-	if len(cfg.Indexes) == 0 {
-		log.Fatal("At least one Index is required")
+	if cfg.Index.Path == "" {
+		log.Fatal("An Index is required")
 	}
 
-	for _, icfg := range cfg.Indexes {
-		if err := cs.BuildSearchIndex(icfg, githubToken.Get()); err != nil {
-			log.Fatalf("Error building %q: %v", icfg.Name, err)
-		}
+	if err := cs.BuildSearchIndex(cfg.Index, githubToken.Get()); err != nil {
+		log.Fatalf("Error building %q: %v", cfg.Index.Name, err)
 	}
 }

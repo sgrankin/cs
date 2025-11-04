@@ -7,7 +7,6 @@ import (
 	"cmp"
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"maps"
 	"math"
@@ -139,19 +138,7 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 }
 
 func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.ReplySearch, error) {
-	backendName := r.PathValue("backend")
-	var backend cs.SearchIndex
-	if backendName != "" {
-		backend = s.bk[backendName]
-		if backend == nil {
-			return nil, fmt.Errorf("unknown backend: %s", backendName)
-		}
-	} else {
-		for _, backend = range s.bk {
-			break
-		}
-	}
-
+	backend := s.bk
 	q, err := extractQuery(r)
 	if err != nil {
 		return nil, err
@@ -201,7 +188,6 @@ func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.Re
 			cmp.Compare(e1, e2),
 		)
 	})
-	reply.Backend = backendName
 
 	// Remove overlapping context lines:
 	for _, r := range reply.Results {
