@@ -9,7 +9,8 @@
     "bootstrap-select": "1.13.18",
     "htmx.org": "4.0.0-alpha1",
     "jquery": "3.7.1",
-    "lit": "3.3.1"
+    "lit": "3.3.1",
+    "ts-lit-plugin": "2.0.2"
   },
   "private": "true"
 }

@@ -13,7 +13,8 @@
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
     "experimentalDecorators": true,
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "plugins": [{"name": "ts-lit-plugin"}]
   },
   "exclude": ["node_modules", "**/node_modules/*"]
 }
