@@ -89,8 +89,6 @@ namespace CodesearchUI {
         initQuery();
         updateOptions(repos);
 
-        input.trigger("focus");
-
         input_regex.on("change", () => setPref("regex", input_regex.prop("checked")));
         input_repos.on("change", () => setPref("repos", input_repos.val()));
         input_context.on("change", () => setPref("context", input_context.prop("checked")));

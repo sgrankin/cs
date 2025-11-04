@@ -11386,7 +11386,6 @@ var CodesearchUI;
     init();
     initQuery();
     updateOptions(CodesearchUI2.repos);
-    CodesearchUI2.input.trigger("focus");
     CodesearchUI2.input_regex.on("change", () => setPref("regex", CodesearchUI2.input_regex.prop("checked")));
     input_repos.on("change", () => setPref("repos", input_repos.val()));
     input_context.on("change", () => setPref("context", input_context.prop("checked")));

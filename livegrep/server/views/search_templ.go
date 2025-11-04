@@ -928,7 +928,7 @@ func searchInputs(err error) templ.Component {
 			templ_7745c5c3_Var46 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<div class=\"search-inputs\"><div class=\"prefixed-input filter-code\"><label class=\"prefix-label\" for=\"searchbox\">Query:</label> <input name=\"q\" type=\"search\" incremental id=\"searchbox\" tabindex=\"1\"></div><div id=\"regex-error\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<div class=\"search-inputs\"><div class=\"prefixed-input filter-code\"><label class=\"prefix-label\" for=\"searchbox\">Query:</label> <input name=\"q\" type=\"search\" incremental id=\"searchbox\" tabindex=\"1\" autofocus></div><div id=\"regex-error\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

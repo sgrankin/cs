@@ -257,7 +257,7 @@ templ searchInputs(err error) {
 	<div class="search-inputs">
 		<div class="prefixed-input filter-code">
 			<label class="prefix-label" for="searchbox">Query:</label>
-			<input name="q" type="search" incremental id="searchbox" tabindex="1"/>
+			<input name="q" type="search" incremental id="searchbox" tabindex="1" autofocus/>
 		</div>
 		<div id="regex-error">
 			if err != nil {
