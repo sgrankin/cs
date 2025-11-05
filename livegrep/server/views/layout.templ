@@ -11,6 +11,12 @@ type Page struct {
 	Config        cs.ServeConfig
 }
 
+// Title returns an HTML document fragment with the title.
+// HTMX can parse this as a document and will set the page title.
+templ Title(title string) {
+	<html><head><title>{ title }</title></head></html>
+}
+
 templ layout(p Page) {
 	<!DOCTYPE html>
 	<html xmlns="http://www.w3.org/1999/xhtml">
@@ -56,4 +62,10 @@ templ layout(p Page) {
 			}
 		</body>
 	</html>
+}
+
+templ Partial(target, swap string, contents templ.Component) {
+	<partial hx-target={ target } hx-swap={ swap }>
+		@contents
+	</partial>
 }

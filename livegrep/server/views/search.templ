@@ -49,18 +49,29 @@ templ Index(p Page, d IndexPageData) {
 			if d.SearchResult != nil {
 				<div id="resultarea">
 					<div id="countarea">
-						@countView(d.SearchResult)
+						@CountView(d.SearchResult)
 					</div>
 					@matchesView(d.SearchResult)
 				</div>
 			} else {
-				@help()
+				@Help()
 			}
 		</div>
 	}
 }
 
-templ countView(d *api.ReplySearch) {
+templ ResultArea() {
+	<div id="resultarea">
+		<div id="countarea"></div>
+		<div id="results" tabIndex="-1" style="outline: none">
+			<div id="file-extensions"></div>
+			<div id="path-results"></div>
+			<div id="code-results"></div>
+		</div>
+	</div>
+}
+
+templ CountView(d *api.ReplySearch) {
 	<span id="numresults">
 		if d.Info.HasMore {
 			{ fmt.Sprintf("%d+", d.Info.ResultsCount) }
@@ -89,21 +100,25 @@ templ matchesView(d *api.ReplySearch) {
 		style="outline: none"
 		class={ templ.KV("no-context", d.Query.ContextLines <= 0) }
 	>
-		if len(d.Query.File) == 0 {
-			for _, f := range d.Facets {
-				if f.Key == "ext" {
-					@extensionsButtons(facetValues(f))
+		<div id="file-extensions">
+			if len(d.Query.File) == 0 {
+				for _, f := range d.Facets {
+					if f.Key == "ext" {
+						@ExtensionsButtons(f)
+					}
 				}
 			}
-		}
-		<div class="path-results">
+		</div>
+		<div id="path-results">
 			for _, r := range limitedFileResults(d) {
-				@filenameMatch(r)
+				@FilenameMatch(r)
 			}
 		</div>
-		for _, r := range d.Results {
-			@fileContentMatch(r)
-		}
+		<div id="code-results">
+			for _, r := range d.Results {
+				@FileContentMatch(r)
+			}
+		</div>
 	</div>
 }
 
@@ -133,7 +148,7 @@ templ matchStr(s string, bounds [2]int) {
 	{ s[0:bounds[0]] }<span class="matchstr">{ s[bounds[0]:bounds[1]] }</span>{ s[bounds[1]:] }
 }
 
-templ filenameMatch(r *api.FileResult) {
+templ FilenameMatch(r *api.FileResult) {
 	<filename-match
 		text={ r.Path }
 		start={ r.Bounds[0] }
@@ -144,7 +159,7 @@ templ filenameMatch(r *api.FileResult) {
 	></filename-match>
 }
 
-templ fileContentMatch(r *api.Result) {
+templ FileContentMatch(r *api.Result) {
 	<div class="file-group">
 		<div class="header">
 			<span class="header-path">
@@ -196,22 +211,21 @@ templ matchView(r *api.Result, match api.LineResult) {
 	</div>
 }
 
-templ extensionsButtons(extensions []string) {
-	<div class="file-extensions">
-		if len(extensions) > 0 {
-			Narrow to:
-			for _, ex := range limitSlice(extensions, 5) {
-				<filter-button
-					text={ ex }
-					rawFilter={ fmt.Sprintf("file:%s", ex) }
-					regexFilter={ fmt.Sprintf("file:\\%s$", ex) }
-				></filter-button>
-			}
+templ ExtensionsButtons(f *api.Facet) {
+	{{ extensions := facetValues(f) }}
+	if len(extensions) > 0 {
+		Narrow to:
+		for _, ex := range limitSlice(extensions, 5) {
+			<filter-button
+				text={ ex }
+				rawFilter={ fmt.Sprintf("file:%s", ex) }
+				regexFilter={ fmt.Sprintf("file:\\%s$", ex) }
+			></filter-button>
 		}
-	</div>
+	}
 }
 
-templ help() {
+templ Help() {
 	<div id="helparea">
 		<div class="helpsection"><h5>Special query terms</h5> </div>
 		<table>

@@ -105,6 +105,10 @@
     }
 }
 
+html {
+    overflow-y: scroll;
+}
+
 .bootstrap-select.dropdown .dropdown-menu .notify,
 .bootstrap-select.dropdown .no-results {
     background: var(--color-bootstrap-select-background);
@@ -345,12 +349,12 @@ a:hover {
     /* despite 'tabindex' that lets it receive keystrokes */
 }
 
-.file-extensions,
-.path-results {
+#file-extensions,
+#path-results {
     margin-bottom: 15px;
 }
 
-.file-extensions button {
+#file-extensions button {
     margin-left: 4px;
 }
 
