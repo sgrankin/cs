@@ -14,7 +14,7 @@ type Page struct {
 // Title returns an HTML document fragment with the title.
 // HTMX can parse this as a document and will set the page title.
 templ Title(title string) {
-	<html><head><title>{ title }</title></head></html>
+	<html><title>{ title }</title></html>
 }
 
 templ layout(p Page) {
