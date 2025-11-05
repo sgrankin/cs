@@ -621,6 +621,7 @@ var htmx = (() => {
                 attempt = 0; // Reset on successful connection
 
                 try {
+                    if (config.mode !== 'continuous') this.__handleHistoryUpdate(ctx);
                     for await (const sseMessage of this.__parseSSE(currentResponse)) {
                         if (!elt.isConnected) break;
 
@@ -649,7 +650,6 @@ var htmx = (() => {
                         ctx.status = "stream message received";
 
                         if (!ctx.response.cancelled) {
-                            this.__handleHistoryUpdate(ctx);
                             await this.swap(ctx);
                             this.__handleAnchorScroll(ctx);
                             ctx.status = "swapped";
@@ -1514,7 +1514,7 @@ var htmx = (() => {
             let ctx = this.__createRequestContext(sourceElt, context.event || {});
             Object.assign(ctx, context, {target: targetElt});
             Object.assign(ctx.request, {action: path, method: verb.toUpperCase()});
-            if (context.headers) Object.assign(ctx.request.headers, context.headers);
+            if (context.request.headers) Object.assign(ctx.request.headers, context.request.headers);
 
             return this.__handleTriggerEvent(ctx);
         }
