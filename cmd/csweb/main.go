@@ -25,9 +25,6 @@ var (
 		"The config file.")
 	indexPath = flag.String("index", "",
 		"The path to the index file(s).  Allows serving an index without a config.")
-
-	tailscaleHost = flag.String("tailscale-host", "",
-		"Create a tailscale service and listen on it.  Uses HTTPS.")
 )
 
 func main() {
@@ -73,11 +70,5 @@ func main() {
 		}()
 	}
 
-	if *tailscaleHost != "" {
-		s := HTTPTSServer{Handler: srv}
-		go func() {
-			log.Fatal(s.Serve(*tailscaleHost))
-		}()
-	}
 	select {} // And now we wait...
 }
