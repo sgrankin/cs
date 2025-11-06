@@ -15,8 +15,8 @@ import (
 	"sgrankin.dev/cs/livegrep/server/views"
 )
 
-func (s *server) makeSearchScriptData() (script_data *api.SearchScriptData, backend cs.SearchIndex, sampleRepo string) {
-	sampleRepo = ""
+func (s *server) makeSearchScriptData() (*api.SearchScriptData, cs.SearchIndex, string) {
+	sampleRepo := ""
 	bk := s.bk
 	info := bk.Info()
 	trees := []string{}
@@ -27,7 +27,7 @@ func (s *server) makeSearchScriptData() (script_data *api.SearchScriptData, back
 		trees = append(trees, tree.Name)
 	}
 
-	script_data = &api.SearchScriptData{Repos: trees}
+	script_data := &api.SearchScriptData{Repos: trees}
 	return script_data, bk, sampleRepo
 }
 
@@ -91,6 +91,7 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 				SearchResult:    result,
 				SearchResultErr: resultErr,
 			},
+			r.Form,
 		).Render(r.Context(), w)
 	}
 }

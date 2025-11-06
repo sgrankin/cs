@@ -3,8 +3,11 @@ package views
 import (
 	"fmt"
 	"path"
+	"slices"
+	"maps"
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/api"
+	"net/url"
 )
 
 type IndexPageData struct {
@@ -28,21 +31,21 @@ type Meta struct {
 	EntrypointMap map[string]EntryPoint
 }
 
-templ Index(p Page, d IndexPageData) {
+templ Index(p Page, d IndexPageData, params url.Values) {
 	@layout(p) {
 		<div id="searcharea">
 			<form
 				method="get"
 				hx-get="/search"
-				hx-trigger="input from:input changed delay:100ms consume, change from:select changed consume, search"
+				hx-trigger="input from:input delay:100ms, change from:select"
 				hx-select="#resultbox"
 				hx-target="#resultbox"
 				hx-select-oob="#regex-error"
 				hx-push-url="true"
 				hx-sync="this:queue last"
 			>
-				@searchInputs(d.SearchResultErr)
-				@searchOptions(d.Backend)
+				@searchInputs(d.SearchResultErr, params)
+				@searchOptions(d.Backend, params)
 			</form>
 		</div>
 		<div id="resultbox">
@@ -267,11 +270,11 @@ templ Help() {
 	</div>
 }
 
-templ searchInputs(err error) {
+templ searchInputs(err error, params url.Values) {
 	<div class="search-inputs">
 		<div class="prefixed-input filter-code">
 			<label class="prefix-label" for="searchbox">Query:</label>
-			<input name="q" type="search" incremental id="searchbox" tabindex="1" autofocus/>
+			<input name="q" type="search" incremental id="searchbox" tabindex="1" autofocus value={ params.Get("q") }/>
 		</div>
 		<div id="regex-error">
 			if err != nil {
@@ -289,31 +292,70 @@ templ searchInputs(err error) {
 	</div>
 }
 
-templ searchOptions(index cs.SearchIndex) {
+func groupRepos(index cs.SearchIndex) ([]string, map[string][]string) {
+	groups := map[string][]string{}
+	for _, repo := range index.Info().Trees {
+		dir, base := path.Split(repo.Name)
+		groups[dir] = append(groups[dir], dir+base)
+	}
+	keys := slices.Sorted(maps.Keys(groups))
+	return keys, groups
+}
+
+templ repoOptions(index cs.SearchIndex) {
+	{{ keys, groups := groupRepos(index) }}
+	for _, k := range keys {
+		<optgroup label={ k }>
+			for _, repo := range slices.Sorted(slices.Values(groups[k])) {
+				<option value={ repo } data-tokens={ repo }>{ path.Base(repo) }</option>
+			}
+		</optgroup>
+	}
+}
+
+templ searchOptions(index cs.SearchIndex, params url.Values) {
 	<div class="search-options">
 		<div class="search-option">
 			<span class="label">Case:</span>
-			<input type="radio" name="fold_case" value="false" id="case-match" tabindex="3"/>
+			<input
+				type="radio"
+				name="fold_case"
+				value="false"
+				id="case-match"
+				tabindex="3"
+				checked?={ params.Get("fold_case") == "false" }
+			/>
 			<label for="case-match">match</label>
-			<input type="radio" name="fold_case" value="auto" id="case-auto" tabindex="4"/>
+			<input
+				type="radio"
+				name="fold_case"
+				value="auto"
+				id="case-auto"
+				tabindex="4"
+				checked?={ params.Get("fold_case") == "auto" }
+			/>
 			<label for="case-auto">auto</label>
 			[<span class="tooltip-target">?<div class="tooltip">Case-sensitive if the query contains capital letters</div></span>]
-			<input type="radio" name="fold_case" value="true" id="case-ignore" tabindex="5"/>
+			<input
+				type="radio"
+				name="fold_case"
+				value="true"
+				id="case-ignore"
+				tabindex="5"
+				checked?={ params.Get("fold_case") == "true" }
+			/>
 			<label for="case-ignore">ignore</label>
 		</div>
 		<div class="search-option">
 			<span class="label">Regex:</span>
-			<input type="checkbox" name="regex" id="regex" tabindex="6"/>
+			<input type="checkbox" name="regex" id="regex" tabindex="6" checked?={ params.Get("regex") == "true" }/>
 			<label for="regex">on</label>
 		</div>
 		<div class="search-option">
 			<span class="label">Repo:</span>
-			<select name="repo[]" id="repos" multiple></select>
-		</div>
-		<div class="search-option">
-			<span class="label">Context:</span>
-			<input type="checkbox" name="context" id="context" tabindex="8" checked="CHECKED"/>
-			<label for="context">on</label>
+			<select name="repo[]" id="repos" multiple>
+				@repoOptions(index)
+			</select>
 		</div>
 	</div>
 }
