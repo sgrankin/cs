@@ -1,20 +1,20 @@
 module sgrankin.dev/cs
 
-go 1.25.3
+go 1.25.4
 
 require (
 	github.com/a-h/templ v0.3.960
 	github.com/alecthomas/chroma/v2 v2.20.0
-	github.com/evanw/esbuild v0.25.11
+	github.com/evanw/esbuild v0.25.12
 	github.com/go-git/go-git/v5 v5.16.3
 	github.com/goccy/go-yaml v1.18.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/quic-go/quic-go v0.55.0
-	golang.org/x/exp v0.0.0-20251017212417-90e834f514db
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	golang.org/x/sync v0.17.0
-	tailscale.com v1.90.0
+	tailscale.com v1.90.6
 )
 
 require (
