@@ -1,0 +1,71 @@
+package views
+
+import "sgrankin.dev/cs"
+
+type Page struct {
+	Title         string
+	JSPath        string
+	CSSPath       string
+	ScriptData    interface{}
+	IncludeHeader bool
+	Config        cs.ServeConfig
+}
+
+// Title returns an HTML document fragment with the title.
+// HTMX can parse this as a document and will set the page title.
+templ Title(title string) {
+	<html><title>{ title }</title></html>
+}
+
+templ layout(p Page) {
+	<!DOCTYPE html>
+	<html xmlns="http://www.w3.org/1999/xhtml">
+		<head>
+			<title>{ p.Title }</title>
+			<link
+				rel="search"
+				type="application/opensearchdescription+xml"
+				href="/opensearch.xml"
+				title="Code Search"
+			/>
+			<link rel="icon" href="/static/favicon.ico"/>
+			<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png"/>
+			<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png"/>
+			if p.JSPath != "" {
+				<script src={ string(templ.URL("/" + p.JSPath)) } type="module" defer></script>
+			}
+			<link rel="stylesheet" href={ string(templ.URL("/" + p.CSSPath)) }/>
+		</head>
+		<body>
+			{ children... }
+			if p.IncludeHeader {
+				<footer id="header">
+					if p.Config.Templates.HeaderHTML != "" {
+						@templ.Raw(p.Config.Templates.HeaderHTML)
+					} else {
+						<ul>
+							<li><a href="/">search</a></li>
+							<li><a href="/about">about</a></li>
+							<li><a href="https://github.com/sgrankin/cs">source</a></li>
+							if p.Config.Templates.Feedback.MailTo != "" {
+								<li><a id="feedbacklink" href={ templ.URL("mailto:" + p.Config.Templates.Feedback.MailTo) }>feedback</a></li>
+							}
+						</ul>
+					}
+				</footer>
+			}
+			if p.Config.Templates.FooterHTML  != "" {
+				@templ.Raw(p.Config.Templates.FooterHTML)
+			}
+			if p.ScriptData  != "" {
+				@templ.JSONScript("data", p.ScriptData)
+			}
+		</body>
+	</html>
+}
+
+templ Partial(target, swap string, contents templ.Component) {
+	<partial hx-target={ target } hx-swap={ swap }>
+		@contents
+	</partial>
+}

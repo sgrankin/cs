@@ -1,0 +1,361 @@
+package views
+
+import (
+	"fmt"
+	"path"
+	"slices"
+	"maps"
+	"sgrankin.dev/cs"
+	"sgrankin.dev/cs/livegrep/server/api"
+	"net/url"
+)
+
+type IndexPageData struct {
+	Backend         cs.SearchIndex
+	SampleRepo      string
+	SearchResult    *api.ReplySearch
+	SearchResultErr error
+}
+
+type Backend struct {
+	cs.SearchIndex
+	ID string
+}
+
+type EntryPoint struct {
+	JS, CSS string
+}
+
+type Meta struct {
+	BuildOutputs  []string
+	EntrypointMap map[string]EntryPoint
+}
+
+templ Index(p Page, d IndexPageData, params url.Values) {
+	@layout(p) {
+		<div id="searcharea">
+			<form
+				method="get"
+				hx-get="/search"
+				hx-trigger="input from:input delay:100ms, change from:select"
+				hx-select="#resultbox"
+				hx-target="#resultbox"
+				hx-select-oob="#regex-error"
+				hx-push-url="true"
+				hx-sync="this:queue last"
+			>
+				@searchInputs(d.SearchResultErr, params)
+				@searchOptions(d.Backend, params)
+			</form>
+		</div>
+		<div id="resultbox">
+			if d.SearchResult != nil {
+				<div id="resultarea">
+					<div id="countarea">
+						@CountView(d.SearchResult)
+					</div>
+					@matchesView(d.SearchResult)
+				</div>
+			} else {
+				@Help()
+			}
+		</div>
+	}
+}
+
+templ ResultArea() {
+	<div id="resultarea">
+		<div id="countarea"></div>
+		<div id="results" tabIndex="-1" style="outline: none">
+			<div id="file-extensions"></div>
+			<div id="path-results"></div>
+			<div id="code-results"></div>
+		</div>
+	</div>
+}
+
+templ CountView(d *api.ReplySearch) {
+	<span id="numresults">
+		if d.Info.HasMore {
+			{ fmt.Sprintf("%d+", d.Info.ResultsCount) }
+		} else {
+			{ fmt.Sprintf("%d", d.Info.ResultsCount) }
+		}
+	</span> matches
+	<span id="searchtimebox">
+		<span class="label">in </span>
+		<span id="searchtime">{ fmt.Sprintf("%dms", d.Info.QueryTime.Milliseconds()) }</span>
+	</span>
+}
+
+func facetValues(f *api.Facet) []string {
+	vals := []string{}
+	for _, v := range f.Values {
+		vals = append(vals, v.Value)
+	}
+	return vals
+}
+
+templ matchesView(d *api.ReplySearch) {
+	<div
+		id="results"
+		tabIndex="-1"
+		style="outline: none"
+		class={ templ.KV("no-context", d.Query.ContextLines <= 0) }
+	>
+		<div id="file-extensions">
+			if len(d.Query.File) == 0 {
+				for _, f := range d.Facets {
+					if f.Key == "ext" {
+						@ExtensionsButtons(f)
+					}
+				}
+			}
+		</div>
+		<div id="path-results">
+			for _, r := range limitedFileResults(d) {
+				@FilenameMatch(r)
+			}
+		</div>
+		<div id="code-results">
+			for _, r := range d.Results {
+				@FileContentMatch(r)
+			}
+		</div>
+	</div>
+}
+
+func limitedFileResults(d *api.ReplySearch) []*api.FileResult {
+	if d.Query.FilenameOnly {
+		return d.FileResults
+	}
+	return limitSlice(d.FileResults, 10)
+}
+
+func limitSlice[S ~[]E, E any](s S, limit int) S {
+	if len(s) <= limit {
+		return s
+	}
+	return s[:limit]
+}
+
+func viewURL(tree, version, p string, lno int) templ.SafeURL {
+	url := path.Join("/view", tree+"@"+version, "+", p)
+	if lno >= 0 {
+		url += "#L" + fmt.Sprintf("%d", lno)
+	}
+	return templ.URL(url)
+}
+
+templ matchStr(s string, bounds [2]int) {
+	{ s[0:bounds[0]] }<span class="matchstr">{ s[bounds[0]:bounds[1]] }</span>{ s[bounds[1]:] }
+}
+
+templ FilenameMatch(r *api.FileResult) {
+	<filename-match
+		text={ r.Path }
+		start={ r.Bounds[0] }
+		end={ r.Bounds[1] }
+		repo={ r.Tree }
+		version={ r.Version[:6] }
+		href={ viewURL(r.Tree, r.Version, r.Path, -1) }
+	></filename-match>
+}
+
+templ FileContentMatch(r *api.Result) {
+	<div class="file-group">
+		<div class="header">
+			<span class="header-path">
+				<a class="result-path" href={ viewURL(r.Tree, r.Version, r.Path, -1) }>
+					<span class="repo">{ r.Tree }:</span><span class="version">{ r.Version[:6] }:</span>{ path.Dir(r.Path) }/<span class="filename">{ path.Base(r.Path) }</span>
+				</a>
+			</span>
+		</div>
+		for _, match := range r.Lines {
+			// TODO: fix handling of overlapping contexts.
+			@matchView(r, match)
+		}
+	</div>
+}
+
+templ matchView(r *api.Result, match api.LineResult) {
+	<div
+		class={
+			"match",
+			templ.KV("clip-before", match.ClipBefore),
+			templ.KV("clip-after", match.ClipAfter),
+		}
+	>
+		<div class="contents">
+			for i, line := range match.ContextBefore {
+				{{ lno := match.LineNumber - len(match.ContextBefore) + i }}
+				<match-line
+					lineNo={ lno }
+					text={ line }
+					href={ viewURL(r.Tree, r.Version, r.Path, lno) }
+				></match-line>
+			}
+			<match-line
+				lineNo={ match.LineNumber }
+				text={ match.Line }
+				start={ match.Bounds[0] }
+				end={ match.Bounds[1] }
+				href={ viewURL(r.Tree, r.Version, r.Path, match.LineNumber) }
+			></match-line>
+			for i, line := range match.ContextAfter {
+				{{ lno := match.LineNumber + 1 + i }}
+				<match-line
+					lineNo={ lno }
+					text={ line }
+					href={ viewURL(r.Tree, r.Version, r.Path, lno) }
+				></match-line>
+			}
+		</div>
+	</div>
+}
+
+templ ExtensionsButtons(f *api.Facet) {
+	{{ extensions := facetValues(f) }}
+	if len(extensions) > 0 {
+		Narrow to:
+		for _, ex := range limitSlice(extensions, 5) {
+			<filter-button
+				text={ ex }
+				rawFilter={ fmt.Sprintf("file:%s", ex) }
+				regexFilter={ fmt.Sprintf("file:\\%s$", ex) }
+			></filter-button>
+		}
+	}
+}
+
+templ Help() {
+	<div id="helparea">
+		<div class="helpsection"><h5>Special query terms</h5> </div>
+		<table>
+			<tr>
+				<td><code>path:</code> </td>
+				<td>Only include results from matching files.</td>
+				<td><a href="/search?q=hello+path:test">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>-path:</code> </td>
+				<td>Exclude results from matching files.</td>
+				<td><a href="/search?q=hello+-path:test">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>repo:</code> </td>
+				<td>Only include results from matching repositories.</td>
+				<td><a href="/search?q=hello+repo:example">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>-repo:</code> </td>
+				<td>Exclude results from matching repositories.</td>
+				<td><a href="/search?q=hello+-repo:example">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>max_matches:</code> </td>
+				<td>Adjust the limit on number of matching lines returned.</td>
+				<td><a href="/search?q=hello+max_matches:5">example</a> </td>
+			</tr>
+			<tr>
+				<td><code>(<em>special-term</em>:) </code> </td>
+				<td>Escape one of the above terms by wrapping it in parentheses (with regex enabled). </td>
+				<td><a href="/search?q=(file:)®ex=true">example</a> </td>
+			</tr>
+		</table>
+		<div class="helpsection"><h5>Regular Expressions</h5> </div>
+		<p>
+			See the complete supported regex syntax in <a href="https://github.com/google/re2/wiki/Syntax">the RE2 documentation</a>.
+		</p>
+	</div>
+}
+
+templ searchInputs(err error, params url.Values) {
+	<div class="search-inputs">
+		<div class="prefixed-input filter-code">
+			<label class="prefix-label" for="searchbox">Query:</label>
+			<input name="q" type="search" incremental id="searchbox" tabindex="1" autofocus value={ params.Get("q") }/>
+		</div>
+		<div id="regex-error">
+			if err != nil {
+				<span id="errortext">{ err.Error() }</span>
+			}
+		</div>
+		<div class="query-hint">
+			Special terms:
+			<code>path:</code>
+			<code>-path:</code>
+			<code>repo:</code>
+			<code>-repo:</code>
+			<code>max_matches:</code>
+		</div>
+	</div>
+}
+
+func groupRepos(index cs.SearchIndex) ([]string, map[string][]string) {
+	groups := map[string][]string{}
+	for _, repo := range index.Info().Trees {
+		dir, base := path.Split(repo.Name)
+		groups[dir] = append(groups[dir], dir+base)
+	}
+	keys := slices.Sorted(maps.Keys(groups))
+	return keys, groups
+}
+
+templ repoOptions(index cs.SearchIndex) {
+	{{ keys, groups := groupRepos(index) }}
+	for _, k := range keys {
+		<optgroup label={ k }>
+			for _, repo := range slices.Sorted(slices.Values(groups[k])) {
+				<option value={ repo } data-tokens={ repo }>{ path.Base(repo) }</option>
+			}
+		</optgroup>
+	}
+}
+
+templ searchOptions(index cs.SearchIndex, params url.Values) {
+	<div class="search-options">
+		<div class="search-option">
+			<span class="label">Case:</span>
+			<input
+				type="radio"
+				name="fold_case"
+				value="false"
+				id="case-match"
+				tabindex="3"
+				checked?={ params.Get("fold_case") == "false" }
+			/>
+			<label for="case-match">match</label>
+			<input
+				type="radio"
+				name="fold_case"
+				value="auto"
+				id="case-auto"
+				tabindex="4"
+				checked?={ params.Get("fold_case") == "auto" }
+			/>
+			<label for="case-auto">auto</label>
+			[<span class="tooltip-target">?<div class="tooltip">Case-sensitive if the query contains capital letters</div></span>]
+			<input
+				type="radio"
+				name="fold_case"
+				value="true"
+				id="case-ignore"
+				tabindex="5"
+				checked?={ params.Get("fold_case") == "true" }
+			/>
+			<label for="case-ignore">ignore</label>
+		</div>
+		<div class="search-option">
+			<span class="label">Regex:</span>
+			<input type="checkbox" name="regex" id="regex" tabindex="6" checked?={ params.Get("regex") == "true" }/>
+			<label for="regex">on</label>
+		</div>
+		<div class="search-option">
+			<span class="label">Repo:</span>
+			<select name="repo[]" id="repos" multiple>
+				@repoOptions(index)
+			</select>
+		</div>
+	</div>
+}

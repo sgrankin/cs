@@ -7,9 +7,12 @@ import (
 	"embed"
 	"encoding/json"
 	"log"
+
+	"sgrankin.dev/cs/livegrep/server/views"
 )
 
 //go:generate bun install
+//go:generate go run github.com/a-h/templ/cmd/templ generate
 //go:generate go run ./gencss -style=vs -out=./web/syntax-light.css
 //go:generate go run ./gencss -style=xcode-dark -out=./web/syntax-dark.css
 //go:generate go run ./build $DEBUG
@@ -18,7 +21,7 @@ var staticFS embed.FS
 
 //go:embed static/meta.json
 var metaJSON []byte
-var meta Meta
+var meta views.Meta
 
 func init() {
 	if err := json.Unmarshal(metaJSON, &meta); err != nil {

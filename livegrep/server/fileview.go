@@ -7,16 +7,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"net/http"
 	"path"
 	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/a-h/templ"
+
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/chroma"
+	"sgrankin.dev/cs/livegrep/server/views"
 )
 
 // Grabbed from the extensions GitHub supports here - https://github.com/github/markup
@@ -26,12 +28,11 @@ var supportedReadmeRegex = buildReadmeRegex([]string{
 })
 
 func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	backend := r.PathValue("backend")
 	path := r.PathValue("path")
 	repoName, path, _ := strings.Cut(path, "@")
 	commit, path, _ := strings.Cut(path, "/+/")
 
-	fileData, err := buildFileData(s.bk[backend], repoName, commit, path)
+	fileData, err := buildFileData(s.bk, repoName, commit, path)
 	if err != nil {
 		http.Error(w, "Error reading file: "+err.Error(), 500)
 		return
@@ -44,15 +45,13 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 		FilePath:   path,
 		Commit:     commit,
 	}
-
-	s.renderPage(w, "fileview.html", &page{
+	views.FileView(views.Page{
 		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
 		JSPath:        meta.EntrypointMap["web/fileview.ts"].JS,
 		CSSPath:       meta.EntrypointMap["web/fileview.ts"].CSS,
 		ScriptData:    script_data,
 		IncludeHeader: false,
-		Data:          fileData,
-	})
+	}, *fileData).Render(r.Context(), w)
 }
 
 func externalURL(repo, commit, path string) (url, name string) {
@@ -67,40 +66,7 @@ func externalURL(repo, commit, path string) (url, name string) {
 	return "", ""
 }
 
-type breadCrumbEntry struct {
-	Name string
-	Path string
-}
-
-type directoryListEntry struct {
-	Name          string
-	Path          string
-	IsDir         bool
-	SymlinkTarget string
-}
-
-type fileViewerContext struct {
-	Backend        string
-	PathSegments   []breadCrumbEntry
-	RepoName       string
-	RepoURL        string
-	Commit         string
-	DirContent     *directoryContent
-	FileContent    *sourceFileContent
-	ExternalDomain string
-	Headlink       string
-}
-
-type sourceFileContent struct {
-	FormattedContent template.HTML
-}
-
-type directoryContent struct {
-	Entries       []directoryListEntry
-	ReadmeContent *sourceFileContent
-}
-
-type DirListingSort []directoryListEntry
+type DirListingSort []views.DirectoryListEntry
 
 func (s DirListingSort) Len() int {
 	return len(s)
@@ -124,8 +90,19 @@ type gitTreeEntry struct {
 	ObjectName string
 }
 
-func viewPath(backend, repo, commit string, name ...string) string {
-	return path.Join("/view/", backend, repo+"@"+commit+"/+/"+path.Join(name...))
+func gitParseTreeEntry(line string) gitTreeEntry {
+	dataAndPath := strings.SplitN(line, "\t", 2)
+	dataFields := strings.Split(dataAndPath[0], " ")
+	return gitTreeEntry{
+		Mode:       dataFields[0],
+		ObjectType: dataFields[1],
+		ObjectId:   dataFields[2],
+		ObjectName: dataAndPath[1],
+	}
+}
+
+func viewPath(repo, commit string, name ...string) string {
+	return path.Join("/view/", repo+"@"+commit+"/+/"+path.Join(name...))
 }
 
 func buildReadmeRegex(supportedReadmeExtensions []string) *regexp.Regexp {
@@ -148,13 +125,13 @@ func buildReadmeRegex(supportedReadmeExtensions []string) *regexp.Regexp {
 	return repoFileRegex
 }
 
-func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*fileViewerContext, error) {
+func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*views.FileViewerContext, error) {
 	files := backend.Paths(repoName, commit, path)
 	if len(files) == 0 {
 		return nil, fmt.Errorf("not found: %q", path)
 	}
-	var fileContent *sourceFileContent
-	var dirContent *directoryContent
+	var fileContent *views.SourceFileContent
+	var dirContent *views.DirectoryContent
 	if len(files) == 1 && files[0].Path == path {
 		// This is a blob.
 		fileContent = mkFileContent(backend, files[0])
@@ -162,7 +139,7 @@ func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*file
 		dirContent = mkDirContent(backend, files, repoName, commit, path)
 	}
 	segments := mkPathSegments(backend, repoName, commit, path)
-	return &fileViewerContext{
+	return &views.FileViewerContext{
 		Backend:      backend.Name(),
 		PathSegments: segments,
 		RepoName:     repoName,
@@ -173,36 +150,36 @@ func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*file
 	}, nil
 }
 
-func mkPathSegments(backend cs.SearchIndex, repoName, commit, p string) []breadCrumbEntry {
+func mkPathSegments(backend cs.SearchIndex, repoName, commit, p string) []views.BreadCrumbEntry {
 	splits := strings.Split(p, "/")
-	segments := make([]breadCrumbEntry, len(splits))
+	segments := make([]views.BreadCrumbEntry, len(splits))
 	for i, name := range splits {
 		parentPath := path.Clean(strings.Join(splits[0:i], "/"))
 		slash := "/"
 		if i == len(splits)-1 {
 			slash = ""
 		}
-		segments[i] = breadCrumbEntry{
+		segments[i] = views.BreadCrumbEntry{
 			Name: name,
-			Path: viewPath(backend.Name(), repoName, commit, parentPath, name) + slash,
+			Path: viewPath(repoName, commit, parentPath, name) + slash,
 		}
 	}
 	return segments
 }
 
-func mkFileContent(backend cs.SearchIndex, file cs.File) *sourceFileContent {
+func mkFileContent(backend cs.SearchIndex, file cs.File) *views.SourceFileContent {
 	content := backend.Data(file.Tree, file.Version, file.Path)
-	return &sourceFileContent{
-		FormattedContent: chroma.FormatHTML(path.Base(file.Path), content),
+	return &views.SourceFileContent{
+		FormattedContent: templ.Raw(chroma.FormatHTML(path.Base(file.Path), content)),
 	}
 }
 
-func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pathPrefix string) *directoryContent {
+func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pathPrefix string) *views.DirectoryContent {
 	// This is a directory listing.
 	if pathPrefix != "" && !strings.HasSuffix(pathPrefix, "/") {
 		pathPrefix += "/"
 	}
-	dirEntries := make([]directoryListEntry, 0, len(files))
+	dirEntries := make([]views.DirectoryListEntry, 0, len(files))
 	var readmePath string
 	for _, p := range files {
 		relPath, found := strings.CutPrefix(p.Path, pathPrefix)
@@ -214,12 +191,12 @@ func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pat
 			// Subdirectory, and already handled.
 			continue
 		}
-		viewURL := viewPath(backend.Name(), repoName, commit, pathPrefix, base)
+		viewURL := viewPath(repoName, commit, pathPrefix, base)
 		if isdir {
 			viewURL += "/"
 		}
 
-		de := directoryListEntry{
+		de := views.DirectoryListEntry{
 			Name:  base,
 			Path:  viewURL,
 			IsDir: isdir,
@@ -241,11 +218,11 @@ func mkDirContent(backend cs.SearchIndex, files []cs.File, repoName, commit, pat
 
 	sort.Sort(DirListingSort(dirEntries))
 
-	var readmeContent *sourceFileContent
+	var readmeContent *views.SourceFileContent
 	if readmePath != "" {
 		readmeContent = mkFileContent(backend, cs.File{Tree: repoName, Version: commit, Path: readmePath})
 	}
-	return &directoryContent{
+	return &views.DirectoryContent{
 		Entries:       dirEntries,
 		ReadmeContent: readmeContent,
 	}

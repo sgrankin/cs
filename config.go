@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Indexes []IndexConfig `json:"indexes"`
-	Serve   ServeConfig   `json:"serve"`
+	Index IndexConfig `json:"index"`
+	Serve ServeConfig `json:"serve"`
 }
 
 type IndexConfig struct {
@@ -50,16 +50,5 @@ type ServeConfig struct {
 
 		HeaderHTML template.HTML `json:"header_html"` // HTML injected into layout template for site-specific customizations.
 		FooterHTML template.HTML `json:"footer_html"` // HTML injected into layout template just before </body> for site-specific customization.
-
-		Links []LinkConfig `json:"file_links"` // Add extra links to files.
 	} `json:"templates"`
-}
-
-type LinkConfig struct {
-	// Filename match that enables this link.
-	MatchRegexp string `json:"match_regexp" ts_type:"RegExp" ts_transform:"new RegExp(__VALUE__)"`
-
-	Label       string `json:"label"`        // Link label.
-	UrlTemplate string `json:"url_template"` // URL template with {placeholders}: name, basename, version, path, lno.
-	Target      string `json:"target"`       // <a> tag target attribute.
 }

@@ -23,7 +23,7 @@ var (
 		"The address to listen on.")
 	config = cs.FlagVar[cs.EnvString]("config", "config.yaml",
 		"The config file.")
-	indexPath = cs.FlagVar[cs.StringSet]("index", cs.StringSet{},
+	indexPath = flag.String("index", "",
 		"The path to the index file(s).  Allows serving an index without a config.")
 
 	tailscaleHost = flag.String("tailscale-host", "",
@@ -40,8 +40,8 @@ func main() {
 			DefaultMaxMatches: 500,
 		},
 	}
-	for path := range *indexPath {
-		cfg.Indexes = append(cfg.Indexes, cs.IndexConfig{Path: path})
+	if indexPath != nil {
+		cfg.Index = cs.IndexConfig{Path: *indexPath}
 	}
 
 	if *config != "" {
@@ -53,22 +53,16 @@ func main() {
 			log.Fatalf("reading %s: %v", flag.Arg(0), err.Error())
 		}
 	}
-	if len(cfg.Indexes) == 0 {
-		log.Fatal("At least one Index is required")
+	if cfg.Index.Path == "" {
+		log.Fatal("An index is required")
 	}
 
-	var indexes []cs.SearchIndex
-	for _, icfg := range cfg.Indexes {
-		indexes = append(indexes, cs.NewSearchIndex(icfg))
-	}
-
-	srv := server.New(cfg.Serve, indexes)
+	index := cs.NewSearchIndex(cfg.Index)
+	srv := server.New(cfg.Serve, index)
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
 		for range ticker.C {
-			for _, index := range indexes {
-				index.Reload()
-			}
+			index.Reload()
 		}
 	}()
 

@@ -42,6 +42,8 @@ export interface LineResult {
     context_after: string[];
     bounds: number[];
     line: string;
+    ClipBefore: boolean;
+    ClipAfter: boolean;
 }
 export interface Result {
     tree: string;
@@ -52,6 +54,9 @@ export interface Result {
 export interface Stats {
     total_time: number;
     why: string;
+    ResultsCount: number;
+    HasMore: boolean;
+    QueryTime: number;
 }
 export interface ReplySearch {
     info?: Stats;
@@ -67,15 +72,8 @@ export interface ReplySearch {
 
 
 
-export interface LinkConfig {
-    match_regexp: RegExp;
-    label: string;
-    url_template: string;
-    target: string;
-}
 export interface SearchScriptData {
-    backend_repos: {[key: string]: string[]};
-    link_configs: LinkConfig[];
+    repos: string[];
 }
 export interface FileViewData {
     repo_name: string;

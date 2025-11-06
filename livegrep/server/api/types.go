@@ -3,7 +3,11 @@
 
 package api
 
-import "sgrankin.dev/cs"
+import (
+	"time"
+
+	"sgrankin.dev/cs"
+)
 
 type InnerError struct {
 	Code    string `json:"code"`
@@ -35,8 +39,11 @@ type FacetValue struct {
 }
 
 type Stats struct {
-	TotalTime  int64  `json:"total_time"`
-	ExitReason string `json:"why"`
+	TotalTime    int64  `json:"total_time"`
+	ExitReason   string `json:"why"`
+	ResultsCount int
+	HasMore      bool
+	QueryTime    time.Duration
 }
 
 type Result struct {
@@ -46,12 +53,23 @@ type Result struct {
 	Lines   []LineResult `json:"lines"`
 }
 
+/* TODO:
+Line result handling is a mess.
+- We should return several groups of text.
+- Each group should be a group of consecutive lines.
+- Each line in the group may contain one (or more?) matches.
+There should not be a visible boundary between these lines.
+There should be a visible boundary between (non-consecutive) groups.
+*/
+
 type LineResult struct {
 	LineNumber    int      `json:"lno"`
 	ContextBefore []string `json:"context_before"`
 	ContextAfter  []string `json:"context_after"`
 	Bounds        [2]int   `json:"bounds"`
 	Line          string   `json:"line"`
+	ClipBefore    bool     // Previous LineResult has context that abuts ContextBefore.
+	ClipAfter     bool     // Next LineResult has context that abouts ContextAfter.
 }
 
 type FileResult struct {
@@ -62,8 +80,7 @@ type FileResult struct {
 }
 
 type SearchScriptData struct {
-	BackendRepos map[string][]string `json:"backend_repos"`
-	LinkConfigs  []cs.LinkConfig     `json:"link_configs"`
+	Repos []string `json:"repos"`
 }
 
 type FileViewData struct {
