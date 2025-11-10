@@ -340,7 +340,7 @@ templ searchOptions(index cs.SearchIndex, params url.Values) {
 				value="auto"
 				id="case-auto"
 				tabindex="4"
-				checked?={ params.Get("fold_case") == "auto" }
+				checked?={ params.Get("fold_case") == "auto"  || params.Get("fold_case") == "" }
 			/>
 			<label for="case-auto">auto</label>
 			[<span class="tooltip-target">?<div class="tooltip">Case-sensitive if the query contains capital letters</div></span>]
@@ -355,9 +355,8 @@ templ searchOptions(index cs.SearchIndex, params url.Values) {
 			<label for="case-ignore">ignore</label>
 		</div>
 		<div class="search-option">
-			<span class="label">Regex:</span>
-			<input type="checkbox" name="regex" id="regex" tabindex="6" checked?={ params.Get("regex") == "true" }/>
-			<label for="regex">on</label>
+			<span class="label">Literal:</span>
+			<input type="checkbox" name="literal" id="literal" tabindex="6" checked?={ params.Get("literal") == "true" }/>
 		</div>
 		<div class="search-option">
 			<span class="label">Repo:</span>

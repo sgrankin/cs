@@ -1183,7 +1183,7 @@ func searchOptions(index cs.SearchIndex, params url.Values) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if params.Get("fold_case") == "auto" {
+		if params.Get("fold_case") == "auto" || params.Get("fold_case") == "" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -1199,17 +1199,17 @@ func searchOptions(index cs.SearchIndex, params url.Values) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "> <label for=\"case-ignore\">ignore</label></div><div class=\"search-option\"><span class=\"label\">Regex:</span> <input type=\"checkbox\" name=\"regex\" id=\"regex\" tabindex=\"6\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "> <label for=\"case-ignore\">ignore</label></div><div class=\"search-option\"><span class=\"label\">Literal:</span> <input type=\"checkbox\" name=\"literal\" id=\"literal\" tabindex=\"6\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if params.Get("regex") == "true" {
+		if params.Get("literal") == "true" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "> <label for=\"regex\">on</label></div><div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo\" id=\"repos\" multiple>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "></div><div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo\" id=\"repos\" multiple>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

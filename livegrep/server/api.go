@@ -31,7 +31,7 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 	var err error
 
 	regex := true
-	if re, ok := params["regex"]; ok && re[0] == "false" {
+	if param, ok := params["literal"]; ok && param[0] != "false" {
 		regex = false
 	}
 
