@@ -55,7 +55,7 @@ func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.
 	views.About(views.Page{
 		Title:         "about",
 		IncludeHeader: true,
-		CSSPath:       meta.EntrypointMap["web/codesearch_ui.tsx"].CSS,
+		CSSPath:       "static/codesearch_ui.css",
 	}).Render(r.Context(), w)
 }
 

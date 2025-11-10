@@ -46,8 +46,8 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 	views.Index(
 		views.Page{
 			Title:         title,
-			JSPath:        meta.EntrypointMap["web/codesearch_ui.tsx"].JS,
-			CSSPath:       meta.EntrypointMap["web/codesearch_ui.tsx"].CSS,
+			JSPath:        "static/codesearch_ui.js",
+			CSSPath:       "static/codesearch_ui.css",
 			IncludeHeader: true,
 		},
 		views.IndexPageData{

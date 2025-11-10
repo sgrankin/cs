@@ -5,10 +5,6 @@ package server
 
 import (
 	"embed"
-	"encoding/json"
-	"log"
-
-	"sgrankin.dev/cs/livegrep/server/views"
 )
 
 //go:generate bun install
@@ -18,13 +14,3 @@ import (
 //go:generate go run ./build $DEBUG
 //go:embed static
 var staticFS embed.FS
-
-//go:embed static/meta.json
-var metaJSON []byte
-var meta views.Meta
-
-func init() {
-	if err := json.Unmarshal(metaJSON, &meta); err != nil {
-		log.Panic(err)
-	}
-}

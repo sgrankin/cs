@@ -39,8 +39,8 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 	views.FileView(views.Page{
 		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
-		JSPath:        meta.EntrypointMap["web/fileview.ts"].JS,
-		CSSPath:       meta.EntrypointMap["web/fileview.ts"].CSS,
+		JSPath:        "static/fileview.js",
+		CSSPath:       "static/fileview.css",
 		IncludeHeader: false,
 		BodyAttrs:     templ.Attributes{"data-search-url-template": "/search?q={query}&repo=" + url.QueryEscape(repoName)},
 	}, *fileData).Render(r.Context(), w)
