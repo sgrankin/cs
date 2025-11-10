@@ -270,17 +270,21 @@ templ Help() {
 	</div>
 }
 
+templ RegexError(err error) {
+	<div id="regex-error">
+		if err != nil {
+			<span id="errortext">{ err.Error() }</span>
+		}
+	</div>
+}
+
 templ searchInputs(err error, params url.Values) {
 	<div class="search-inputs">
 		<div class="prefixed-input filter-code">
 			<label class="prefix-label" for="searchbox">Query:</label>
 			<input name="q" type="search" incremental id="searchbox" tabindex="1" autofocus value={ params.Get("q") }/>
 		</div>
-		<div id="regex-error">
-			if err != nil {
-				<span id="errortext">{ err.Error() }</span>
-			}
-		</div>
+		@RegexError(err)
 		<div class="query-hint">
 			Special terms:
 			<code>path:</code>

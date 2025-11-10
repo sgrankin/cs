@@ -31,6 +31,11 @@ func (s *server) makeSearchScriptData() (cs.SearchIndex, string) {
 
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Vary", "HX-Request")
+	if r.Header.Get(http.CanonicalHeaderKey("HX-Request")) == "true" {
+		s.streamSearch(ctx, w, r)
+		return
+	}
+
 	backend, sampleRepo := s.makeSearchScriptData()
 	result, resultErr := s.searchForRequest(ctx, r)
 	title := "code search"
@@ -38,59 +43,66 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 		title = fmt.Sprintf("%s · %s", result.Query.Line, title)
 	}
 
-	if r.Header.Get(http.CanonicalHeaderKey("HX-Request")) == "true" {
-		// TODO: actually streaming search -- serve results as they are found.
-		w.Header().Add("Content-Type", "text/event-stream")
-		writeData(ctx, w, views.Title(title))
-		if result == nil {
-			writeData(ctx, w, views.Partial("#resultbox", "innerHTML", views.Help()))
-			return
+	views.Index(
+		views.Page{
+			Title:         title,
+			JSPath:        meta.EntrypointMap["web/codesearch_ui.tsx"].JS,
+			CSSPath:       meta.EntrypointMap["web/codesearch_ui.tsx"].CSS,
+			IncludeHeader: true,
+		},
+		views.IndexPageData{
+			Backend:         backend,
+			SampleRepo:      sampleRepo,
+			SearchResult:    result,
+			SearchResultErr: resultErr,
+		},
+		r.Form,
+	).Render(r.Context(), w)
+}
 
-		}
-		writeData(ctx, w, views.Partial("#resultbox", "innerHTML", views.ResultArea()))
-		writeData(ctx, w, views.Partial("#countarea", "innerHTML", views.CountView(result)))
-		if len(result.Query.File) == 0 {
-			for _, f := range result.Facets {
-				if f.Key == "ext" {
-					writeData(ctx, w, views.Partial("#file-extensions", "innerHTML", views.ExtensionsButtons(f)))
-				}
-			}
-		}
-		files := result.FileResults
-		if !result.Query.FilenameOnly && len(files) > 10 {
-			files = files[:10]
-		}
-		filenames := []templ.Component{}
-		for _, r := range files {
-			filenames = append(filenames, views.FilenameMatch(r))
-		}
-		writeData(ctx, w, views.Partial("#path-results", "innerHTML", templ.Join(filenames...)))
-		for chunk := range slices.Chunk(result.Results, 10) {
-			matches := []templ.Component{}
-			for _, r := range chunk {
-				matches = append(matches, views.FileContentMatch(r))
-			}
-			writeData(ctx, w, views.Partial("#code-results", "append", templ.Join(matches...)))
-
-		}
-		return
-	} else {
-		views.Index(
-			views.Page{
-				Title:         title,
-				JSPath:        meta.EntrypointMap["web/codesearch_ui.tsx"].JS,
-				CSSPath:       meta.EntrypointMap["web/codesearch_ui.tsx"].CSS,
-				IncludeHeader: true,
-			},
-			views.IndexPageData{
-				Backend:         backend,
-				SampleRepo:      sampleRepo,
-				SearchResult:    result,
-				SearchResultErr: resultErr,
-			},
-			r.Form,
-		).Render(r.Context(), w)
+func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Vary", "HX-Request")
+	result, resultErr := s.searchForRequest(ctx, r)
+	title := "code search"
+	if result != nil {
+		title = fmt.Sprintf("%s · %s", result.Query.Line, title)
 	}
+	// TODO: actually streaming search -- serve results as they are found.
+	w.Header().Add("Content-Type", "text/event-stream")
+	writeData(ctx, w, views.Title(title))
+	writeData(ctx, w, views.Partial("#regex-error", "outerHTML", views.RegexError(resultErr)))
+	if result == nil {
+		writeData(ctx, w, views.Partial("#resultbox", "innerHTML", views.Help()))
+		return
+
+	}
+	writeData(ctx, w, views.Partial("#resultbox", "innerHTML", views.ResultArea()))
+	writeData(ctx, w, views.Partial("#countarea", "innerHTML", views.CountView(result)))
+	if len(result.Query.File) == 0 {
+		for _, f := range result.Facets {
+			if f.Key == "ext" {
+				writeData(ctx, w, views.Partial("#file-extensions", "innerHTML", views.ExtensionsButtons(f)))
+			}
+		}
+	}
+	files := result.FileResults
+	if !result.Query.FilenameOnly && len(files) > 10 {
+		files = files[:10]
+	}
+	filenames := []templ.Component{}
+	for _, r := range files {
+		filenames = append(filenames, views.FilenameMatch(r))
+	}
+	writeData(ctx, w, views.Partial("#path-results", "innerHTML", templ.Join(filenames...)))
+	for chunk := range slices.Chunk(result.Results, 10) {
+		matches := []templ.Component{}
+		for _, r := range chunk {
+			matches = append(matches, views.FileContentMatch(r))
+		}
+		writeData(ctx, w, views.Partial("#code-results", "append", templ.Join(matches...)))
+
+	}
+	return
 }
 
 func writeData(ctx context.Context, w http.ResponseWriter, fragment templ.Component) {
