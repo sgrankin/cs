@@ -184,14 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initRepoSelector() {
     let repos = jQuery("#repos");
-    repos.selectpicker({
-        actionsBox: true,
-        selectedTextFormat: "count > 4",
-        countSelectedText: "({0} repositories)",
-        noneSelectedText: "(all repositories)",
-        liveSearch: true,
-        width: "20em",
-    });
     repos.on("refreshed.bs.select", () => {
         let headers = jQuery(this).parent().find(".dropdown-header");
         headers.css("cursor", "pointer");
