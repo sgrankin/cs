@@ -306,12 +306,16 @@ func groupRepos(index cs.SearchIndex) ([]string, map[string][]string) {
 	return keys, groups
 }
 
-templ repoOptions(index cs.SearchIndex) {
+templ repoOptions(index cs.SearchIndex, selected []string) {
 	{{ keys, groups := groupRepos(index) }}
 	for _, k := range keys {
 		<optgroup label={ k }>
 			for _, repo := range slices.Sorted(slices.Values(groups[k])) {
-				<option value={ repo } data-tokens={ repo }>{ path.Base(repo) }</option>
+				<option
+					value={ repo }
+					data-tokens={ repo }
+					selected?={ slices.Contains(selected, repo) /* PERF: O(n^2) search */ }
+				>{ path.Base(repo) }</option>
 			}
 		</optgroup>
 	}
@@ -358,7 +362,7 @@ templ searchOptions(index cs.SearchIndex, params url.Values) {
 		<div class="search-option">
 			<span class="label">Repo:</span>
 			<select name="repo" id="repos" multiple>
-				@repoOptions(index)
+				@repoOptions(index, params["repo"])
 			</select>
 		</div>
 	</div>

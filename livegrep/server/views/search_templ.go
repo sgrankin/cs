@@ -1044,7 +1044,7 @@ func groupRepos(index cs.SearchIndex) ([]string, map[string][]string) {
 	return keys, groups
 }
 
-func repoOptions(index cs.SearchIndex) templ.Component {
+func repoOptions(index cs.SearchIndex, selected []string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -1092,7 +1092,7 @@ func repoOptions(index cs.SearchIndex) templ.Component {
 				var templ_7745c5c3_Var53 string
 				templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(repo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 314, Col: 24}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 315, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 				if templ_7745c5c3_Err != nil {
@@ -1105,31 +1105,41 @@ func repoOptions(index cs.SearchIndex) templ.Component {
 				var templ_7745c5c3_Var54 string
 				templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(repo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 314, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 316, Col: 23}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if slices.Contains(selected, repo) /* PERF: O(n^2) search */ {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, " selected")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, ">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var55 string
 				templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(path.Base(repo))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 314, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/search.templ`, Line: 318, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</option>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "</option>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</optgroup>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "</optgroup>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1159,55 +1169,55 @@ func searchOptions(index cs.SearchIndex, params url.Values) templ.Component {
 			templ_7745c5c3_Var56 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<div class=\"search-options\"><div class=\"search-option\"><span class=\"label\">Case:</span> <input type=\"radio\" name=\"fold_case\" value=\"false\" id=\"case-match\" tabindex=\"3\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "<div class=\"search-options\"><div class=\"search-option\"><span class=\"label\">Case:</span> <input type=\"radio\" name=\"fold_case\" value=\"false\" id=\"case-match\" tabindex=\"3\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if params.Get("fold_case") == "false" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "> <label for=\"case-match\">match</label> <input type=\"radio\" name=\"fold_case\" value=\"auto\" id=\"case-auto\" tabindex=\"4\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if params.Get("fold_case") == "auto" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "> <label for=\"case-auto\">auto</label> [<span class=\"tooltip-target\">?<div class=\"tooltip\">Case-sensitive if the query contains capital letters</div></span>] <input type=\"radio\" name=\"fold_case\" value=\"true\" id=\"case-ignore\" tabindex=\"5\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "> <label for=\"case-match\">match</label> <input type=\"radio\" name=\"fold_case\" value=\"auto\" id=\"case-auto\" tabindex=\"4\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if params.Get("fold_case") == "true" {
+		if params.Get("fold_case") == "auto" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "> <label for=\"case-ignore\">ignore</label></div><div class=\"search-option\"><span class=\"label\">Regex:</span> <input type=\"checkbox\" name=\"regex\" id=\"regex\" tabindex=\"6\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "> <label for=\"case-auto\">auto</label> [<span class=\"tooltip-target\">?<div class=\"tooltip\">Case-sensitive if the query contains capital letters</div></span>] <input type=\"radio\" name=\"fold_case\" value=\"true\" id=\"case-ignore\" tabindex=\"5\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if params.Get("regex") == "true" {
+		if params.Get("fold_case") == "true" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "> <label for=\"regex\">on</label></div><div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo\" id=\"repos\" multiple>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "> <label for=\"case-ignore\">ignore</label></div><div class=\"search-option\"><span class=\"label\">Regex:</span> <input type=\"checkbox\" name=\"regex\" id=\"regex\" tabindex=\"6\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = repoOptions(index).Render(ctx, templ_7745c5c3_Buffer)
+		if params.Get("regex") == "true" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, " checked")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "> <label for=\"regex\">on</label></div><div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo\" id=\"repos\" multiple>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</select></div></div>")
+		templ_7745c5c3_Err = repoOptions(index, params["repo"]).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "</select></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
