@@ -41,7 +41,7 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 
 	// Repo multiselect, but only if "repo:" is not in the query.
 	if len(query.Repo) == 0 {
-		if repos, ok := params["repo[]"]; ok {
+		if repos, ok := params["repo"]; ok {
 			query.RepoFilter = repos
 		}
 	}

@@ -10,15 +10,17 @@ type DirectoryContent struct {
 }
 
 type FileViewerContext struct {
-	Backend        string
-	PathSegments   []BreadCrumbEntry
-	RepoName       string
-	RepoURL        string
-	Commit         string
-	DirContent     *DirectoryContent
-	FileContent    *SourceFileContent
-	ExternalDomain string
-	Headlink       string
+	Backend             string
+	PathSegments        []BreadCrumbEntry
+	RepoName            string
+	RepoURL             string
+	Commit              string
+	DirContent          *DirectoryContent
+	FileContent         *SourceFileContent
+	ExternalDomain      string
+	ExternalURL         string
+	ExternalURLTemplate string
+	Headlink            string
 }
 
 type BreadCrumbEntry struct {
@@ -66,6 +68,7 @@ templ fileHeader(d FileViewerContext) {
 						data-action-name=""
 						title={ "View at " + d.ExternalDomain + ". Keyboard shortcut: v" }
 						href="#"
+						data-href-template={ d.ExternalURLTemplate }
 					>
 						view at { d.ExternalDomain } [<span class="shortcut">v</span>]
 					</a>

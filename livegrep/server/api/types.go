@@ -78,14 +78,3 @@ type FileResult struct {
 	Path    string `json:"path"`
 	Bounds  [2]int `json:"bounds"`
 }
-
-type SearchScriptData struct {
-	Repos []string `json:"repos"`
-}
-
-type FileViewData struct {
-	RepoName   string `json:"repo_name"`
-	URLPattern string `json:"url_pattern"`
-	FilePath   string `json:"file_path"`
-	Commit     string `json:"commit"`
-}

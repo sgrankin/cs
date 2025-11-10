@@ -1162,7 +1162,7 @@ func searchOptions(index cs.SearchIndex, params url.Values) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "> <label for=\"regex\">on</label></div><div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo[]\" id=\"repos\" multiple>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "> <label for=\"regex\">on</label></div><div class=\"search-option\"><span class=\"label\">Repo:</span> <select name=\"repo\" id=\"repos\" multiple>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

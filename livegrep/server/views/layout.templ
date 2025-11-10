@@ -6,9 +6,9 @@ type Page struct {
 	Title         string
 	JSPath        string
 	CSSPath       string
-	ScriptData    interface{}
 	IncludeHeader bool
 	Config        cs.ServeConfig
+	BodyAttrs     templ.Attributes
 }
 
 // Title returns an HTML document fragment with the title.
@@ -36,7 +36,7 @@ templ layout(p Page) {
 			}
 			<link rel="stylesheet" href={ string(templ.URL("/" + p.CSSPath)) }/>
 		</head>
-		<body>
+		<body { p.BodyAttrs... }>
 			{ children... }
 			if p.IncludeHeader {
 				<footer id="header">
@@ -56,9 +56,6 @@ templ layout(p Page) {
 			}
 			if p.Config.Templates.FooterHTML  != "" {
 				@templ.Raw(p.Config.Templates.FooterHTML)
-			}
-			if p.ScriptData  != "" {
-				@templ.JSONScript("data", p.ScriptData)
 			}
 		</body>
 	</html>

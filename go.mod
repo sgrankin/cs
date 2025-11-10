@@ -45,7 +45,6 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/tkrajina/go-reflector v0.5.8 // indirect
-	github.com/tkrajina/typescriptify-golang-structs v0.2.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/mod v0.29.0 // indirect
@@ -58,5 +57,4 @@ require (
 tool (
 	github.com/a-h/templ/cmd/templ
 	github.com/tkrajina/go-reflector/reflector
-	github.com/tkrajina/typescriptify-golang-structs/tscriptify
 )

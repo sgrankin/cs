@@ -11,11 +11,10 @@ import (
 	"github.com/a-h/templ"
 
 	"sgrankin.dev/cs"
-	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/views"
 )
 
-func (s *server) makeSearchScriptData() (*api.SearchScriptData, cs.SearchIndex, string) {
+func (s *server) makeSearchScriptData() (cs.SearchIndex, string) {
 	sampleRepo := ""
 	bk := s.bk
 	info := bk.Info()
@@ -27,13 +26,12 @@ func (s *server) makeSearchScriptData() (*api.SearchScriptData, cs.SearchIndex, 
 		trees = append(trees, tree.Name)
 	}
 
-	script_data := &api.SearchScriptData{Repos: trees}
-	return script_data, bk, sampleRepo
+	return bk, sampleRepo
 }
 
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Vary", "HX-Request")
-	scriptData, backend, sampleRepo := s.makeSearchScriptData()
+	backend, sampleRepo := s.makeSearchScriptData()
 	result, resultErr := s.searchForRequest(ctx, r)
 	title := "code search"
 	if result != nil {
@@ -82,7 +80,6 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 				Title:         title,
 				JSPath:        meta.EntrypointMap["web/codesearch_ui.tsx"].JS,
 				CSSPath:       meta.EntrypointMap["web/codesearch_ui.tsx"].CSS,
-				ScriptData:    scriptData,
 				IncludeHeader: true,
 			},
 			views.IndexPageData{

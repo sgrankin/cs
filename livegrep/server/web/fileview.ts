@@ -12,7 +12,7 @@ function getSelectedText() {
     return window.getSelection()?.toString() || "";
 }
 
-function scrollToRange(range: { start: number; end: number; }, elementContainer: JQuery) {
+function scrollToRange(range: {start: number; end: number}, elementContainer: JQuery) {
     // - If we have a single line, scroll the viewport so that the element is
     // at 1/3 of the viewport.
     // - If we have a range, try and center the range in the viewport
@@ -72,7 +72,7 @@ function parseHashForLineRange(hashString: string) {
     return null;
 }
 
-function addHighlightClassesForRange(range: { start: number; end: number; }, root: JQuery) {
+function addHighlightClassesForRange(range: {start: number; end: number}, root: JQuery) {
     let idSelectors: string[] = [];
     for (let lineNumber = range.start; lineNumber <= range.end; lineNumber++) {
         idSelectors.push("#L" + lineNumber);
@@ -94,21 +94,17 @@ function expandRangeToElement(element: JQuery) {
     }
 }
 
-function init(initData: FileViewData) {
+function init() {
     let root = jQuery(".file-content");
     let lineNumberContainer = root.find(".line-numbers");
     let helpScreen = jQuery(".help-screen");
 
     function doSearch(query: string, newTab = false) {
-        let url = "/search" + (query
-            ? "?q=" + encodeURIComponent(query) + "&repo=" + encodeURIComponent(initData.repo_name)
-            : "");
-
-        if (newTab)
-            window.open(url);
-        else
-            window.location.href = url;
-
+        let url = jQuery("body")!
+            .attr("data-search-url-template")!
+            .replace("{query}", encodeURIComponent(query));
+        if (newTab) window.open(url);
+        else window.location.href = url;
     }
 
     function showHelp() {
@@ -144,10 +140,11 @@ function init(initData: FileViewData) {
         }
 
         // Update the external-browse link
-        jQuery("#external-link").attr("href", getExternalLink(range));
+        let link = jQuery("#external-link");
+        link.attr("href", getExternalLink(link.attr("data-href-template") as string, range));
     }
 
-    function getLineNumber(range: { start: number; end: number; } | null) {
+    function getLineNumber(range: {start: number; end: number} | null) {
         if (range == null) {
             // Default to first line if no lines are selected.
             return "1";
@@ -161,34 +158,16 @@ function init(initData: FileViewData) {
         }
     }
 
-    function getExternalLink(range: { start: number; end: number; } | null) {
-        let lno = getLineNumber(range);
-
-        let repoName = initData.repo_name;
-        let filePath = initData.file_path;
-        let url = initData.url_pattern;
-
-        // If url not found, warn user and fail gracefully
+    function getExternalLink(url: string | undefined, range: {start: number; end: number} | null) {
         if (!url) {
-            // deal with both undefined and empty string
             console.error(
                 "The index file you provided does not provide repositories[x].metadata.url_pattern. External links to file sources will not work. See the README for more information on file viewing.",
             );
-            return;
+            return "#";
         }
 
-        // If {path} already has a slash in front of it, trim extra leading
-        // slashes from `pathInRepo` to avoid a double-slash in the URL.
-        if (url.indexOf("/{path}") !== -1) {
-            filePath = filePath.replace(/^\/+/, "");
-        }
-
-        // XXX code copied
-        url = url.replace("{lno}", lno.toString());
-        url = url.replace("{version}", initData.commit);
-        url = url.replace("{name}", repoName);
-        url = url.replace("{path}", filePath);
-        return url;
+        let lno = getLineNumber(range);
+        return url.replace("{lno}", lno.toString());
     }
 
     function processKeyEvent(key: string) {
@@ -230,7 +209,7 @@ function init(initData: FileViewData) {
             case "p": {
                 let selectedText = getSelectedText();
                 if (selectedText) {
-                    window.find(selectedText, /*case-sensitive:*/false, /*previous:*/key == "p");
+                    window.find(selectedText, /*case-sensitive:*/ false, /*previous:*/ key == "p");
                 }
                 return true;
             }
@@ -295,7 +274,7 @@ function init(initData: FileViewData) {
             handleHashChange();
         });
 
-        jQuery(document).on("keydown", event => {
+        jQuery(document).on("keydown", (event) => {
             // Filter out key events when the user has focused an input field.
             if (jQuery(event.target).is("input,textarea")) return;
             // Filter out key if a modifier is pressed.
@@ -328,5 +307,5 @@ function init(initData: FileViewData) {
 }
 
 jQuery(() => {
-    init(JSON.parse((document.getElementById("data") as HTMLScriptElement).text) as api.FileViewData);
+    init();
 });

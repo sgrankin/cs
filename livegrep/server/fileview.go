@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"regexp"
 	"sort"
@@ -16,7 +17,6 @@ import (
 	"github.com/a-h/templ"
 
 	"sgrankin.dev/cs"
-	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/chroma"
 	"sgrankin.dev/cs/livegrep/server/views"
 )
@@ -37,28 +37,17 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 		http.Error(w, "Error reading file: "+err.Error(), 500)
 		return
 	}
-	url, domain := externalURL(repoName, commit, path)
-	fileData.ExternalDomain = domain
-	script_data := &api.FileViewData{
-		RepoName:   repoName,
-		URLPattern: url,
-		FilePath:   path,
-		Commit:     commit,
-	}
 	views.FileView(views.Page{
 		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
 		JSPath:        meta.EntrypointMap["web/fileview.ts"].JS,
 		CSSPath:       meta.EntrypointMap["web/fileview.ts"].CSS,
-		ScriptData:    script_data,
 		IncludeHeader: false,
+		BodyAttrs:     templ.Attributes{"data-search-url-template": "/search?q={query}&repo=" + url.QueryEscape(repoName)},
 	}, *fileData).Render(r.Context(), w)
 }
 
 func externalURL(repo, commit, path string) (url, name string) {
 	// URLPattern may have these replaceable tags:
-	// - {name}: repo name
-	// - {version}: the commit
-	// - {path}: file path in repo
 	// - {lno}: the line number
 	if repo, found := strings.CutPrefix(repo, "github.com/"); found {
 		return "https://github.com/" + repo + "/blob/" + commit + "/" + path + "#L{lno}", "GitHub"
@@ -139,14 +128,17 @@ func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*view
 		dirContent = mkDirContent(backend, files, repoName, commit, path)
 	}
 	segments := mkPathSegments(backend, repoName, commit, path)
+	url, domain := externalURL(repoName, commit, path)
 	return &views.FileViewerContext{
-		Backend:      backend.Name(),
-		PathSegments: segments,
-		RepoName:     repoName,
-		RepoURL:      viewPath(backend.Name(), repoName, commit),
-		Commit:       commit,
-		DirContent:   dirContent,
-		FileContent:  fileContent,
+		Backend:             backend.Name(),
+		PathSegments:        segments,
+		RepoName:            repoName,
+		RepoURL:             viewPath(backend.Name(), repoName, commit),
+		Commit:              commit,
+		DirContent:          dirContent,
+		FileContent:         fileContent,
+		ExternalDomain:      domain,
+		ExternalURLTemplate: url,
 	}, nil
 }
 

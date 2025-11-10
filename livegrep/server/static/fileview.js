@@ -6440,16 +6440,14 @@ function expandRangeToElement(element) {
     setHash("#L" + range.start + "-" + range.end);
   }
 }
-function init(initData) {
+function init() {
   let root = (0, import_jquery.default)(".file-content");
   let lineNumberContainer = root.find(".line-numbers");
   let helpScreen = (0, import_jquery.default)(".help-screen");
   function doSearch(query, newTab = false) {
-    let url = "/search" + (query ? "?q=" + encodeURIComponent(query) + "&repo=" + encodeURIComponent(initData.repo_name) : "");
-    if (newTab)
-      window.open(url);
-    else
-      window.location.href = url;
+    let url = (0, import_jquery.default)("body").attr("data-search-url-template").replace("{query}", encodeURIComponent(query));
+    if (newTab) window.open(url);
+    else window.location.href = url;
   }
   function showHelp() {
     helpScreen.removeClass("hidden").children().on("click", function(event) {
@@ -6472,7 +6470,8 @@ function init(initData) {
         scrollToRange(range, root);
       }
     }
-    (0, import_jquery.default)("#external-link").attr("href", getExternalLink(range));
+    let link = (0, import_jquery.default)("#external-link");
+    link.attr("href", getExternalLink(link.attr("data-href-template"), range));
   }
   function getLineNumber(range) {
     if (range == null) {
@@ -6483,25 +6482,15 @@ function init(initData) {
       return range.start + "-" + range.end;
     }
   }
-  function getExternalLink(range) {
-    let lno = getLineNumber(range);
-    let repoName = initData.repo_name;
-    let filePath = initData.file_path;
-    let url = initData.url_pattern;
+  function getExternalLink(url, range) {
     if (!url) {
       console.error(
         "The index file you provided does not provide repositories[x].metadata.url_pattern. External links to file sources will not work. See the README for more information on file viewing."
       );
-      return;
+      return "#";
     }
-    if (url.indexOf("/{path}") !== -1) {
-      filePath = filePath.replace(/^\/+/, "");
-    }
-    url = url.replace("{lno}", lno.toString());
-    url = url.replace("{version}", initData.commit);
-    url = url.replace("{name}", repoName);
-    url = url.replace("{path}", filePath);
-    return url;
+    let lno = getLineNumber(range);
+    return url.replace("{lno}", lno.toString());
   }
   function processKeyEvent(key) {
     switch (key) {
@@ -6619,7 +6608,7 @@ function init(initData) {
   }, 1);
 }
 (0, import_jquery.default)(() => {
-  init(JSON.parse(document.getElementById("data").text));
+  init();
 });
 /*! For license information please see fileview.js.LEGAL.txt */
 //# sourceMappingURL=fileview.js.map
