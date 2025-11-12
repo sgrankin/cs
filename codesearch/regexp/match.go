@@ -16,11 +16,13 @@ import (
 
 // A matcher holds the state for running regular expression search.
 type matcher struct {
-	prog      *syntax.Prog       // compiled program
-	dstate    map[string]*dstate // dstate cache
-	start     *dstate            // start state
-	startLine *dstate            // start state for beginning of line
-	z1, z2    nstate             // two temporary nstates
+	prog        *syntax.Prog       // compiled program
+	dstate      map[string]*dstate // dstate cache
+	start       *dstate            // start state
+	startLine   *dstate            // start state for beginning of line
+	startWord   *dstate            // start state for being at a word boundary
+	startNoWord *dstate            // start state for being in a word
+	z1, z2      nstate             // two temporary nstates
 }
 
 // An nstate corresponds to an NFA state.
@@ -119,6 +121,16 @@ func (m *matcher) init(prog *syntax.Prog) error {
 	m.addq(&m.z1.q, uint32(prog.Start), syntax.EmptyBeginLine)
 	m.z1.flag = flagBOL
 	m.startLine = m.cache(&m.z1)
+
+	m.z1.q.Reset()
+	m.addq(&m.z1.q, uint32(prog.Start), syntax.EmptyWordBoundary)
+	m.z1.flag = flagBOL
+	m.startWord = m.cache(&m.z1)
+
+	m.z1.q.Reset()
+	m.addq(&m.z1.q, uint32(prog.Start), syntax.EmptyNoWordBoundary)
+	m.z1.flag = flagBOL
+	m.startNoWord = m.cache(&m.z1)
 
 	return nil
 }
@@ -274,8 +286,7 @@ func match[T ~[]byte | ~string](m *matcher, s T) (end int) {
 	return -1
 }
 
-func revmatch[T ~[]byte | ~string](m *matcher, s T) (end int) {
-	d := m.start
+func revmatch[T ~[]byte | ~string](m *matcher, s T, d *dstate) (end int) {
 	for i := len(s) - 1; i >= 0; i-- {
 		c := int(s[i])
 		d1 := d.next[c]

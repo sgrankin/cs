@@ -46,7 +46,7 @@ var matchTests = []struct {
 }{
 	// // Adapted from go/src/pkg/regexp/find_test.go.
 	{`a+`, "abc\ndef\nghi\n", []Range{{0, 1}}},
-	{``, ``, []Range{{}}},
+	{``, ``, []Range{{0, 0}}},
 	{`^abcdefg`, "abcdefg", []Range{{0, 7}}},
 	{`a+`, "baaab", []Range{{1, 2}, {2, 3}, {3, 4}}},
 	{"abcd..", "abcdef", []Range{{0, 6}}},
@@ -54,14 +54,14 @@ var matchTests = []struct {
 	{`x`, "y", nil},
 	{`b`, "abc", []Range{{1, 2}}},
 	{`.`, "a", []Range{{0, 1}}},
-	// {`.*`, "abcdef", []Range{{}}}, // XXX hang
-	// {`^`, "abcde", []Range{{}}}, // XXX hang
+	{`.*`, "abcdef", []Range{{0, 0}}},
+	{`^`, "abcde", []Range{{0, 0}}},
 	{`$`, "abcde", []Range{{5, 5}}},
 	{`^abcd$`, "abcd", []Range{{0, 4}}},
 	{`^bcd'`, "abcdef", nil},
 	{`^abcd$`, "abcde", nil},
 	{`a+`, "baaab", []Range{{1, 2}, {2, 3}, {3, 4}}},
-	// {`a*`, "baaab", []Range{{}}}, // XXX hang
+	{`a*`, "baaab", []Range{{0, 0}}},
 	{`[a-z]+`, "abcd", []Range{{0, 1}, {1, 2}, {2, 3}, {3, 4}}},
 	{`[^a-z]+`, "ab1234cd", []Range{{2, 3}, {3, 4}, {4, 5}, {5, 6}}},
 	{`[a\-\]z]+`, "az]-bcz", []Range{{0, 1}, {1, 2}, {2, 3}, {3, 4}, {6, 7}}},
@@ -73,7 +73,7 @@ var matchTests = []struct {
 	{`(a)`, "a", []Range{{0, 1}}},
 	{`(.)(.)`, "日a", []Range{{0, 4}}},
 	{`(.*)`, "", []Range{{0, 0}}},
-	// {`(.*)`, "abcd", []Range{{}}}, // XXX hang
+	{`(.*)`, "abcd", []Range{{0, 0}}},
 	{`(..)(..)`, "abcd", []Range{{0, 4}}},
 	{`(([^xyz]*)(d))`, "abcd", []Range{{3, 4}}},
 	{`((a|b|c)*(d))`, "abcd", []Range{{3, 4}}},
@@ -81,8 +81,8 @@ var matchTests = []struct {
 	{`\a\f\r\t\v`, "\a\f\r\t\v", []Range{{0, 5}}},
 	{`[\a\f\n\r\t\v]+`, "\a\f\r\t\v", rangesUpTo(5)},
 
-	// {`a*(|(b))c*`, "aacc", []Range{{}}}, /// XXX hang
-	// {`(.*).*`, "ab", []Range{{}}}, // XXX hang
+	{`a*(|(b))c*`, "aacc", []Range{{0, 0}}},
+	{`(.*).*`, "ab", []Range{{0, 0}}},
 	{`[.]`, ".", []Range{{0, 1}}},
 	{`/$`, "/abc/", []Range{{4, 5}}},
 	{`/$`, "/abc", nil},
@@ -105,18 +105,18 @@ var matchTests = []struct {
 	{`(?:.|(?:.a))`, "", nil},
 	{`(?:A(?:A|a))`, "Aa", []Range{{0, 2}}},
 	{`(?:A|(?:A|a))`, "a", []Range{{0, 1}}},
-	{`(a){0}`, "", []Range{{}}},
+	{`(a){0}`, "", []Range{{0, 0}}},
 	{`(?-s)(?:(?:^).)`, "\n", nil},
 	{`(?s)(?:(?:^).)`, "\n", []Range{{0, 1}}},
 	{`(?:(?:^).)`, "\n", nil},
-	// {`\b`, "x", []Range{{}}}, // XXX panic
-	// {`\b`, "xx", []Range{{}}},
-	// {`\b`, "x y", []Range{{}}},
-	// {`\b`, "xx yy", []Range{{}}},
-	// {`\B`, "x", nil},
-	// {`\B`, "xx", []Range{{}}},
-	// {`\B`, "x y", nil},
-	// {`\B`, "xx yy", []Range{{}}},
+	{`\b`, "x", []Range{{0, 0}}},
+	{`\b`, "xx", []Range{{0, 0}}},
+	{`\b`, "x y", []Range{{0, 0}}},
+	{`\b`, "xx yy", []Range{{0, 0}}},
+	{`\B`, "x", nil},
+	{`\B`, "xx", []Range{{1, 1}}},
+	{`\B`, "x y", nil},
+	{`\B`, "xx yy", []Range{{1, 1}}},
 	{`(?im)^[abc]+$`, "abcABC", []Range{{0, 6}}},
 	{`(?im)^[α]+$`, "αΑ", []Range{{0, 4}}},
 	{`[Aa]BC`, "abc", nil},
@@ -201,7 +201,6 @@ func TestMatch(t *testing.T) {
 
 func grep(re *Regexp, b []byte) []Range {
 	var m []Range
-	// lineno := 1
 	offset := 0
 	for {
 		r := Match(re, b)
@@ -209,6 +208,9 @@ func grep(re *Regexp, b []byte) []Range {
 			break
 		}
 		m = append(m, *r.Add(offset))
+		if r.Start == r.End {
+			break // Zero-width match; record it once and be done.
+		}
 		offset += r.End
 		b = b[r.End:]
 		if len(b) == 0 {

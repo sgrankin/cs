@@ -111,9 +111,28 @@ func Match[T ~[]byte | ~string](r *Regexp, s T) *Range {
 	if end < 0 {
 		return nil
 	}
-	start := revmatch(&r.revmatcher, s[:end])
+	var d *dstate
+	// For reverse matching, we need the correct set of flags for word boundary matching:
+	left := -1
+	right := -1
+	if end > 0 {
+		left = int(s[end-1])
+	}
+	if len(s) > end {
+		right = int(s[end])
+	}
+	switch {
+	case left == -1 && right == -1:
+		d = r.revmatcher.start
+	case isWordByte(left) == isWordByte(right):
+		d = r.revmatcher.startNoWord
+	case isWordByte(left) != isWordByte(right):
+		d = r.revmatcher.startWord
+	}
+	start := revmatch(&r.revmatcher, s[:end], d)
 	if start < 0 {
-		log.Panicf("Reverse regex failed: \n%q\n%x\nend=%d start=%d\nsyn=%q\nsynprog=%s\nrevsyn=%q\nrevprog=%s", s, s, end, start,
+		log.Panicf("Reverse regex failed: \ns=%q\ns=%x\nend=%d start=%d\nsyn=%q\nsynprog=%s\nrevsyn=%q\nrevprog=%s",
+			s, s, end, start,
 			r.syn.String(),
 			r.matcher.prog.String(),
 			r.revsyn.String(),
