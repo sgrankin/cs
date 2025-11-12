@@ -121,6 +121,7 @@ func (m *matcher) init(prog *syntax.Prog) error {
 	m.z1.flag = flagBOL
 	m.startLine = m.cache(&m.z1)
 
+	// TODO: can we use syntax.EmptyOpContext() to initialize these states instead?
 	m.z1.q.Reset()
 	m.addq(&m.z1.q, uint32(prog.Start), syntax.EmptyWordBoundary)
 	m.z1.flag = flagBOL

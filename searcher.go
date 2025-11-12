@@ -60,7 +60,7 @@ func (b *indexSearcher) SearchFileNames(
 			continue
 		}
 		m := regexp.Match(re, path)
-		if m == regexp.NilRange {
+		if m == regexp.NilRange || m.Start == m.End {
 			continue
 		}
 		res = append(res, FileResult{
@@ -115,15 +115,11 @@ func (b *indexSearcher) SearchFiles(
 
 func searchBlob(re *regexp.Regexp, blob []byte, contextLines, maxMatches int) []LineResult {
 	var results []LineResult
-	m := regexp.Match(re, blob)
-	if m == regexp.NilRange {
-		return nil
-	}
-
 	lineNum := 1
 	lineNumUntil := 0
 
-	for m != regexp.NilRange {
+	m := regexp.Match(re, blob)
+	for m != regexp.NilRange && m.Start != m.End {
 		lineStart := max(bytes.LastIndexByte(blob[:m.End], '\n')+1, 0)
 		lineEnd := len(blob)
 		if m.End < len(blob) {
