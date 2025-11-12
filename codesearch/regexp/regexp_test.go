@@ -45,82 +45,82 @@ var matchTests = []struct {
 	m  []Range
 }{
 	// // Adapted from go/src/pkg/regexp/find_test.go.
-	// {`a+`, "abc\ndef\nghi\n", []int{1}},
-	// {``, ``, []int{1}},
-	// {`^abcdefg`, "abcdefg", []int{1}},
-	// {`a+`, "baaab", []int{1}},
-	// {"abcd..", "abcdef", []int{1}},
-	// {`a`, "a", []int{1}},
-	// {`x`, "y", nil},
-	// {`b`, "abc", []int{1}},
-	// {`.`, "a", []int{1}},
-	// {`.*`, "abcdef", []int{1}},
-	// {`^`, "abcde", []int{1}},
-	// {`$`, "abcde", []int{1}},
-	// {`^abcd$`, "abcd", []int{1}},
-	// {`^bcd'`, "abcdef", nil},
-	// {`^abcd$`, "abcde", nil},
-	// {`a+`, "baaab", []int{1}},
-	// {`a*`, "baaab", []int{1}},
-	// {`[a-z]+`, "abcd", []int{1}},
-	// {`[^a-z]+`, "ab1234cd", []int{1}},
-	// {`[a\-\]z]+`, "az]-bcz", []int{1}},
-	// {`[^\n]+`, "abcd\n", []int{1}},
-	// {`[日本語]+`, "日本語日本語", []int{1}},
-	// {`日本語+`, "日本語", []int{1}},
-	// {`日本語+`, "日本語語語語", []int{1}},
-	// {`()`, "", []int{1}},
-	// {`(a)`, "a", []int{1}},
-	// {`(.)(.)`, "日a", []int{1}},
-	// {`(.*)`, "", []int{1}},
-	// {`(.*)`, "abcd", []int{1}},
-	// {`(..)(..)`, "abcd", []int{1}},
-	// {`(([^xyz]*)(d))`, "abcd", []int{1}},
-	// {`((a|b|c)*(d))`, "abcd", []int{1}},
-	// {`(((a|b|c)*)(d))`, "abcd", []int{1}},
-	// {`\a\f\r\t\v`, "\a\f\r\t\v", []int{1}},
-	// {`[\a\f\n\r\t\v]+`, "\a\f\r\t\v", []int{1}},
+	{`a+`, "abc\ndef\nghi\n", []Range{{0, 1}}},
+	{``, ``, []Range{{}}},
+	{`^abcdefg`, "abcdefg", []Range{{0, 7}}},
+	{`a+`, "baaab", []Range{{1, 2}, {2, 3}, {3, 4}}},
+	{"abcd..", "abcdef", []Range{{0, 6}}},
+	{`a`, "a", []Range{{0, 1}}},
+	{`x`, "y", nil},
+	{`b`, "abc", []Range{{1, 2}}},
+	{`.`, "a", []Range{{0, 1}}},
+	// {`.*`, "abcdef", []Range{{}}}, // XXX hang
+	// {`^`, "abcde", []Range{{}}}, // XXX hang
+	{`$`, "abcde", []Range{{5, 5}}},
+	{`^abcd$`, "abcd", []Range{{0, 4}}},
+	{`^bcd'`, "abcdef", nil},
+	{`^abcd$`, "abcde", nil},
+	{`a+`, "baaab", []Range{{1, 2}, {2, 3}, {3, 4}}},
+	// {`a*`, "baaab", []Range{{}}}, // XXX hang
+	{`[a-z]+`, "abcd", []Range{{0, 1}, {1, 2}, {2, 3}, {3, 4}}},
+	{`[^a-z]+`, "ab1234cd", []Range{{2, 3}, {3, 4}, {4, 5}, {5, 6}}},
+	{`[a\-\]z]+`, "az]-bcz", []Range{{0, 1}, {1, 2}, {2, 3}, {3, 4}, {6, 7}}},
+	{`[^\n]+`, "abcd\n", []Range{{0, 1}, {1, 2}, {2, 3}, {3, 4}}},
+	{`[日本語]+`, "日本語日本語", []Range{{0, 3}, {3, 6}, {6, 9}, {9, 12}, {12, 15}, {15, 18}}},
+	{`日本語+`, "日本語", []Range{{0, 9}}},
+	{`日本語+`, "日本語語語語", []Range{{0, 9}}},
+	{`()`, "", []Range{{0, 0}}},
+	{`(a)`, "a", []Range{{0, 1}}},
+	{`(.)(.)`, "日a", []Range{{0, 4}}},
+	{`(.*)`, "", []Range{{0, 0}}},
+	// {`(.*)`, "abcd", []Range{{}}}, // XXX hang
+	{`(..)(..)`, "abcd", []Range{{0, 4}}},
+	{`(([^xyz]*)(d))`, "abcd", []Range{{3, 4}}},
+	{`((a|b|c)*(d))`, "abcd", []Range{{3, 4}}},
+	{`(((a|b|c)*)(d))`, "abcd", []Range{{3, 4}}},
+	{`\a\f\r\t\v`, "\a\f\r\t\v", []Range{{0, 5}}},
+	{`[\a\f\n\r\t\v]+`, "\a\f\r\t\v", rangesUpTo(5)},
 
-	// {`a*(|(b))c*`, "aacc", []int{1}},
-	// {`(.*).*`, "ab", []int{1}},
-	// {`[.]`, ".", []int{1}},
-	// {`/$`, "/abc/", []int{1}},
-	// {`/$`, "/abc", nil},
+	// {`a*(|(b))c*`, "aacc", []Range{{}}}, /// XXX hang
+	// {`(.*).*`, "ab", []Range{{}}}, // XXX hang
+	{`[.]`, ".", []Range{{0, 1}}},
+	{`/$`, "/abc/", []Range{{4, 5}}},
+	{`/$`, "/abc", nil},
 
 	// // multiple matches
-	// {`.`, "abc", []int{1}},
-	// {`(.)`, "abc", []int{1}},
-	// {`.(.)`, "abcd", []int{1}},
-	// {`ab*`, "abbaab", []int{1}},
-	// {`a(b*)`, "abbaab", []int{1}},
+	{`.`, "abc", []Range{{0, 1}, {1, 2}, {2, 3}}},
+	{`(.)`, "abc", []Range{{0, 1}, {1, 2}, {2, 3}}},
+	{`.(.)`, "abcd", []Range{{0, 2}, {2, 4}}},
+	{`ab*`, "abbaab", []Range{{0, 1}, {3, 4}, {4, 5}}},
+	{`a(b*)`, "abbaab", []Range{{0, 1}, {3, 4}, {4, 5}}},
 
-	// // fixed bugs
-	// {`ab$`, "cab", []int{1}},
-	// {`axxb$`, "axxcb", nil},
-	// {`data`, "daXY data", []int{1}},
-	// {`da(.)a$`, "daXY data", []int{1}},
-	// {`zx+`, "zzx", []int{1}},
-	// {`ab$`, "abcab", []int{1}},
-	// {`(aa)*$`, "a", []int{1}},
-	// {`(?:.|(?:.a))`, "", nil},
-	// {`(?:A(?:A|a))`, "Aa", []int{1}},
-	// {`(?:A|(?:A|a))`, "a", []int{1}},
-	// {`(a){0}`, "", []int{1}},
-	// //	{`(?-s)(?:(?:^).)`, "\n", nil},
-	// //	{`(?s)(?:(?:^).)`, "\n", []int{1}},
-	// //	{`(?:(?:^).)`, "\n", nil},
-	// {`\b`, "x", []int{1}},
-	// {`\b`, "xx", []int{1}},
-	// {`\b`, "x y", []int{1}},
-	// {`\b`, "xx yy", []int{1}},
+	// fixed bugs
+	{`ab$`, "cab", []Range{{1, 3}}},
+	{`axxb$`, "axxcb", nil},
+	{`data`, "daXY data", []Range{{5, 9}}},
+	{`da(.)a$`, "daXY data", []Range{{5, 9}}},
+	{`zx+`, "zzx", []Range{{1, 3}}},
+	{`ab$`, "abcab", []Range{{3, 5}}},
+	{`(aa)*$`, "a", []Range{{1, 1}}},
+	{`(?:.|(?:.a))`, "", nil},
+	{`(?:A(?:A|a))`, "Aa", []Range{{0, 2}}},
+	{`(?:A|(?:A|a))`, "a", []Range{{0, 1}}},
+	{`(a){0}`, "", []Range{{}}},
+	{`(?-s)(?:(?:^).)`, "\n", nil},
+	{`(?s)(?:(?:^).)`, "\n", []Range{{0, 1}}},
+	{`(?:(?:^).)`, "\n", nil},
+	// {`\b`, "x", []Range{{}}}, // XXX panic
+	// {`\b`, "xx", []Range{{}}},
+	// {`\b`, "x y", []Range{{}}},
+	// {`\b`, "xx yy", []Range{{}}},
 	// {`\B`, "x", nil},
-	// {`\B`, "xx", []int{1}},
+	// {`\B`, "xx", []Range{{}}},
 	// {`\B`, "x y", nil},
-	// {`\B`, "xx yy", []int{1}},
-	// {`(?im)^[abc]+$`, "abcABC", []int{1}},
-	// {`(?im)^[α]+$`, "αΑ", []int{1}},
-	// {`[Aa]BC`, "abc", nil},
-	// {`[Aa]bc`, "abc", []int{1}},
+	// {`\B`, "xx yy", []Range{{}}},
+	{`(?im)^[abc]+$`, "abcABC", []Range{{0, 6}}},
+	{`(?im)^[α]+$`, "αΑ", []Range{{0, 4}}},
+	{`[Aa]BC`, "abc", nil},
+	{`[Aa]bc`, "abc", []Range{{0, 3}}},
 
 	// RE2 tests
 	{`[^\S\s]`, "abcd", nil},
@@ -131,26 +131,19 @@ var matchTests = []struct {
 	{`(?i)\W`, "k", nil},
 	{`(?i)\W`, "s", nil},
 
-	// // can backslash-escape any punctuation
-	// {
-	// 	`\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\{\|\}\~`,
-	// 	`!"#$%&'()*+,-./:;<=>?@[\]^_{|}~`,
-	// 	[]int{1},
-	// },
-	// {
-	// 	`[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\{\|\}\~]+`,
-	// 	`!"#$%&'()*+,-./:;<=>?@[\]^_{|}~`,
-	// 	[]Range{{0, 1}},
-	// },
+	// can backslash-escape any punctuation
+	{
+		`\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\{\|\}\~`,
+		`!"#$%&'()*+,-./:;<=>?@[\]^_{|}~`,
+		[]Range{{0, 31}},
+	},
+	{
+		`[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\{\|\}\~]+`,
+		`!"#$%&'()*+,-./:;<=>?@[\]^_{|}~`,
+		rangesUpTo(31),
+	},
 	{"\\`", "`", []Range{{0, 1}}},
 	{"[\\`]+", "`", []Range{{0, 1}}},
-
-	// // long set of matches (longer than startSize)
-	// {
-	// 	".",
-	// 	"qwertyuiopasdfghjklzxcvbnm1234567890",
-	// 	[]Range{{0, 1}},
-	// },
 
 	// Multiline inputs, matches wthin a line.
 	{`x`, "a", nil},
@@ -223,4 +216,13 @@ func grep(re *Regexp, b []byte) []Range {
 		}
 	}
 	return m
+}
+
+// rangesUpTo returns one-character ranges from {0, 1} up to {n-1, n} in order.
+func rangesUpTo(n int) []Range {
+	var ret []Range
+	for i := range n {
+		ret = append(ret, Range{i, i + 1})
+	}
+	return ret
 }
