@@ -5,6 +5,7 @@
 package regexp
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -44,7 +45,7 @@ var matchTests = []struct {
 	s  string
 	m  []Range
 }{
-	// // Adapted from go/src/pkg/regexp/find_test.go.
+	// Adapted from go/src/pkg/regexp/find_test.go.
 	{`a+`, "abc\ndef\nghi\n", []Range{{0, 1}}},
 	{``, ``, []Range{{0, 0}}},
 	{`^abcdefg`, "abcdefg", []Range{{0, 7}}},
@@ -87,7 +88,7 @@ var matchTests = []struct {
 	{`/$`, "/abc/", []Range{{4, 5}}},
 	{`/$`, "/abc", nil},
 
-	// // multiple matches
+	// multiple matches
 	{`.`, "abc", []Range{{0, 1}, {1, 2}, {2, 3}}},
 	{`(.)`, "abc", []Range{{0, 1}, {1, 2}, {2, 3}}},
 	{`.(.)`, "abcd", []Range{{0, 2}, {2, 4}}},
@@ -182,7 +183,10 @@ var matchTests = []struct {
 	{`x.*x`, "hello x world\nbanana x phone", nil},
 	{`(?s)x.*x`, "hello x world\nbanana x phone", []Range{{6, 22}}},
 	{`(?s)xy.*xy`, "hello xy world\n\n\nbanana xy phone", []Range{{6, 26}}},
+
 	{`x.*x`, "axöxb", []Range{{1, 5}}},
+
+	{`(x+x+)+y`, "xxxxxxxxxxx", nil}, // Catastrophic backtracking example
 }
 
 func TestMatch(t *testing.T) {
@@ -192,28 +196,57 @@ func TestMatch(t *testing.T) {
 			t.Errorf("Compile(%#q): %v", tt.re, err)
 			continue
 		}
-		lines := grep(re, []byte(tt.s))
+		lines := grep(re, tt.s)
 		if diff := cmp.Diff(tt.m, lines); diff != "" {
 			t.Errorf("grep(%#q, %q) result differs (-want+got):\n%v", tt.re, tt.s, diff)
 		}
 	}
 }
 
-func grep(re *Regexp, b []byte) []Range {
+var matchBenches = []struct {
+	re string
+	s  string
+}{
+	{`x`, "a"},
+	{`da(.)a$`, "daXY data"},
+	{`\bbanana (phone|pants)\b`, "x y z banana tree banana phone banana pants"},
+	{`(x+x+)+y`, "xxxxxxxxxxx"},
+	{`(?i)\\W`, "s"},
+	{`[Aa]BC`, "abc"},
+	{`(?:.|(?:.a))`, ""},
+}
+
+func BenchmarkMatch(b *testing.B) {
+	for i, tt := range matchBenches {
+		b.Run(fmt.Sprintf("%04d·%q·%q", i, tt.re, tt.s), func(b *testing.B) {
+			b.ReportAllocs()
+			re, err := Compile(tt.re, 0)
+			if err != nil {
+				b.Errorf("Compile(%#q): %v", tt.re, err)
+				return
+			}
+			for b.Loop() {
+				Match(re, tt.s)
+			}
+		})
+	}
+}
+
+func grep(re *Regexp, s string) []Range {
 	var m []Range
 	offset := 0
 	for {
-		r := Match(re, b)
-		if r == nil {
+		r := Match(re, s)
+		if r == NilRange {
 			break
 		}
-		m = append(m, *r.Add(offset))
+		m = append(m, r.Add(offset))
 		if r.Start == r.End {
 			break // Zero-width match; record it once and be done.
 		}
 		offset += r.End
-		b = b[r.End:]
-		if len(b) == 0 {
+		s = s[r.End:]
+		if len(s) == 0 {
 			break
 		}
 	}

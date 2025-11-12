@@ -99,17 +99,19 @@ func (re *Regexp) Clone() *Regexp {
 
 type Range struct{ Start, End int }
 
-func (r *Range) Add(x int) *Range {
-	if r == nil {
-		return nil
+var NilRange = Range{-1, -1}
+
+func (r Range) Add(x int) Range {
+	if r == NilRange {
+		return r
 	}
-	return &Range{r.Start + x, r.End + x}
+	return Range{r.Start + x, r.End + x}
 }
 
-func Match[T ~[]byte | ~string](r *Regexp, s T) *Range {
+func Match[T ~[]byte | ~string](r *Regexp, s T) Range {
 	end := match(&r.matcher, s)
 	if end < 0 {
-		return nil
+		return NilRange
 	}
 	var d *dstate
 	// For reverse matching, we need the correct set of flags for word boundary matching:
@@ -138,7 +140,7 @@ func Match[T ~[]byte | ~string](r *Regexp, s T) *Range {
 			r.revsyn.String(),
 			r.revmatcher.prog.String())
 	}
-	return &Range{start, end}
+	return Range{start, end}
 }
 
 func reverse(syn *syntax.Regexp) *syntax.Regexp {

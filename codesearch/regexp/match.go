@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"regexp/syntax"
-	"sort"
+	"slices"
 
 	"sgrankin.dev/cs/codesearch/sparse"
 )
@@ -46,16 +46,18 @@ const (
 // A dstate corresponds to a DFA state.
 type dstate struct {
 	next    [256]*dstate // next state, per byte
-	enc     string       // encoded nstate
+	enc     []byte       // encoded nstate
 	matched bool         // match is complete
 }
+
+var dstateMatched = &dstate{matched: true} // Singleton matched state to avoid a needless alloc at the end of matches.
 
 func (z *nstate) String() string {
 	return fmt.Sprintf("%v/%#x+%#x", z.q.Dense(), z.flag, z.partial)
 }
 
 // enc encodes z as a string.
-func (z *nstate) enc() string {
+func (z *nstate) enc() []byte {
 	var buf []byte
 	var v [10]byte
 	last := ^uint32(0)
@@ -63,23 +65,20 @@ func (z *nstate) enc() string {
 	buf = append(buf, v[:n]...)
 	n = binary.PutUvarint(v[:], uint64(z.flag))
 	buf = append(buf, v[:n]...)
+
+	// Sort the queue in place: we're in `cache` and the state wont be used again.
 	dense := z.q.Dense()
-	ids := make([]int, 0, len(dense))
-	for _, id := range z.q.Dense() {
-		ids = append(ids, int(id))
-	}
-	sort.Ints(ids)
-	for _, id := range ids {
+	slices.Sort(dense)
+	for _, id := range dense {
 		n := binary.PutUvarint(v[:], uint64(uint32(id)-last))
 		buf = append(buf, v[:n]...)
 		last = uint32(id)
 	}
-	return string(buf)
+	return buf
 }
 
 // dec decodes the encoding s into z.
-func (z *nstate) dec(s string) {
-	b := []byte(s)
+func (z *nstate) dec(b []byte) {
 	i, n := binary.Uvarint(b)
 	if n <= 0 {
 		bug()
@@ -249,20 +248,20 @@ func (m *matcher) computeNext(d *dstate, c int) *dstate {
 
 	// re-add start, process rune + expand according to flags.
 	if m.stepByte(&this.q, &next.q, c, flag) {
-		return &dstate{matched: true}
+		return dstateMatched
 	}
 	return m.cache(next)
 }
 
 func (m *matcher) cache(z *nstate) *dstate {
 	enc := z.enc()
-	d := m.dstate[enc]
+	d := m.dstate[string(enc)]
 	if d != nil {
 		return d
 	}
 
 	d = &dstate{enc: enc}
-	m.dstate[enc] = d
+	m.dstate[string(enc)] = d
 	return d
 }
 
