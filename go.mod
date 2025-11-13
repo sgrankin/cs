@@ -45,7 +45,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
-	github.com/tkrajina/go-reflector v0.5.8 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
@@ -56,7 +55,4 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
-tool (
-	github.com/a-h/templ/cmd/templ
-	github.com/tkrajina/go-reflector/reflector
-)
+tool github.com/a-h/templ/cmd/templ
