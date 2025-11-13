@@ -3,6 +3,7 @@ module sgrankin.dev/cs
 go 1.25.4
 
 require (
+	github.com/CAFxX/httpcompression v0.0.9
 	github.com/a-h/templ v0.3.960
 	github.com/alecthomas/chroma/v2 v2.20.0
 	github.com/evanw/esbuild v0.27.0
@@ -36,6 +37,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/natefinch/atomic v1.0.1 // indirect

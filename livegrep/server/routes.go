@@ -8,6 +8,8 @@ import (
 	"net/http/pprof"
 	"time"
 
+	"github.com/CAFxX/httpcompression"
+
 	"sgrankin.dev/cs"
 	"sgrankin.dev/cs/livegrep/server/reqid"
 )
@@ -56,4 +58,10 @@ func withRequestID(h http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 		h.ServeHTTP(w, r)
 	})
+}
+
+var withCompression func(http.Handler) http.Handler
+
+func init() {
+	withCompression, _ = httpcompression.DefaultAdapter(httpcompression.MinSize(0))
 }
