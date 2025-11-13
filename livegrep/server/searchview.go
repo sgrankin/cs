@@ -11,6 +11,7 @@ import (
 	"github.com/a-h/templ"
 
 	"sgrankin.dev/cs"
+	"sgrankin.dev/cs/livegrep/server/api"
 	"sgrankin.dev/cs/livegrep/server/views"
 )
 
@@ -29,6 +30,14 @@ func (s *server) makeSearchScriptData() (cs.SearchIndex, string) {
 	return bk, sampleRepo
 }
 
+func pageTitle(r *api.ReplySearch) string {
+	title := "code search"
+	if r != nil {
+		title = fmt.Sprintf("%s · %s", r.Query.Line, title)
+	}
+	return title
+}
+
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Vary", "HX-Request")
 	if r.Header.Get(http.CanonicalHeaderKey("HX-Request")) == "true" {
@@ -38,14 +47,10 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 
 	backend, sampleRepo := s.makeSearchScriptData()
 	result, resultErr := s.searchForRequest(ctx, r)
-	title := "code search"
-	if result != nil {
-		title = fmt.Sprintf("%s · %s", result.Query.Line, title)
-	}
 
 	views.Index(
 		views.Page{
-			Title:         title,
+			Title:         pageTitle(result),
 			JSPath:        "static/codesearch_ui.js",
 			CSSPath:       "static/codesearch_ui.css",
 			IncludeHeader: true,
@@ -63,13 +68,9 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Vary", "HX-Request")
 	result, resultErr := s.searchForRequest(ctx, r)
-	title := "code search"
-	if result != nil {
-		title = fmt.Sprintf("%s · %s", result.Query.Line, title)
-	}
 	// TODO: actually streaming search -- serve results as they are found.
 	w.Header().Add("Content-Type", "text/event-stream")
-	writeData(ctx, w, views.Title(title))
+	writeData(ctx, w, views.Title(pageTitle(result)))
 	writeData(ctx, w, views.Partial("#regex-error", "outerHTML", views.RegexError(resultErr)))
 	if result == nil {
 		writeData(ctx, w, views.Partial("#resultbox", "innerHTML", views.Help()))

@@ -62,13 +62,6 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 
 var ErrTimedOut = errors.New("timed out talking to backend")
 
-func stringSlice(ss []string) []string {
-	if ss != nil {
-		return ss
-	}
-	return []string{}
-}
-
 func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Query) (*api.ReplySearch, error) {
 	start := time.Now()
 
@@ -96,8 +89,8 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 		for _, r := range r.Lines {
 			lines = append(lines, api.LineResult{
 				LineNumber:    int(r.LineNumber),
-				ContextBefore: stringSlice(r.ContextBefore),
-				ContextAfter:  stringSlice(r.ContextAfter),
+				ContextBefore: r.ContextBefore,
+				ContextAfter:  r.ContextAfter,
 				Bounds:        [2]int{int(r.Bounds.Left), int(r.Bounds.Right)},
 				Line:          r.Line,
 			})
