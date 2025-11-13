@@ -115,38 +115,6 @@ func ResolveFetchSpecs(client *github.Client, specs []GitHubSourceConfig, auth *
 	return result, nil
 }
 
-func GCRefs(repo *git.Repository, keep []string) error {
-	log.Println("pruning unused refs")
-	want := map[string]bool{}
-	for _, ref := range keep {
-		want[ref] = true
-	}
-	refs, err := repo.References()
-	if err != nil {
-		return fmt.Errorf("resolving references: %w", err)
-	}
-	defer refs.Close()
-	var toRemove []gitplumb.ReferenceName
-	if err := refs.ForEach(func(r *gitplumb.Reference) error {
-		if r.Type() != gitplumb.HashReference {
-			return nil
-		}
-		if !want[r.Name().String()] {
-			toRemove = append(toRemove, r.Name())
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	for _, r := range toRemove {
-		log.Printf("removing ref %s", r.Short())
-		if err := repo.Storer.RemoveReference(r); err != nil {
-			return fmt.Errorf("removing %v: %w", r, err)
-		}
-	}
-	return nil
-}
-
 type gitRepo struct {
 	repo      *git.Repository
 	remoteURL string

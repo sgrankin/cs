@@ -37,7 +37,6 @@ func New(cfg cs.ServeConfig, index cs.SearchIndex) *server {
 	var h http.Handler = mux
 	h = withCompression(h)
 	h = withTimeout(h)
-	h = withRequestID(h)
 	h = handlers.RecoveryHandler(
 		handlers.PrintRecoveryStack(true),
 		handlers.RecoveryLogger(log.Default()),

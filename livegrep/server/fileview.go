@@ -79,17 +79,6 @@ type gitTreeEntry struct {
 	ObjectName string
 }
 
-func gitParseTreeEntry(line string) gitTreeEntry {
-	dataAndPath := strings.SplitN(line, "\t", 2)
-	dataFields := strings.Split(dataAndPath[0], " ")
-	return gitTreeEntry{
-		Mode:       dataFields[0],
-		ObjectType: dataFields[1],
-		ObjectId:   dataFields[2],
-		ObjectName: dataAndPath[1],
-	}
-}
-
 func viewPath(repo, commit string, name ...string) string {
 	return path.Join("/view/", repo+"@"+commit+"/+/"+path.Join(name...))
 }

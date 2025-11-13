@@ -5,7 +5,6 @@
 package regexp
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"regexp/syntax"
@@ -315,19 +314,4 @@ func isWordByte(c int) bool {
 		'a' <= c && c <= 'z' ||
 		'0' <= c && c <= '9' ||
 		c == '_'
-}
-
-var nl = []byte{'\n'}
-
-func countNL(b []byte) int {
-	n := 0
-	for {
-		i := bytes.IndexByte(b, '\n')
-		if i < 0 {
-			break
-		}
-		n++
-		b = b[i+1:]
-	}
-	return n
 }

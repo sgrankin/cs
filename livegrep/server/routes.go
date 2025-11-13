@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"expvar"
-	"log"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/CAFxX/httpcompression"
 
 	"sgrankin.dev/cs"
-	"sgrankin.dev/cs/livegrep/server/reqid"
 )
 
 func addRoutes(mux *http.ServeMux, srv *server) {
@@ -45,16 +43,6 @@ func withTimeout(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), RequestTimeout)
 		defer cancel()
-		r = r.WithContext(ctx)
-		h.ServeHTTP(w, r)
-	})
-}
-
-func withRequestID(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := reqid.NewContext(r.Context(), reqid.New())
-		log.Printf("http request: remote=%q method=%q url=%q",
-			r.RemoteAddr, r.Method, r.URL)
 		r = r.WithContext(ctx)
 		h.ServeHTTP(w, r)
 	})
