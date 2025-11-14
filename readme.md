@@ -54,19 +54,19 @@ reverses the regex, and runs it backward to find the beginning of the match.
 
 - `go install sgrankin.dev/cs/cmd/csweb@latest`
 - Create a config file (see below).
-- Run using your favorite init system. `~/go/bin/csweb -listen=localhost:8910 -config=config.yaml -poll-interval=30m`
+- Run using your favorite init system. `~/go/bin/csweb -listen=localhost:8910 -config=config.yaml -rebuild-interval=30m`
 - Set the `GITHUB_TOKEN` environment variable to a valid GitHub token to increase API rate limit & see private repos.
 
 ### Config
 
 ```
-indexes:  # Multiple indexes are possible if you want to keep things separate.
-  - path: /var/lib/codesearch  # Path to a directory with permissions.
-    reposources:  # Sources of git repos.
-      github:  # Only github is implemented.
-        - org: "golang"  # All repos from an org.
-        - user: "me"  # All repos from a user.
-        - repo: "golang/go"  # A single repo.
+index:  # Multiple indexes are possible if you want to keep things separate.
+  path: /var/lib/codesearch  # Path to a directory with permissions.
+  reposources:  # Sources of git repos.
+    github:  # Only github is implemented.
+      - org: "golang"  # All repos from an org.
+      - user: "me"  # All repos from a user.
+      - repo: "golang/go"  # A single repo.
 ```
 
 See [config.go](config.go) for other fields, including how to specify raw repos and all of the livegrep UI options.

@@ -25,6 +25,11 @@ var (
 		"The config file.")
 	indexPath = flag.String("index", "",
 		"The path to the index file(s).  Allows serving an index without a config.")
+
+	rebuildInterval = flag.Duration("rebuild-interval", 0,
+		"When set, build the index and then fetch/rebuild every duration.  Avoids running csbuild separately.")
+	githubToken = cs.FlagVar[cs.EnvString]("github-token", "${GITHUB_TOKEN}",
+		"GitHub token for private repo access.  Only needed for fetch & build.")
 )
 
 func main() {
@@ -57,8 +62,7 @@ func main() {
 	index := cs.NewSearchIndex(cfg.Index)
 	srv := server.New(cfg.Serve, index)
 	go func() {
-		ticker := time.NewTicker(10 * time.Second)
-		for range ticker.C {
+		for range time.Tick(10 * time.Second) {
 			index.Reload()
 		}
 	}()
@@ -67,6 +71,17 @@ func main() {
 		go func() {
 			log.Printf("Listening on %s.", *listenAddr)
 			log.Fatal(http.ListenAndServe(*listenAddr, srv))
+		}()
+	}
+
+	if *rebuildInterval != 0 {
+		go func() {
+			ticker := time.Tick(*rebuildInterval)
+			for ; ; <-ticker {
+				if err := cs.BuildSearchIndex(cfg.Index, githubToken.Get()); err != nil {
+					log.Fatalf("Error building %q: %v", cfg.Index.Name, err)
+				}
+			}
 		}()
 	}
 
