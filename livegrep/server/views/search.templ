@@ -43,6 +43,9 @@ templ Index(p Page, d IndexPageData, params url.Values) {
 				hx-select-oob="#regex-error"
 				hx-push-url="true"
 				hx-sync="this:queue last"
+				autocapitalize="off"
+				autocomplete="off"
+				spellcheck="false"
 			>
 				@searchInputs(d.SearchResultErr, params)
 				@searchOptions(d.Backend, params)
