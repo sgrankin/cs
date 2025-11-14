@@ -5,6 +5,7 @@ import (
 	"context"
 	"iter"
 	"regexp/syntax"
+	"slices"
 
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/codesearch/regexp"
@@ -166,9 +167,10 @@ func countNL(b []byte) int {
 	return n
 }
 
-func firstLines(b []byte, n int) (res []string) {
+func firstLines(b []byte, n int) []string {
+	var res []string
 	if n <= 0 || len(b) == 0 {
-		return
+		return res
 	}
 	if b[0] == '\n' {
 		// We start looking at a newline boundary, so skip it.
@@ -179,17 +181,18 @@ func firstLines(b []byte, n int) (res []string) {
 		i := bytes.IndexByte(b, '\n')
 		if i < 0 {
 			res = append(res, string(b))
-			return
+			break
 		}
 		res = append(res, string(b[:i]))
 		b = b[i+1:]
 	}
-	return
+	return res
 }
 
-func lastLines(b []byte, n int) (res []string) {
+func lastLines(b []byte, n int) []string {
+	var res []string
 	if n <= 0 || len(b) == 0 {
-		return
+		return res
 	}
 	if b[len(b)-1] == '\n' {
 		// We start looking at a newline boundary, so skip it.
@@ -200,12 +203,13 @@ func lastLines(b []byte, n int) (res []string) {
 		i := bytes.LastIndexByte(b, '\n')
 		if i < 0 {
 			res = append(res, string(b))
-			return
+			break
 		}
 		res = append(res, string(b[i+1:]))
 		b = b[:i]
 	}
-	return
+	slices.Reverse(res)
+	return res
 }
 
 // RegexpFilter creates a filter function based on the given regexp.
