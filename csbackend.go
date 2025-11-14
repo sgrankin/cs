@@ -8,6 +8,7 @@ import (
 	"log"
 	"maps"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp/syntax"
@@ -374,6 +375,15 @@ func BuildSearchIndex(cfg IndexConfig, githubToken string) error {
 		if err := os.Remove(filepath.Join(cfg.Path, path)); err != nil {
 			return err
 		}
+	}
+
+	// GC the repo... otherwise the growth is unbounded.
+	log.Printf("Running git gc in %q", gitPath)
+	cmd := exec.Command("git", "gc", "-q")
+	cmd.Dir = gitPath
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return err
 	}
 	return nil
 }
