@@ -1,14 +1,14 @@
 module sgrankin.dev/cs
 
-go 1.25.4
+go 1.25.5
 
 require (
 	github.com/CAFxX/httpcompression v0.0.9
 	github.com/a-h/templ v0.3.960
 	github.com/alecthomas/chroma/v2 v2.20.0
-	github.com/evanw/esbuild v0.27.0
-	github.com/go-git/go-git/v5 v5.16.3
-	github.com/goccy/go-yaml v1.18.0
+	github.com/evanw/esbuild v0.27.1
+	github.com/go-git/go-git/v5 v5.16.4
+	github.com/goccy/go-yaml v1.19.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v57 v57.0.0
 	github.com/gorilla/handlers v1.5.2
