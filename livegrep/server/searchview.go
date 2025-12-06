@@ -39,8 +39,10 @@ func pageTitle(r *api.ReplySearch) string {
 }
 
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Vary", "HX-Request")
-	if r.Header.Get(http.CanonicalHeaderKey("HX-Request")) == "true" {
+	w.Header().Add("vary", "hx-request")
+	w.Header().Add("cache-control", "max-age=0")
+
+	if r.Header.Get("hx-request") == "true" {
 		s.streamSearch(ctx, w, r)
 		return
 	}
