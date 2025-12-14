@@ -1535,13 +1535,13 @@ var htmx = (() => {
 
         __pushUrlIntoHistory(path) {
             if (!this.config.history) return;
-            history.pushState({htmx: true}, '', path);
+            history.pushState({htmx: true}, document.title, path);
             this.__trigger(document, "htmx:after:push:into:history", {path});
         }
 
         __replaceUrlInHistory(path) {
             if (!this.config.history) return;
-            history.replaceState({htmx: true}, '', path);
+            history.replaceState({htmx: true}, document.title, path);
             this.__trigger(document, "htmx:after:replace:into:history", {path});
         }
 
