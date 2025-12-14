@@ -40,13 +40,12 @@ func pageTitle(r *api.ReplySearch) string {
 
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("vary", "hx-request")
-	w.Header().Add("cache-control", "max-age=0")
-
 	if r.Header.Get("hx-request") == "true" {
 		s.streamSearch(ctx, w, r)
 		return
 	}
 
+	w.Header().Add("cache-control", "max-age=0")
 	backend, sampleRepo := s.makeSearchScriptData()
 	result, resultErr := s.searchForRequest(ctx, r)
 
@@ -68,7 +67,7 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 }
 
 func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Vary", "HX-Request")
+	w.Header().Add("cache-control", "no-store")
 	result, resultErr := s.searchForRequest(ctx, r)
 	// TODO: actually streaming search -- serve results as they are found.
 	w.Header().Add("Content-Type", "text/event-stream")
