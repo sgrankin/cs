@@ -20,19 +20,9 @@ import {LitElement, html, css} from "lit";
 import {classMap} from "lit/directives/class-map.js";
 import {customElement, property} from "lit/decorators.js";
 
-import * as api from "./api.ts";
-
 htmx.config.transitions = false;
 // Reload on history navigation so that the repo selector is reinits (it's mangled on HTMX processing).
 htmx.config.historyReload = true;
-
-type Query = {
-    q: string;
-    fold_case: boolean;
-    regex: boolean;
-    backend: string;
-    repo: string[];
-};
 
 @customElement("filter-button")
 export class SearchFilterButton extends LitElement {
