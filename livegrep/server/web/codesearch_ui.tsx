@@ -198,3 +198,14 @@ function initRepoSelector() {
         }
     });
 }
+
+// Safari history hack.
+// After a few queries that call history.pushState, navigating to e.g. a file and then returning back causes
+// Safari (not chrome), after the page is rendered from bfcache, to reload (re-verify?) the page in the background,
+// but using the wrong query string! (most likely the one the page was originally loaded with)
+// The result is merged in, but just the form contents -- so the query box will be set to incorrect filters.
+// Instead, if we see a pageshow event that's persisted, we know we just got reloaded from the bfcache,
+// so issue a reload which will preempt whatever it is Safari does.  Unfortunately it slows down navigation in Chrome.
+window.addEventListener("pageshow", (event) => {
+    if (event.persisted) location.reload();
+});
