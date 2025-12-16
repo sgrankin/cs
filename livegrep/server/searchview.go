@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -30,14 +29,6 @@ func (s *server) makeSearchScriptData() (cs.SearchIndex, string) {
 	return bk, sampleRepo
 }
 
-func pageTitle(r *api.ReplySearch) string {
-	title := "code search"
-	if r != nil {
-		title = fmt.Sprintf("%s · %s", r.Query.Line, title)
-	}
-	return title
-}
-
 func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("vary", "hx-request")
 	if r.Header.Get("hx-request") == "true" {
@@ -47,11 +38,12 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 
 	w.Header().Add("cache-control", "max-age=0")
 	backend, sampleRepo := s.makeSearchScriptData()
-	result, resultErr := s.searchForRequest(ctx, r)
+
+	q, err := extractQuery(r)
 
 	views.Index(
 		views.Page{
-			Title:         pageTitle(result),
+			Title:         pageTitle(q),
 			JSPath:        "static/codesearch_ui.js",
 			CSSPath:       "static/codesearch_ui.css",
 			IncludeHeader: true,
@@ -59,19 +51,32 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 		views.IndexPageData{
 			Backend:         backend,
 			SampleRepo:      sampleRepo,
-			SearchResult:    result,
-			SearchResultErr: resultErr,
+			SearchResult:    nil,
+			SearchResultErr: err,
 		},
 		r.Form,
 	).Render(r.Context(), w)
 }
 
+func pageTitle(q cs.Query) string {
+	title := "code search"
+	if q.Line != "" {
+		title = fmt.Sprintf("%s · %s", q.Line, title)
+	}
+	return title
+}
+
 func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("cache-control", "no-store")
-	result, resultErr := s.searchForRequest(ctx, r)
+
+	var result *api.ReplySearch
+	q, resultErr := extractQuery(r)
+	if resultErr == nil {
+		result, resultErr = s.searchForRequest(ctx, q)
+	}
 	// TODO: actually streaming search -- serve results as they are found.
 	w.Header().Add("Content-Type", "text/event-stream")
-	writeData(ctx, w, views.Title(pageTitle(result)))
+	writeData(ctx, w, views.Title(pageTitle(q)))
 	writeData(ctx, w, views.Partial("#regex-error", "outerHTML", views.RegexError(resultErr)))
 	if result == nil {
 		writeData(ctx, w, views.Partial("#resultbox", "innerHTML", views.Help()))
@@ -96,13 +101,8 @@ func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *htt
 		filenames = append(filenames, views.FilenameMatch(r))
 	}
 	writeData(ctx, w, views.Partial("#path-results", "innerHTML", templ.Join(filenames...)))
-	for chunk := range slices.Chunk(result.Results, 10) {
-		matches := []templ.Component{}
-		for _, r := range chunk {
-			matches = append(matches, views.FileContentMatch(r))
-		}
-		writeData(ctx, w, views.Partial("#code-results", "append", templ.Join(matches...)))
-
+	for _, r := range result.Results {
+		writeData(ctx, w, views.Partial("#code-results", "append", views.FileContentMatch(r)))
 	}
 	return
 }

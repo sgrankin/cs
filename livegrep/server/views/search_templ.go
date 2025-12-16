@@ -72,7 +72,7 @@ func Index(p Page, d IndexPageData, params url.Values) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"searcharea\"><form method=\"get\" hx-get=\"/search\" hx-trigger=\"input from:input delay:100ms, change from:select\" hx-select=\"#resultbox\" hx-target=\"#resultbox\" hx-select-oob=\"#regex-error\" hx-push-url=\"true\" hx-sync=\"this:queue last\" autocapitalize=\"off\" autocomplete=\"off\" spellcheck=\"false\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"searcharea\"><form method=\"get\" hx-get=\"/search\" hx-trigger=\"input from:input delay:100ms, change from:select, load\" hx-select=\"#resultbox\" hx-target=\"#resultbox\" hx-select-oob=\"#regex-error\" hx-push-url=\"true\" hx-sync=\"this:queue last\" autocapitalize=\"off\" autocomplete=\"off\" spellcheck=\"false\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

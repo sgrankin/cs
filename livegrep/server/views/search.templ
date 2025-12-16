@@ -37,7 +37,7 @@ templ Index(p Page, d IndexPageData, params url.Values) {
 			<form
 				method="get"
 				hx-get="/search"
-				hx-trigger="input from:input delay:100ms, change from:select"
+				hx-trigger="input from:input delay:100ms, change from:select, load"
 				hx-select="#resultbox"
 				hx-target="#resultbox"
 				hx-select-oob="#regex-error"

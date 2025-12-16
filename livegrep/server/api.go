@@ -130,12 +130,8 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 	return reply, nil
 }
 
-func (s *server) searchForRequest(ctx context.Context, r *http.Request) (*api.ReplySearch, error) {
+func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySearch, error) {
 	backend := s.bk
-	q, err := extractQuery(r)
-	if err != nil {
-		return nil, err
-	}
 
 	if q.Line == "" {
 		return nil, nil
