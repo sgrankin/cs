@@ -63,7 +63,7 @@ templ layout(p Page) {
 }
 
 templ Partial(target, swap string, contents templ.Component) {
-	<partial hx-target={ target } hx-swap={ swap }>
+	<hx-partial hx-target={ target } hx-swap={ swap }>
 		@contents
-	</partial>
+	</hx-partial>
 }

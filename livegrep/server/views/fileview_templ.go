@@ -108,7 +108,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 		var templ_7745c5c3_Var3 templ.SafeURL
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(d.RepoURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 47, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 47, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -121,7 +121,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("Repository: " + d.RepoName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 47, Col: 97}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 47, Col: 97}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -134,7 +134,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(d.RepoName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 48, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 48, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -153,7 +153,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 				var templ_7745c5c3_Var6 templ.SafeURL
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(e.Path))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 52, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 52, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -166,7 +166,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(e.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 52, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 52, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -184,7 +184,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 				var templ_7745c5c3_Var8 templ.SafeURL
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(e.Path))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 54, Col: 32}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 54, Col: 32}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -197,7 +197,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(e.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 54, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 54, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -221,7 +221,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("View at " + d.ExternalDomain + ". Keyboard shortcut: v")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 69, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 69, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -234,7 +234,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(d.ExternalURLTemplate)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 71, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 71, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -247,7 +247,7 @@ func fileHeader(d FileViewerContext) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(d.ExternalDomain)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 73, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 73, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -386,7 +386,7 @@ func dirContent(d DirectoryContent) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var16).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 1, Col: 0}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func dirContent(d DirectoryContent) templ.Component {
 				var templ_7745c5c3_Var18 templ.SafeURL
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(child.Path))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 125, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 125, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -418,7 +418,7 @@ func dirContent(d DirectoryContent) templ.Component {
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(child.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 127, Col: 20}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 127, Col: 20}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -432,7 +432,7 @@ func dirContent(d DirectoryContent) templ.Component {
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(child.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 129, Col: 20}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 129, Col: 20}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -447,7 +447,7 @@ func dirContent(d DirectoryContent) templ.Component {
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(child.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 133, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 133, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -466,7 +466,7 @@ func dirContent(d DirectoryContent) templ.Component {
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(child.SymlinkTarget)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 136, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 136, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -536,7 +536,7 @@ func helpScreen(d FileViewerContext) templ.Component {
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(d.ExternalDomain)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `livegrep/server/views/fileview.templ`, Line: 157, Col: 102}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/fileview.templ`, Line: 157, Col: 102}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
