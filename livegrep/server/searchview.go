@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -101,8 +102,12 @@ func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *htt
 		filenames = append(filenames, views.FilenameMatch(r))
 	}
 	writeData(ctx, w, views.Partial("#path-results", "innerHTML", templ.Join(filenames...)))
-	for _, r := range result.Results {
-		writeData(ctx, w, views.Partial("#code-results", "append", views.FileContentMatch(r)))
+	for chunk := range slices.Chunk(result.Results, 10) {
+		var matches []templ.Component
+		for _, r := range chunk {
+			matches = append(matches, views.FileContentMatch(r))
+		}
+		writeData(ctx, w, views.Partial("#code-results", "append", templ.Join(matches...)))
 	}
 	return
 }
