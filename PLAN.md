@@ -90,8 +90,19 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
 - Top N values with counts per facet
 - Click to add filter to query, shift-click to exclude
 - Facet keys map to query operators (`repo:`, `org:`, `path:`, `ext:`)
-- Repo/org facets can replace the dedicated repo multi-select — faceted navigation
-  is more discoverable and composes better with other filters
+- Two modes of repo filtering — need both:
+  - **Pre-filter** (before searching): scope to specific repos upfront, like current dropdown
+  - **Post-filter** (facets in results): see distribution, click to narrow after searching
+  - Design question: what's the right lightweight pre-filter UI? (full multi-select is heavy;
+    could be repo groups, `repo:` syntax, or a simpler scoping control)
+
+### Build tooling
+
+- Replace custom Go esbuild wrapper (`livegrep/server/build/`) with esbuild CLI + `esbuild.config.mjs`
+- Run via `bunx esbuild` — bun already manages deps
+- Static assets checked in (so `go install` works without node toolchain)
+- Dev workflow: watch mode that keeps assets up to date during development
+- Update Procfile accordingly
 
 ### Suggested Build Order
 1. API types & endpoints (the contract)
@@ -106,6 +117,27 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
 - [ ] Per-user repo access control: restrict visible repos based on user identity
   - Identity from HTTP header (auth proxy), config maps users/groups to repo sets
 
+## Frontend Testing
+
+- **`@web/test-runner`** — runs tests in real browser (headless Chrome via Playwright)
+  - Mocha + Chai built in, `--coverage` for 100% target
+- **`axe-core`** — accessibility rule engine, run against each component
+- Plain assertions, hand-written fixture helper (no `@open-wc/testing`)
+- Per component: rendering, interactions, events, reactive updates, ARIA correctness
+- **Playwright MCP** for interactive visual evaluation during development
+  - Same Playwright engine as test-runner — no extra browser dependency
+  - Navigate, screenshot, inspect, click — used by Claude to verify UI visually
+
+## Test Data
+
+- **Integration tests**: Pre-built small index from hand-crafted fixtures in `testdata/`
+  - A few files in a few languages, known content, deterministic search results
+  - Fast, stable, checked into repo
+- **End-to-end / performance**: Real diverse index via `config.yaml` (`data/`)
+  - Currently: clojure/clojure + torvalds/linux
+  - Exercises real-world code paths, catches performance issues
+  - Not checked in — built locally via `go run ./cmd/csweb -rebuild-interval=30m`
+
 ## Tooling
 
 - [ ] Factor out shared Claude Code skills for Go style and Go testing (including coverage script)
@@ -118,4 +150,5 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
 - [ ] Remove unused API abstraction layer
 - [ ] Simplify logger (avoid double-logging timestamps)
 - [ ] Consider using go-getter for repo syncing
+- [ ] OpenTelemetry: tracing and metrics (especially for search performance)
 - [ ] Metrics/observability
