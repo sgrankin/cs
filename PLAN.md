@@ -106,6 +106,11 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
 - [ ] Per-user repo access control: restrict visible repos based on user identity
   - Identity from HTTP header (auth proxy), config maps users/groups to repo sets
 
+## Tooling
+
+- [ ] Factor out shared Claude Code skills for Go style and Go testing (including coverage script)
+  - Reusable across projects (cs, mk, etc.) — move to ~/.claude/skills/
+
 ## Build & Infra
 
 - [ ] Compress static assets at build time (not runtime)
