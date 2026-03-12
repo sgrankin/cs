@@ -112,7 +112,7 @@ func (f *Formatter) writeHTML(w io.Writer, tokens []chroma.Token) (err error) {
 					html = fmt.Sprintf(`<span style="%s">%s</span>`, attr, html)
 				}
 			}
-			write(html)
+			write("%s", html)
 		}
 
 		write(`</span>`) // End of CodeLine
