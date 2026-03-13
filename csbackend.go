@@ -361,7 +361,11 @@ func BuildSearchIndex(cfg IndexConfig, githubToken string) error {
 		indexPath = filepath.Join(cfg.Path, indexPath)
 		log.Printf("Building index for %s %s at %s", repo.Name(), repo.Version(), indexPath)
 		os.MkdirAll(filepath.Dir(indexPath), 0o777)
-		if err := BuildIndex(indexPath, []Repo{repo}); err != nil {
+		fsys, err := repo.FS()
+		if err != nil {
+			return err
+		}
+		if err := BuildIndexFromFS(indexPath, fsys); err != nil {
 			return err
 		}
 	}

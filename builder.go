@@ -2,20 +2,12 @@ package cs
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
-	"log"
 
 	"sgrankin.dev/cs/codesearch/index"
 )
 
-type RepoFile interface {
-	Path() string
-	Size() int
-	FileMode() fs.FileMode
-	Reader() io.ReadCloser
-}
-
+// Repo represents a version-controlled repository that can be indexed.
 type Repo interface {
 	// Name is the unique ref name this Repo tracks in the underlying repository.
 	Name() string
@@ -23,15 +15,12 @@ type Repo interface {
 	// For git, Version yields the SHA1 of the commit.
 	Version() Version
 
-	// Files yields all of the files in the tree at the current Version.
-	// For git, Refresh may be called concurrently, unless it deletes underlying objects.
-	Files(yield func(RepoFile) error) error
+	// FS returns a filesystem view of the repo at the current Version.
+	FS() (fs.FS, error)
 
 	// Refresh fetches the remote and updates the local tracking ref.
 	Refresh() (Version, error)
 }
-
-type indexBuilder struct{}
 
 // BuildIndexFromFS creates a search index at indexPath from all regular files in fsys.
 func BuildIndexFromFS(indexPath string, fsys fs.FS) error {
@@ -51,26 +40,6 @@ func BuildIndexFromFS(indexPath string, fsys fs.FS) error {
 	if err != nil {
 		wix.Close()
 		return fmt.Errorf("building index: %w", err)
-	}
-	wix.Flush()
-	wix.Close()
-	return nil
-}
-
-// BuildIndex creates a new index at `path` with the given `repos`.
-func BuildIndex(path string, repos []Repo) error {
-	log.Printf("Building index at %q", path)
-	wix := index.Create(path)
-	for _, repo := range repos {
-		if err := repo.Files(func(rf RepoFile) error {
-			r := rf.Reader()
-			defer r.Close()
-			wix.Add(rf.Path(), r)
-			return nil
-		}); err != nil {
-			wix.Close()
-			return fmt.Errorf("failed building index: %w", err)
-		}
 	}
 	wix.Flush()
 	wix.Close()
