@@ -50,6 +50,19 @@ go tool govulncheck ./...  # no known vulnerabilities (pinned in go.mod)
 
 Address any gopls diagnostics (type errors, unused imports, etc.) visible in changed files.
 
+## Test Style
+
+**Table-driven by default.** If there are 2+ cases for the same function, use a test table with `t.Run`. Don't write separate `TestFooBasic`, `TestFooEdge`, `TestFooError` functions when a single `TestFoo` with a `[]struct{ name string; ... }` table covers them. This is the first thing to reach for, not an optimization.
+
+**Data-driven over hand-written assertions.** Prefer txtar/golden file patterns over hand-checking individual fields:
+- **Golden JSON tests** (`testdata/search/*.txt` or `*.txtar`): config + expected output separated by blank line. Run with `-update` to regenerate. See `livegrep/server/search_test.go` and `search_test.go` for the pattern.
+- **txtar for test fixtures** (`testdata/index/*.txtar`): source files for building real indexes. Prefer real implementations over fakes/mocks.
+- When the input data controls the output shape, use real implementations. When you need precise output control that real implementations can't provide (e.g., non-deterministic concurrent results), use structural assertions in Go tests.
+
+**Reduce structural duplication.** If multiple tests share setup (create server, make request, check status), extract the common pattern into the table struct or a helper. The test table should capture what varies; the runner captures what's shared.
+
+**Fakes over mocks.** Use data-driven fakes (like `fs.MapFS`, real search indexes from txtar) instead of function-field mocks. If a test needs a `SearchIndex`, build a real one from test data — don't stub individual methods.
+
 ## Test Coverage
 
 Target: **100% statement coverage.** New/changed code must have 100% coverage. Existing gaps will be closed over time.
