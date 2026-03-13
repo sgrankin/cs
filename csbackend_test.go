@@ -3,6 +3,8 @@ package cs
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -11,6 +13,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/go-git/go-git/v5"
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/codesearch/regexp"
 )
@@ -386,4 +389,217 @@ func TestSearchIndexInfoEmptyIndex(t *testing.T) {
 	if len(info.Trees) != 0 {
 		t.Errorf("empty index should have 0 trees, got %d", len(info.Trees))
 	}
+}
+
+func TestBuildSearchIndex(t *testing.T) {
+	t.Run("fresh build", func(t *testing.T) {
+		remoteDir := initBareRemote(t) // has hello.txt with "hello\n"
+		indexDir := filepath.Join(t.TempDir(), "index")
+
+		cfg := IndexConfig{
+			Name: "test-index",
+			Path: indexDir,
+			Repos: []RepoConfig{{
+				Name:      "test/repo",
+				RemoteURL: remoteDir,
+				RemoteRef: "refs/heads/master",
+			}},
+		}
+
+		if err := BuildSearchIndex(cfg, ""); err != nil {
+			t.Fatalf("BuildSearchIndex: %v", err)
+		}
+
+		// Verify NewSearchIndex can load the result.
+		si := NewSearchIndex(cfg)
+		info := si.Info()
+		if len(info.Trees) != 1 {
+			t.Fatalf("expected 1 tree, got %d", len(info.Trees))
+		}
+		if info.Trees[0].Name != "test/repo" {
+			t.Errorf("tree name = %q, want %q", info.Trees[0].Name, "test/repo")
+		}
+
+		// Verify search finds content from the repo.
+		result, err := si.Search(context.Background(), Query{
+			Line:       "hello",
+			MaxMatches: 100,
+		})
+		if err != nil {
+			t.Fatalf("Search: %v", err)
+		}
+		if len(result.Results) == 0 {
+			t.Error("expected search results for 'hello', got none")
+		}
+	})
+
+	t.Run("no-op when unchanged", func(t *testing.T) {
+		remoteDir := initBareRemote(t)
+		indexDir := filepath.Join(t.TempDir(), "index")
+
+		cfg := IndexConfig{
+			Name: "test-index",
+			Path: indexDir,
+			Repos: []RepoConfig{{
+				Name:      "test/repo",
+				RemoteURL: remoteDir,
+				RemoteRef: "refs/heads/master",
+			}},
+		}
+
+		if err := BuildSearchIndex(cfg, ""); err != nil {
+			t.Fatalf("first BuildSearchIndex: %v", err)
+		}
+
+		// Record index files after first build.
+		indexesDir := filepath.Join(indexDir, "indexes")
+		entries1, err := os.ReadDir(indexesDir)
+		if err != nil {
+			t.Fatalf("ReadDir indexes: %v", err)
+		}
+
+		// Second call should detect no changes and return early.
+		if err := BuildSearchIndex(cfg, ""); err != nil {
+			t.Fatalf("second BuildSearchIndex: %v", err)
+		}
+
+		// Verify index files are unchanged (same count, same names).
+		entries2, err := os.ReadDir(indexesDir)
+		if err != nil {
+			t.Fatalf("ReadDir indexes after second build: %v", err)
+		}
+		if len(entries1) != len(entries2) {
+			t.Fatalf("index file count changed: %d -> %d", len(entries1), len(entries2))
+		}
+		for i := range entries1 {
+			if entries1[i].Name() != entries2[i].Name() {
+				t.Errorf("index file changed: %q -> %q", entries1[i].Name(), entries2[i].Name())
+			}
+		}
+	})
+
+	t.Run("updates changed repo and cleans old indexes", func(t *testing.T) {
+		remoteDir := initBareRemote(t) // has hello.txt
+		indexDir := filepath.Join(t.TempDir(), "index")
+
+		cfg := IndexConfig{
+			Name: "test-index",
+			Path: indexDir,
+			Repos: []RepoConfig{{
+				Name:      "test/repo",
+				RemoteURL: remoteDir,
+				RemoteRef: "refs/heads/master",
+			}},
+		}
+
+		// First build.
+		if err := BuildSearchIndex(cfg, ""); err != nil {
+			t.Fatalf("first BuildSearchIndex: %v", err)
+		}
+
+		// Record the initial index files.
+		indexesDir := filepath.Join(indexDir, "indexes")
+		oldEntries, err := os.ReadDir(indexesDir)
+		if err != nil {
+			t.Fatalf("ReadDir indexes: %v", err)
+		}
+		if len(oldEntries) != 1 {
+			t.Fatalf("expected 1 index file after first build, got %d", len(oldEntries))
+		}
+		oldIndexName := oldEntries[0].Name()
+
+		// Record the first version.
+		si1 := NewSearchIndex(cfg)
+		info1 := si1.Info()
+		version1 := info1.Trees[0].Version
+
+		// Add a new commit to the remote.
+		addCommitToRemote(t, remoteDir, map[string]string{
+			"newfile.txt": "new content here\n",
+		})
+
+		// Second build should detect the change and rebuild.
+		if err := BuildSearchIndex(cfg, ""); err != nil {
+			t.Fatalf("second BuildSearchIndex: %v", err)
+		}
+
+		// Load the updated index and verify the version changed.
+		si2 := NewSearchIndex(cfg)
+		info2 := si2.Info()
+		if len(info2.Trees) != 1 {
+			t.Fatalf("expected 1 tree after rebuild, got %d", len(info2.Trees))
+		}
+		version2 := info2.Trees[0].Version
+		if version1 == version2 {
+			t.Error("version should have changed after adding a commit")
+		}
+
+		// Verify the new content is searchable.
+		result, err := si2.Search(context.Background(), Query{
+			Line:       "new content",
+			MaxMatches: 100,
+		})
+		if err != nil {
+			t.Fatalf("Search: %v", err)
+		}
+		if len(result.Results) == 0 {
+			t.Error("expected search results for 'new content', got none")
+		}
+
+		// Verify old index file was cleaned up and only the new one remains.
+		newEntries, err := os.ReadDir(indexesDir)
+		if err != nil {
+			t.Fatalf("ReadDir indexes after rebuild: %v", err)
+		}
+		if len(newEntries) != 1 {
+			t.Fatalf("expected 1 index file after rebuild, got %d", len(newEntries))
+		}
+		newIndexName := newEntries[0].Name()
+		if oldIndexName == newIndexName {
+			t.Error("index file name should have changed after rebuild")
+		}
+	})
+
+	t.Run("empty version skipped", func(t *testing.T) {
+		// Create an empty bare repo (no commits).
+		emptyDir := filepath.Join(t.TempDir(), "empty-remote")
+		if _, err := git.PlainInit(emptyDir, false); err != nil {
+			t.Fatalf("PlainInit: %v", err)
+		}
+
+		indexDir := filepath.Join(t.TempDir(), "index")
+		cfg := IndexConfig{
+			Name: "test-index",
+			Path: indexDir,
+			Repos: []RepoConfig{{
+				Name:      "test/empty-repo",
+				RemoteURL: emptyDir,
+				RemoteRef: "refs/heads/master",
+			}},
+		}
+
+		// Should not error.
+		if err := BuildSearchIndex(cfg, ""); err != nil {
+			t.Fatalf("BuildSearchIndex with empty repo: %v", err)
+		}
+
+		// Verify meta.json exists but has no trees (empty version repos are skipped).
+		meta, err := readIndexMeta(indexDir)
+		if err != nil {
+			t.Fatalf("readIndexMeta: %v", err)
+		}
+		if len(meta.Trees) != 0 {
+			t.Errorf("expected 0 trees for empty repo, got %d", len(meta.Trees))
+		}
+
+		// Verify no index files were created.
+		indexesDir := filepath.Join(indexDir, "indexes")
+		entries, err := os.ReadDir(indexesDir)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			t.Fatalf("ReadDir indexes: %v", err)
+		}
+		if len(entries) > 0 {
+			t.Errorf("expected no index files, got %d", len(entries))
+		}
+	})
 }

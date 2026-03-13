@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -184,6 +185,9 @@ func (r *gitRepo) ref() *gitplumb.Reference {
 type gitTreeFS struct{ tree *gitobj.Tree }
 
 func (g gitTreeFS) Open(name string) (fs.File, error) {
+	if !fs.ValidPath(name) {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
+	}
 	if name == "." {
 		return &gitDir{tree: g.tree, name: "."}, nil
 	}
@@ -211,7 +215,7 @@ type gitFile struct {
 }
 
 func (f *gitFile) Stat() (fs.FileInfo, error) {
-	return gitFileInfo{name: f.name, size: f.size}, nil
+	return gitFileInfo{name: path.Base(f.name), size: f.size}, nil
 }
 func (f *gitFile) Read(b []byte) (int, error) { return f.r.Read(b) }
 func (f *gitFile) Close() error               { return f.r.Close() }
@@ -223,7 +227,7 @@ type gitDir struct {
 }
 
 func (d *gitDir) Stat() (fs.FileInfo, error) {
-	return gitFileInfo{name: d.name, isDir: true}, nil
+	return gitFileInfo{name: path.Base(d.name), isDir: true}, nil
 }
 func (d *gitDir) Read([]byte) (int, error) {
 	return 0, &fs.PathError{Op: "read", Path: d.name, Err: errors.New("is a directory")}
@@ -238,19 +242,26 @@ func (d *gitDir) ReadDir(n int) ([]fs.DirEntry, error) {
 		}
 		return nil, io.EOF
 	}
-	if n <= 0 || d.pos+n > len(entries) {
+	readAll := n <= 0
+	if readAll || d.pos+n > len(entries) {
 		n = len(entries) - d.pos
 	}
 	result := make([]fs.DirEntry, n)
 	for i := range n {
 		e := entries[d.pos+i]
 		mode, _ := e.Mode.ToOSFileMode()
-		result[i] = gitDirEntry{name: e.Name, mode: mode}
+		var size int64
+		if !mode.IsDir() {
+			if f, err := d.tree.TreeEntryFile(&e); err == nil {
+				size = f.Size
+			}
+		}
+		result[i] = gitDirEntry{name: e.Name, mode: mode, size: size}
 	}
 	d.pos += n
 	// fs.ReadDirFile contract: EOF is only returned for batched reads (n > 0).
 	// When n <= 0 (read all), callers expect nil on success.
-	if d.pos >= len(entries) && n > 0 {
+	if d.pos >= len(entries) && !readAll {
 		return result, io.EOF
 	}
 	return result, nil
@@ -277,13 +288,14 @@ func (i gitFileInfo) Sys() any               { return nil }
 type gitDirEntry struct {
 	name string
 	mode fs.FileMode
+	size int64
 }
 
 func (e gitDirEntry) Name() string      { return e.name }
 func (e gitDirEntry) IsDir() bool       { return e.mode.IsDir() }
 func (e gitDirEntry) Type() fs.FileMode { return e.mode.Type() }
 func (e gitDirEntry) Info() (fs.FileInfo, error) {
-	return gitFileInfo{name: e.name, isDir: e.IsDir()}, nil
+	return gitFileInfo{name: e.name, size: e.size, isDir: e.IsDir()}, nil
 }
 
 // emptyFS is an fs.FS with no files.
