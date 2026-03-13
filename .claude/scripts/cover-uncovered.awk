@@ -3,7 +3,7 @@
 /^mode:/ { next }
 {
     split($1, a, ":")
-    file = a[1]; sub(/.*\//, "", file)
+    file = a[1]; sub(/^[^\/]*\/[^\/]*\//, "", file)
     split(a[2], pos, ",")
     split(pos[1], sl, ".")
     split(pos[2], el, ".")

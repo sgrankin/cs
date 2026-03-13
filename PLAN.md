@@ -128,6 +128,13 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
   - Same Playwright engine as test-runner — no extra browser dependency
   - Navigate, screenshot, inspect, click — used by Claude to verify UI visually
 
+## CLI & Integration Testing
+
+- **`rsc.io/script`** (`scripttest`) for `cmd/csbuild` and `cmd/csweb` tests
+  - txtar-based scripts: set up files/config, run commands, check outputs
+  - Good fit for the full pipeline: config → build index → search → verify results
+  - Not for library packages (index, regexp) — those are pure Go unit tests
+
 ## Test Data
 
 - **Integration tests**: Pre-built small index from hand-crafted fixtures in `testdata/`

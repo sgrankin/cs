@@ -41,6 +41,7 @@ Key points: clarity over cleverness, minimal dependencies, errors returned not p
 All must pass before committing:
 
 ```bash
+go tool goimports -w .     # format and fix imports
 go test ./...              # all tests must pass
 go vet ./...               # must be clean
 go tool staticcheck ./...  # must be clean (pinned in go.mod)
@@ -62,4 +63,4 @@ Output is one line per file with uncovered line ranges (e.g. `api.go: 54-58,90-9
 
 ## Code Review
 
-Before finalizing a change, review the diff with Sonnet. Focus on things mechanical checks can't catch: correctness, test quality, design issues, subtle bugs. Don't duplicate the pre-commit checklist.
+Before finalizing a change, run `/simplify` then `/review` (code-reviewer agent). Focus on things mechanical checks can't catch: correctness, test quality, design issues, subtle bugs. Don't duplicate the pre-commit checklist.

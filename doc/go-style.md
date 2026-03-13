@@ -179,7 +179,7 @@ Grouping "makes it easy to scan" and maintains consistency.
 - Compare full structs with `cmp.Diff` — avoids errors from "hand-coded field-by-field comparison."
 
 ### Structure
-- Table-driven when multiple cases share validation. Omit zero-value fields — named fields "improve readability and prevent confusion from positional parameters."
+- **Table-driven tests** are the default when multiple cases share validation logic. Each case is a struct in a slice, run via `t.Run(name, ...)`. Omit zero-value fields — named fields "improve readability and prevent confusion from positional parameters." Prefer table tests over copy-pasted test functions that differ only in inputs/expected values.
 - Keep validation in the test function — "failure messages and the test logic are clear."
 - Call setup functions explicitly — "tight scoping clarifies dependencies."
 
