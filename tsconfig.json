@@ -14,7 +14,10 @@
     "jsxFragmentFactory": "Fragment",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
-    "plugins": [{"name": "ts-lit-plugin"}]
+    "plugins": [{"name": "ts-lit-plugin"}],
+    "paths": {
+      "@testing/*": ["./testing/*"]
+    }
   },
   "exclude": ["node_modules", "**/node_modules/*"]
 }

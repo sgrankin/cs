@@ -1,5 +1,14 @@
 {
   "name": "com_github_livegrep_livegrep_web",
+  "private": true,
+  "scripts": {
+    "build": "bun livegrep/server/build.mjs",
+    "build:watch": "bun livegrep/server/build.mjs --watch",
+    "build:debug": "bun livegrep/server/build.mjs --debug",
+    "build:analyze": "bun livegrep/server/build.mjs --analyze",
+    "test": "bun testing/web-runner.mjs",
+    "test:coverage": "bun testing/web-runner.mjs --coverage"
+  },
   "devDependencies": {
     "@lit-labs/observers": "2.1.0",
     "@lit-labs/signals": "0.2.0",
@@ -7,10 +16,10 @@
     "@types/jquery": "4.0.0",
     "@types/node": "25.5.0",
     "bootstrap-select": "1.13.18",
+    "esbuild": "0.27.4",
     "htmx.org": "4.0.0-alpha5",
     "jquery": "4.0.0",
     "lit": "3.3.2",
     "ts-lit-plugin": "2.0.2"
-  },
-  "private": "true"
+  }
 }

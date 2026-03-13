@@ -1,0 +1,37 @@
+Rendering snapshots for Lit web components.
+
+-- match_str_highlight --
+<match-str text="hello world" start="0" end="5"></match-str>
+
+<span class="matchstr">hello</span> world
+
+-- match_str_no_bounds --
+<match-str text="hello world"></match-str>
+
+hello world
+
+-- match_str_bounds_at_end --
+<match-str text="hello world" start="6" end="11"></match-str>
+
+hello <span class="matchstr">world</span>
+
+-- match_line_with_bounds --
+<match-line lineNo="10" text="hello" href="#L10" start="0" end="5"></match-line>
+
+<a class="lno-link matchlno" href="#L10"><span class="lno">10</span></a>
+            <span class="matchline"><match-str end="5" start="0" text="hello"><span class="matchstr">hello</span></match-str></span>
+
+-- match_line_context --
+<match-line lineNo="9" text="// context" href="#L9"></match-line>
+
+<a class="lno-link" href="#L9"><span class="lno">9</span></a>
+            <span>// context</span>
+
+-- filename_match --
+<filename-match text="main.go" href="/view/myrepo@abc/+/main.go" start="0" end="4" repo="myrepo" version="abc123"></filename-match>
+
+<div class="filename-match">
+            <a class="header label result-path" href="/view/myrepo@abc/+/main.go">
+                <span class="repo">myrepo:</span><span class="version">abc123:</span><match-str end="4" start="0" text="main.go"><span class="matchstr">main</span>.go</match-str>
+            </a>
+        </div>

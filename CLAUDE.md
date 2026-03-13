@@ -6,7 +6,7 @@ Full-text code search tool: livegrep-inspired UI on a modified codesearch backen
 
 - **Backend**: Go, templ (HTML templates), chroma (syntax highlighting), go-git, go-github
 - **Frontend**: TypeScript + Lit web components, HTMX, Bootstrap, jQuery, esbuild
-- **Build**: `go generate ./...` (runs bun install, templ generate, esbuild via `livegrep/server/build`)
+- **Build**: `go generate ./...` (runs bun install, templ generate, esbuild via `livegrep/server/build.mjs`)
 
 ## Key Directories
 
@@ -46,6 +46,7 @@ go test ./...              # all tests must pass
 go vet ./...               # must be clean
 go tool staticcheck ./...  # must be clean (pinned in go.mod)
 go tool govulncheck ./...  # no known vulnerabilities (pinned in go.mod)
+bun run test               # frontend component tests (requires sandbox bypass)
 ```
 
 Address any gopls diagnostics (type errors, unused imports, etc.) visible in changed files.
@@ -73,6 +74,20 @@ go test -coverprofile=cover.out ./...; awk -f .claude/scripts/cover-uncovered.aw
 ```
 
 Output is one line per file with uncovered line ranges (e.g. `api.go: 54-58,90-92`). Should produce no output.
+
+Frontend coverage:
+```bash
+bun run test:coverage      # V8 coverage → per-file line report
+```
+
+## Frontend Testing
+
+Tests live in `livegrep/server/web/*.test.ts`. No test frameworks — just plain functions:
+
+- **Test harness** (`test-harness.ts`): runs exported `test*` functions, reports pass/fail per test. `eq(got, want)` for value comparison.
+- **Runner** (`run-tests.mjs`): esbuild bundles tests, Playwright opens in headless Chromium, reads console output.
+- **Components** to test go in `components.ts` (pure Lit, no side effects). Components that depend on jQuery/htmx stay in `codesearch_ui.tsx`.
+- Run via `bun run test` (requires sandbox bypass for Chromium).
 
 ## Code Review
 

@@ -6,7 +6,6 @@ require (
 	github.com/CAFxX/httpcompression v0.0.9
 	github.com/a-h/templ v0.3.1001
 	github.com/alecthomas/chroma/v2 v2.23.1
-	github.com/evanw/esbuild v0.27.4
 	github.com/go-git/go-git/v5 v5.17.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
