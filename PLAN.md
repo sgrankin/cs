@@ -136,6 +136,23 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
   - Good fit for the full pipeline: config → build index → search → verify results
   - Not for library packages (index, regexp) — those are pure Go unit tests
 
+## Root Package Integration Tests
+
+Remaining uncovered code needs integration-level testing:
+
+- [ ] `git.go` — `gitTreeFS` (fs.FS over go-git Tree), `gitRepo` (FS, Refresh, Version), `openGitRepo`
+  - Use real git repos in temp dirs (`git.PlainInit` + commit test files)
+  - Test `gitTreeFS` with `fs.WalkDir`, `testing/fstest.TestFS`
+  - Test `Refresh` with a local bare remote
+- [ ] `git.go` — `ResolveFetchSpecs` (GitHub API calls)
+  - Fake GitHub API: `httptest.NewServer` returning canned JSON for org/user/repo listing
+  - Test filtering: archived, forks, reject regexp, hidden repos
+- [ ] `syncer.go` — `repoSyncer.Refresh` orchestrates git fetch + repo creation
+  - Combines real git repos with fake GitHub API
+- [ ] `csbackend.go` — `BuildSearchIndex` (full pipeline: sync repos, build indexes, write meta, GC)
+  - Needs both real git and fake GitHub; or test with `Repo` interface fakes
+  - Consider `scripttest` (txtar scripts) for the full pipeline
+
 ## Test Data
 
 - **Integration tests**: Pre-built small index from hand-crafted fixtures in `testdata/`

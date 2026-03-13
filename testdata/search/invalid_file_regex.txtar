@@ -1,0 +1,6 @@
+# Invalid regex in File filter should produce an error.
+q=content
+file=[invalid
+want_error=true
+-- file.txt --
+content

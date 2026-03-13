@@ -1,0 +1,14 @@
+# Search on an empty index (no files).
+q=hello
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [],
+  "FileResults": [],
+  "Facets": [],
+  "IndexName": "",
+  "IndexTime": 0
+}

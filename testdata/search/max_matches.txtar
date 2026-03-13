@@ -1,0 +1,35 @@
+# Search that exceeds MaxMatches limit.
+# Concurrent goroutines make exact results non-deterministic; check stats only.
+q=match
+max_matches=3
+stats_only=true
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "MATCH_LIMIT"
+  },
+  "Results": null,
+  "FileResults": null,
+  "Facets": null,
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- a.txt --
+match this line
+match this line
+match this line
+match this line
+match this line
+-- b.txt --
+match this line
+match this line
+match this line
+match this line
+match this line
+-- c.txt --
+match this line
+match this line
+match this line
+match this line
+match this line

@@ -1,0 +1,16 @@
+# Search for "hello" without FoldCase — should not find "Hello".
+q=hello
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [],
+  "FileResults": [],
+  "Facets": [],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- file.txt --
+Hello World

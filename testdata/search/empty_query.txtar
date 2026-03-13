@@ -1,0 +1,16 @@
+# Empty Line regex produces no content matches (all matches have Start==End).
+q=
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [],
+  "FileResults": [],
+  "Facets": [],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- file.txt --
+content

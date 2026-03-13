@@ -1,0 +1,85 @@
+# Search across multiple trees.
+q=hello
+tree=frontend,backend
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "backend",
+        "Version": "v-backend",
+        "Path": "main.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "func hello() {}",
+          "Bounds": {
+            "Left": 5,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "frontend",
+        "Version": "v-frontend",
+        "Path": "app.js"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "function hello() {}",
+          "Bounds": {
+            "Left": 9,
+            "Right": 14
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".go",
+          "Count": 1
+        },
+        {
+          "Value": ".js",
+          "Count": 1
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "backend",
+          "Count": 1
+        },
+        {
+          "Value": "frontend",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- frontend/app.js --
+function hello() {}
+-- backend/main.go --
+func hello() {}

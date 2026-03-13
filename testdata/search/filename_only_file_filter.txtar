@@ -1,0 +1,34 @@
+# Filename-only search with File filter.
+q=hello
+filename_only=true
+file=\.go$
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [],
+  "FileResults": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "hello.go"
+      },
+      "Bounds": {
+        "Left": 0,
+        "Right": 5
+      }
+    }
+  ],
+  "Facets": [],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- hello.go --
+package main
+-- hello.py --
+pass
+-- world.go --
+package main

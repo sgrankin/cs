@@ -1,0 +1,40 @@
+# Filename-only search that exceeds MaxMatches limit.
+# Two trees each provide maxMatches results; aggregate exceeds limit.
+# Concurrent goroutines make exact results non-deterministic; check stats only.
+q=match
+filename_only=true
+max_matches=3
+stats_only=true
+tree=alpha,beta
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "MATCH_LIMIT"
+  },
+  "Results": null,
+  "FileResults": null,
+  "Facets": null,
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- alpha/match_a.txt --
+content
+-- alpha/match_b.txt --
+content
+-- alpha/match_c.txt --
+content
+-- alpha/match_d.txt --
+content
+-- alpha/match_e.txt --
+content
+-- beta/match_a.txt --
+content
+-- beta/match_b.txt --
+content
+-- beta/match_c.txt --
+content
+-- beta/match_d.txt --
+content
+-- beta/match_e.txt --
+content

@@ -1,0 +1,106 @@
+# Search across multiple trees — results should be sorted.
+q=hello
+tree=zeta,alpha,mid
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "mid",
+        "Version": "v-mid",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "zeta",
+        "Version": "v-zeta",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".txt",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "alpha",
+          "Count": 1
+        },
+        {
+          "Value": "mid",
+          "Count": 1
+        },
+        {
+          "Value": "zeta",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- zeta/file.txt --
+hello
+-- alpha/file.txt --
+hello
+-- mid/file.txt --
+hello

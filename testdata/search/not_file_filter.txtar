@@ -1,0 +1,82 @@
+# Search with NotFile filter: exclude _test.go files.
+q=main
+not_file=_test\.go$
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "main.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "package main",
+          "Bounds": {
+            "Left": 8,
+            "Right": 12
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        },
+        {
+          "LineNumber": 2,
+          "Line": "func main() {}",
+          "Bounds": {
+            "Left": 5,
+            "Right": 9
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "main.go"
+      },
+      "Bounds": {
+        "Left": 0,
+        "Right": 4
+      }
+    }
+  ],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".go",
+          "Count": 1
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "repo",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- main.go --
+package main
+func main() {}
+-- main_test.go --
+package main
+func TestMain() {}

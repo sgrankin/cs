@@ -1,0 +1,84 @@
+# Search with RepoFilter: only alpha and gamma trees.
+q=hello
+tree=alpha,beta,gamma
+repo_filter=alpha,gamma
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello world",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "gamma",
+        "Version": "v-gamma",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello world",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".txt",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "alpha",
+          "Count": 1
+        },
+        {
+          "Value": "gamma",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- alpha/file.txt --
+hello world
+-- beta/file.txt --
+hello world
+-- gamma/file.txt --
+hello world

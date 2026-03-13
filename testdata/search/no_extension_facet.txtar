@@ -1,0 +1,76 @@
+# Files without extensions should not produce empty ext facet values.
+q=hello
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "Makefile"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello: build",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "main.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "func hello() {}",
+          "Bounds": {
+            "Left": 5,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".go",
+          "Count": 1
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "repo",
+          "Count": 2
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- Makefile --
+hello: build
+-- main.go --
+func hello() {}

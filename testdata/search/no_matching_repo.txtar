@@ -1,0 +1,20 @@
+# Search with RepoFilter that matches no trees.
+q=hello
+tree=alpha,beta
+repo_filter=nonexistent
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [],
+  "FileResults": [],
+  "Facets": [],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- alpha/file.txt --
+hello
+-- beta/file.txt --
+hello

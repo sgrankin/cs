@@ -1,0 +1,55 @@
+# Filename-only search — file results should be sorted.
+q=hello
+filename_only=true
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [],
+  "FileResults": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "a_hello.txt"
+      },
+      "Bounds": {
+        "Left": 2,
+        "Right": 7
+      }
+    },
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "m_hello.txt"
+      },
+      "Bounds": {
+        "Left": 2,
+        "Right": 7
+      }
+    },
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "z_hello.txt"
+      },
+      "Bounds": {
+        "Left": 2,
+        "Right": 7
+      }
+    }
+  ],
+  "Facets": [],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- z_hello.txt --
+content
+-- a_hello.txt --
+content
+-- m_hello.txt --
+content

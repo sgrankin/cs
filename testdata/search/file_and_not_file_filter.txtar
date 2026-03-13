@@ -1,0 +1,61 @@
+# Combined File and NotFile filters: .go files but not _test.go.
+q=hello
+file=\.go$
+not_file=_test\.go$
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "code.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello world",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".go",
+          "Count": 1
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "repo",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- code.go --
+hello world
+-- code_test.go --
+hello test
+-- data.json --
+hello json

@@ -1,0 +1,64 @@
+# Search with context lines.
+q=target
+context_lines=1
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 3,
+          "Line": "target",
+          "Bounds": {
+            "Left": 0,
+            "Right": 6
+          },
+          "ContextBefore": [
+            "line2"
+          ],
+          "ContextAfter": [
+            "line4"
+          ]
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".txt",
+          "Count": 1
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "repo",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- file.txt --
+line1
+line2
+target
+line4
+line5

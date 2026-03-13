@@ -1,0 +1,132 @@
+# Search that produces facets across multiple trees and file types.
+q=hello
+tree=alpha,beta
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "main.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "func hello() {}",
+          "Bounds": {
+            "Left": 5,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "readme.md"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello docs",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "util.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "func hello() {}",
+          "Bounds": {
+            "Left": 5,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "beta",
+        "Version": "v-beta",
+        "Path": "app.py"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "def hello():",
+          "Bounds": {
+            "Left": 4,
+            "Right": 9
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".go",
+          "Count": 2
+        },
+        {
+          "Value": ".md",
+          "Count": 1
+        },
+        {
+          "Value": ".py",
+          "Count": 1
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "alpha",
+          "Count": 3
+        },
+        {
+          "Value": "beta",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- alpha/main.go --
+func hello() {}
+-- alpha/util.go --
+func hello() {}
+-- alpha/readme.md --
+hello docs
+-- beta/app.py --
+def hello():
+    pass

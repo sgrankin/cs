@@ -1,0 +1,44 @@
+# Search for filenames matching "hello".
+q=hello
+filename_only=true
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [],
+  "FileResults": [
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "hello.go"
+      },
+      "Bounds": {
+        "Left": 0,
+        "Right": 5
+      }
+    },
+    {
+      "File": {
+        "Tree": "repo",
+        "Version": "v-repo",
+        "Path": "hello_test.go"
+      },
+      "Bounds": {
+        "Left": 0,
+        "Right": 5
+      }
+    }
+  ],
+  "Facets": [],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- hello.go --
+package main
+-- world.go --
+package main
+-- hello_test.go --
+package main

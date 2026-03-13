@@ -1,0 +1,84 @@
+# Search with NotRepo regexp exclude filter.
+q=hello
+tree=myrepo-go,myrepo-py,otherrepo
+not_repo=go$
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "myrepo-py",
+        "Version": "v-myrepo-py",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "otherrepo",
+        "Version": "v-otherrepo",
+        "Path": "file.txt"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "hello",
+          "Bounds": {
+            "Left": 0,
+            "Right": 5
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".txt",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "myrepo-py",
+          "Count": 1
+        },
+        {
+          "Value": "otherrepo",
+          "Count": 1
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- myrepo-go/file.txt --
+hello
+-- myrepo-py/file.txt --
+hello
+-- otherrepo/file.txt --
+hello

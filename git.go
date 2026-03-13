@@ -262,8 +262,8 @@ type gitFileInfo struct {
 	isDir bool
 }
 
-func (i gitFileInfo) Name() string           { return i.name }
-func (i gitFileInfo) Size() int64            { return i.size }
+func (i gitFileInfo) Name() string { return i.name }
+func (i gitFileInfo) Size() int64  { return i.size }
 func (i gitFileInfo) Mode() fs.FileMode {
 	if i.isDir {
 		return fs.ModeDir | 0o555
@@ -298,9 +298,9 @@ func (emptyFS) Open(name string) (fs.File, error) {
 
 type emptyDir struct{}
 
-func (emptyDir) Stat() (fs.FileInfo, error)         { return gitFileInfo{name: ".", isDir: true}, nil }
-func (emptyDir) Read([]byte) (int, error)           { return 0, io.EOF }
-func (emptyDir) Close() error                       { return nil }
+func (emptyDir) Stat() (fs.FileInfo, error) { return gitFileInfo{name: ".", isDir: true}, nil }
+func (emptyDir) Read([]byte) (int, error)   { return 0, io.EOF }
+func (emptyDir) Close() error               { return nil }
 func (emptyDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	if n > 0 {
 		return nil, io.EOF

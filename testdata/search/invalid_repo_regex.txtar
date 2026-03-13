@@ -1,0 +1,6 @@
+# Invalid regex in Repo filter should produce an error.
+q=content
+repo=[invalid
+want_error=true
+-- file.txt --
+content

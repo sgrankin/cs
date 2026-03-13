@@ -1,0 +1,5 @@
+# Invalid regex in Line should produce an error.
+q=[invalid
+want_error=true
+-- file.txt --
+content
