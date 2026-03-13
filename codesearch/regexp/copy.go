@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 // Copied from Go's regexp/syntax.
-// Formatters edited to handle instByteRange.
 
 package regexp
 
@@ -11,42 +10,9 @@ import (
 	"bytes"
 	"fmt"
 	"regexp/syntax"
-	"sort"
 	"strconv"
 	"unicode"
 )
-
-// cleanClass sorts the ranges (pairs of elements of r),
-// merges them, and eliminates duplicates.
-func cleanClass(rp *[]rune) []rune {
-
-	// Sort by lo increasing, hi decreasing to break ties.
-	sort.Sort(ranges{rp})
-
-	r := *rp
-	if len(r) < 2 {
-		return r
-	}
-
-	// Merge abutting, overlapping.
-	w := 2 // write index
-	for i := 2; i < len(r); i += 2 {
-		lo, hi := r[i], r[i+1]
-		if lo <= r[w-1]+1 {
-			// merge with previous range
-			if hi > r[w-1] {
-				r[w-1] = hi
-			}
-			continue
-		}
-		// new disjoint range
-		r[w] = lo
-		r[w+1] = hi
-		w += 2
-	}
-
-	return r[:w]
-}
 
 // appendRange returns the result of appending the range lo-hi to the class r.
 func appendRange(r []rune, lo, hi rune) []rune {
@@ -115,48 +81,12 @@ func appendFoldedRange(r []rune, lo, hi rune) []rune {
 	return r
 }
 
-// ranges implements sort.Interface on a []rune.
-// The choice of receiver type definition is strange
-// but avoids an allocation since we already have
-// a *[]rune.
-type ranges struct {
-	p *[]rune
-}
-
-func (ra ranges) Less(i, j int) bool {
-	p := *ra.p
-	i *= 2
-	j *= 2
-	return p[i] < p[j] || p[i] == p[j] && p[i+1] > p[j+1]
-}
-
-func (ra ranges) Len() int {
-	return len(*ra.p) / 2
-}
-
-func (ra ranges) Swap(i, j int) {
-	p := *ra.p
-	i *= 2
-	j *= 2
-	p[i], p[i+1], p[j], p[j+1] = p[j], p[j+1], p[i], p[i+1]
-}
-
+// progString returns a human-readable dump of the compiled program,
+// including the custom instByteRange instructions added by toByteProg.
 func progString(p *syntax.Prog) string {
 	var b bytes.Buffer
 	dumpProg(&b, p)
 	return b.String()
-}
-
-func instString(i *syntax.Inst) string {
-	var b bytes.Buffer
-	dumpInst(&b, i)
-	return b.String()
-}
-
-func bw(b *bytes.Buffer, args ...string) {
-	for _, s := range args {
-		b.WriteString(s)
-	}
 }
 
 func dumpProg(b *bytes.Buffer, p *syntax.Prog) {
@@ -169,55 +99,51 @@ func dumpProg(b *bytes.Buffer, p *syntax.Prog) {
 		if j == p.Start {
 			pc += "*"
 		}
-		bw(b, pc, "\t")
+		b.WriteString(pc)
+		b.WriteByte('\t')
 		dumpInst(b, i)
-		bw(b, "\n")
+		b.WriteByte('\n')
 	}
-}
-
-func u32(i uint32) string {
-	return strconv.FormatUint(uint64(i), 10)
 }
 
 func dumpInst(b *bytes.Buffer, i *syntax.Inst) {
 	switch i.Op {
 	case syntax.InstAlt:
-		bw(b, "alt -> ", u32(i.Out), ", ", u32(i.Arg))
+		fmt.Fprintf(b, "alt -> %d, %d", i.Out, i.Arg)
 	case syntax.InstAltMatch:
-		bw(b, "altmatch -> ", u32(i.Out), ", ", u32(i.Arg))
+		fmt.Fprintf(b, "altmatch -> %d, %d", i.Out, i.Arg)
 	case syntax.InstCapture:
-		bw(b, "cap ", u32(i.Arg), " -> ", u32(i.Out))
+		fmt.Fprintf(b, "cap %d -> %d", i.Arg, i.Out)
 	case syntax.InstEmptyWidth:
-		bw(b, "empty ", u32(i.Arg), " -> ", u32(i.Out))
+		fmt.Fprintf(b, "empty %d -> %d", i.Arg, i.Out)
 	case syntax.InstMatch:
-		bw(b, "match")
+		b.WriteString("match")
 	case syntax.InstFail:
-		bw(b, "fail")
+		b.WriteString("fail")
 	case syntax.InstNop:
-		bw(b, "nop -> ", u32(i.Out))
+		fmt.Fprintf(b, "nop -> %d", i.Out)
 	case instByteRange:
 		fmt.Fprintf(b, "byte %02x-%02x", (i.Arg>>8)&0xFF, i.Arg&0xFF)
 		if i.Arg&argFold != 0 {
-			bw(b, "/i")
+			b.WriteString("/i")
 		}
-		bw(b, " -> ", u32(i.Out))
-
-	// Should not happen
+		fmt.Fprintf(b, " -> %d", i.Out)
+	// Should not happen after toByteProg, but useful for debugging.
 	case syntax.InstRune:
 		if i.Rune == nil {
-			// shouldn't happen
-			bw(b, "rune <nil>")
+			b.WriteString("rune <nil>")
+			return
 		}
-		bw(b, "rune ", strconv.QuoteToASCII(string(i.Rune)))
+		fmt.Fprintf(b, "rune %s", strconv.QuoteToASCII(string(i.Rune)))
 		if syntax.Flags(i.Arg)&syntax.FoldCase != 0 {
-			bw(b, "/i")
+			b.WriteString("/i")
 		}
-		bw(b, " -> ", u32(i.Out))
+		fmt.Fprintf(b, " -> %d", i.Out)
 	case syntax.InstRune1:
-		bw(b, "rune1 ", strconv.QuoteToASCII(string(i.Rune)), " -> ", u32(i.Out))
+		fmt.Fprintf(b, "rune1 %s -> %d", strconv.QuoteToASCII(string(i.Rune)), i.Out)
 	case syntax.InstRuneAny:
-		bw(b, "any -> ", u32(i.Out))
+		fmt.Fprintf(b, "any -> %d", i.Out)
 	case syntax.InstRuneAnyNotNL:
-		bw(b, "anynotnl -> ", u32(i.Out))
+		fmt.Fprintf(b, "anynotnl -> %d", i.Out)
 	}
 }

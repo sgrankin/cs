@@ -1,0 +1,113 @@
+# Golden tests for progString (byte-compiled regex programs).
+# Run `go test -update` to regenerate.
+
+x
+      0	fail
+      1*	byte 78-78 -> 2
+      2	match
+
+(?i)a
+      0	fail
+      1*	byte 41-41/i -> 2
+      2	match
+
+abc|xyz
+      0	fail
+      1	byte 61-61 -> 2
+      2	byte 62-62 -> 3
+      3	byte 63-63 -> 8
+      4	byte 78-78 -> 5
+      5	byte 79-79 -> 6
+      6	byte 7a-7a -> 8
+      7*	alt -> 1, 4
+      8	match
+
+(a)
+      0	fail
+      1*	cap 2 -> 2
+      2	byte 61-61 -> 3
+      3	cap 3 -> 4
+      4	match
+
+^x
+      0	fail
+      1*	empty 1 -> 2
+      2	byte 78-78 -> 3
+      3	match
+
+日
+      0	fail
+      1*	nop -> 5
+      2	match
+      3	byte a5-a5 -> 2
+      4	byte 97-97 -> 3
+      5	byte e6-e6 -> 4
+
+[a-f]
+      0	fail
+      1*	byte 61-66 -> 2
+      2	match
+
+.
+      0	fail
+      1*	alt -> 3, 7
+      2	match
+      3	byte 00-09 -> 2
+      4	byte 0b-7f -> 2
+      5	byte 80-bf -> 2
+      6	byte c2-df -> 5
+      7	alt -> 4, 10
+      8	byte a0-bf -> 5
+      9	byte e0-e0 -> 8
+     10	alt -> 6, 13
+     11	byte 80-bf -> 5
+     12	byte e1-ef -> 11
+     13	alt -> 9, 16
+     14	byte 90-bf -> 11
+     15	byte f0-f0 -> 14
+     16	alt -> 12, 19
+     17	byte 80-bf -> 11
+     18	byte f1-f3 -> 17
+     19	alt -> 15, 22
+     20	byte 80-8f -> 11
+     21	byte f4-f4 -> 20
+     22	alt -> 18, 21
+
+\bx
+      0	fail
+      1*	empty 16 -> 2
+      2	byte 78-78 -> 3
+      3	match
+
+(?i)α
+      0	fail
+      1*	alt -> 4, 6
+      2	match
+      3	byte 91-91 -> 2
+      4	byte ce-ce -> 3
+      5	byte b1-b1 -> 2
+      6	byte ce-ce -> 5
+
+(?s).
+      0	fail
+      1*	alt -> 3, 8
+      2	match
+      3	byte 00-7f -> 2
+      4	byte 80-bf -> 2
+      5	byte c2-df -> 4
+      6	byte a0-bf -> 4
+      7	byte e0-e0 -> 6
+      8	alt -> 5, 11
+      9	byte 80-bf -> 4
+     10	byte e1-ef -> 9
+     11	alt -> 7, 14
+     12	byte 90-bf -> 9
+     13	byte f0-f0 -> 12
+     14	alt -> 10, 17
+     15	byte 80-bf -> 9
+     16	byte f1-f3 -> 15
+     17	alt -> 13, 20
+     18	byte 80-8f -> 9
+     19	byte f4-f4 -> 18
+     20	alt -> 16, 19
+

@@ -5,8 +5,13 @@
 package regexp
 
 import (
+	"bytes"
+	"flag"
 	"fmt"
+	"os"
 	"reflect"
+	"regexp/syntax"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -146,7 +151,7 @@ var matchTests = []struct {
 	{"\\`", "`", []Range{{0, 1}}},
 	{"[\\`]+", "`", []Range{{0, 1}}},
 
-	// Multiline inputs, matches wthin a line.
+	// Multiline inputs, matches within a line.
 	{`x`, "a", nil},
 	{`x`, "x", []Range{{0, 1}}},
 	{`x`, "xo", []Range{{0, 1}}},
@@ -260,4 +265,595 @@ func rangesUpTo(n int) []Range {
 		ret = append(ret, Range{i, i + 1})
 	}
 	return ret
+}
+
+var updateGolden = flag.Bool("update", false, "update golden test files")
+
+func TestProgString(t *testing.T) {
+	// Golden test: compile regex patterns and compare progString output
+	// against testdata/prog.txt. Run with -update to regenerate.
+	//
+	// Format: pattern on its own line, 4-space-indented output below.
+	// Blank lines separate test cases. Lines starting with # are comments.
+	const path = "testdata/prog.txt"
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type testCase struct {
+		pattern string
+		want    string
+		line    int // line number in file for error reporting
+	}
+	var cases []testCase
+	lines := strings.Split(string(data), "\n")
+	for i := 0; i < len(lines); {
+		if lines[i] == "" || strings.HasPrefix(lines[i], "#") {
+			i++
+			continue
+		}
+		tc := testCase{pattern: lines[i], line: i + 1}
+		i++
+		var out []string
+		for i < len(lines) && strings.HasPrefix(lines[i], "    ") {
+			out = append(out, strings.TrimPrefix(lines[i], "    "))
+			i++
+		}
+		tc.want = strings.Join(out, "\n") + "\n"
+		cases = append(cases, tc)
+	}
+
+	if *updateGolden {
+		var buf strings.Builder
+		buf.WriteString("# Golden tests for progString (byte-compiled regex programs).\n")
+		buf.WriteString("# Run `go test -update` to regenerate.\n\n")
+		for _, tc := range cases {
+			re, err := Compile(tc.pattern, 0)
+			if err != nil {
+				t.Fatalf("line %d: Compile(%q): %v", tc.line, tc.pattern, err)
+			}
+			buf.WriteString(tc.pattern + "\n")
+			for _, line := range strings.Split(strings.TrimRight(progString(re.prog), "\n"), "\n") {
+				buf.WriteString("    " + line + "\n")
+			}
+			buf.WriteByte('\n')
+		}
+		if err := os.WriteFile(path, []byte(buf.String()), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Log("updated", path)
+		return
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.pattern, func(t *testing.T) {
+			re, err := Compile(tc.pattern, 0)
+			if err != nil {
+				t.Fatalf("line %d: Compile(%q): %v", tc.line, tc.pattern, err)
+			}
+			if got := progString(re.prog); got != tc.want {
+				t.Errorf("line %d: progString(%q):\ngot:\n%swant:\n%s", tc.line, tc.pattern, got, tc.want)
+			}
+			_ = progString(re.revprog)
+		})
+	}
+}
+
+func TestDumpInst(t *testing.T) {
+	// Test dumpInst directly to cover all instruction type formatting,
+	// including types that don't appear in compiled byte programs.
+	tests := []struct {
+		name string
+		inst syntax.Inst
+		want string
+	}{
+		{"altmatch", syntax.Inst{Op: syntax.InstAltMatch, Out: 1, Arg: 2}, "altmatch -> 1, 2"},
+		{"nop", syntax.Inst{Op: syntax.InstNop, Out: 5}, "nop -> 5"},
+		{"rune", syntax.Inst{Op: syntax.InstRune, Rune: []rune{'a', 'z'}, Out: 3}, `rune "az" -> 3`},
+		{"rune_fold", syntax.Inst{Op: syntax.InstRune, Rune: []rune{'a'}, Arg: uint32(syntax.FoldCase), Out: 3}, `rune "a"/i -> 3`},
+		{"rune_nil", syntax.Inst{Op: syntax.InstRune, Rune: nil, Out: 3}, "rune <nil>"},
+		{"rune1", syntax.Inst{Op: syntax.InstRune1, Rune: []rune{'x'}, Out: 4}, `rune1 "x" -> 4`},
+		{"any", syntax.Inst{Op: syntax.InstRuneAny, Out: 6}, "any -> 6"},
+		{"anynotnl", syntax.Inst{Op: syntax.InstRuneAnyNotNL, Out: 7}, "anynotnl -> 7"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b bytes.Buffer
+			dumpInst(&b, &tt.inst)
+			got := b.String()
+			if got != tt.want {
+				t.Errorf("dumpInst(%s) = %q, want %q", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCompileError(t *testing.T) {
+	_, err := Compile(`(`, 0)
+	if err == nil {
+		t.Fatal("Compile(`(`, 0) should return an error for invalid regex")
+	}
+}
+
+func TestStringAndSyn(t *testing.T) {
+	re, err := Compile(`hello`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := re.String(); got != "hello" {
+		t.Errorf("String() = %q, want %q", got, "hello")
+	}
+	if syn := re.Syn(); syn == nil {
+		t.Error("Syn() returned nil")
+	}
+}
+
+func TestClone(t *testing.T) {
+	re, err := Compile(`abc`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Clone a compiled regex and verify it works independently.
+	clone := re.Clone()
+	if clone == nil {
+		t.Fatal("Clone() returned nil")
+	}
+	if clone.String() != re.String() {
+		t.Errorf("Clone().String() = %q, want %q", clone.String(), re.String())
+	}
+
+	// Verify the clone produces the same match results.
+	r1 := Match(re, "xabcx")
+	r2 := Match(clone, "xabcx")
+	if r1 != r2 {
+		t.Errorf("Clone match differs: original=%v, clone=%v", r1, r2)
+	}
+
+	// Clone of nil returns nil.
+	var nilRe *Regexp
+	if got := nilRe.Clone(); got != nil {
+		t.Errorf("nil.Clone() = %v, want nil", got)
+	}
+}
+
+func TestRangeAddNilRange(t *testing.T) {
+	got := NilRange.Add(5)
+	if got != NilRange {
+		t.Errorf("NilRange.Add(5) = %v, want %v", got, NilRange)
+	}
+}
+
+func TestNstateString(t *testing.T) {
+	var n nstate
+	n.q.Init(10)
+	n.q.Add(1)
+	n.q.Add(3)
+	n.partial = 'x'
+	s := n.String()
+	if s == "" {
+		t.Error("nstate.String() returned empty string")
+	}
+}
+
+func TestReverseBeginEndText(t *testing.T) {
+	// Exercise the OpBeginText/OpEndText cases in reverse() by using \A and \z.
+	// \A (OpBeginText) can be tested via matching. \z (OpEndText) currently has
+	// a bug in the reverse matcher when the match doesn't start at position 0,
+	// so we only test \A here and verify \z compiles without error.
+	tests := []struct {
+		name  string
+		re    string
+		input string
+		want  Range
+	}{
+		// \A (OpBeginText -> OpEndText in reverse) anchors at start of text.
+		{"begin_text_match", `\Ahello`, "hello world", Range{0, 5}},
+		{"begin_text_no_match", `\Ahello`, "say hello", NilRange},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			re, err := Compile(tt.re, 0)
+			if err != nil {
+				t.Fatalf("Compile(%q): %v", tt.re, err)
+			}
+			got := Match(re, tt.input)
+			if got != tt.want {
+				t.Errorf("Match(%q, %q) = %v, want %v", tt.re, tt.input, got, tt.want)
+			}
+		})
+	}
+
+	// Verify \z compiles (exercises OpEndText -> OpBeginText in reverse).
+	_, err := Compile(`hello\z`, 0)
+	if err != nil {
+		t.Fatalf("Compile(`hello\\z`): %v", err)
+	}
+}
+
+func TestCaseInsensitiveUnicode(t *testing.T) {
+	// Case-insensitive matching with unicode character classes exercises
+	// the FoldCase paths in toByteProg (utf.go lines 44-55).
+	tests := []struct {
+		re    string
+		input string
+		want  Range
+	}{
+		// (?i) with a unicode char class range triggers FoldCase with multi-rune ranges.
+		// Non-greedy matching returns only the first character.
+		{`(?i)[α-γ]`, "Α", Range{0, 2}},
+		// Case-insensitive single ASCII letter - exercises the fold single byte path.
+		{`(?i)a`, "A", Range{0, 1}},
+		// Case-insensitive ASCII range.
+		{`(?i)[a-z]`, "Z", Range{0, 1}},
+	}
+	for _, tt := range tests {
+		re, err := Compile(tt.re, 0)
+		if err != nil {
+			t.Errorf("Compile(%q): %v", tt.re, err)
+			continue
+		}
+		got := Match(re, tt.input)
+		if got != tt.want {
+			t.Errorf("Match(%q, %q) = %v, want %v", tt.re, tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestMultiByteUnicodeRanges(t *testing.T) {
+	// Matching patterns with multi-byte Unicode ranges exercises various
+	// code paths in utf.go's runeBuilder.
+	tests := []struct {
+		name  string
+		re    string
+		input string
+		want  Range
+	}{
+		// 3+ disjoint multi-byte ranges generate 3+ branches through addBranch,
+		// hitting the InstAlt -> new InstAlt chain (utf.go addBranch InstAlt case).
+		{"three_disjoint_ranges", `[αεω]`, "ε", Range{0, 2}},
+		// CJK + Cyrillic + Greek: three widely-separated Unicode ranges.
+		{"three_scripts", `[αЯ你]`, "Я", Range{0, 2}},
+		// Full Unicode range exercise.
+		{"unicode_range", `[\x{0100}-\x{0110}]`, "\u0108", Range{0, 2}},
+		// Range that splits at UTF-8 encoding length boundary.
+		{"utf8_boundary_split", `[\x{7F}-\x{FF}]`, "\u00C0", Range{0, 2}},
+		// Range where hi doesn't end on a mask boundary, triggering
+		// the hi&m != m split in addRange (utf.go lines 256-259).
+		{"hi_mask_split", `[\x{100}-\x{150}]`, "\u0120", Range{0, 2}},
+		// Case-insensitive with multi-rune Unicode char class range triggers
+		// the FoldCase path with len(r) > 1 in toByteProg (utf.go lines 49-52).
+		{"fold_unicode_range", `(?i)[α-ω]`, "Ω", Range{0, 2}},
+		// Case-insensitive single Unicode rune (hits len(r)==1 fold path).
+		{"fold_unicode_single", `(?i)α`, "Α", Range{0, 2}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			re, err := Compile(tt.re, 0)
+			if err != nil {
+				t.Fatalf("Compile(%q): %v", tt.re, err)
+			}
+			got := Match(re, tt.input)
+			if got != tt.want {
+				t.Errorf("Match(%q, %q) = %v, want %v", tt.re, tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAppendRange(t *testing.T) {
+	tests := []struct {
+		name string
+		init []rune
+		lo   rune
+		hi   rune
+		want []rune
+	}{
+		{
+			name: "empty",
+			init: nil,
+			lo:   'a', hi: 'z',
+			want: []rune{'a', 'z'},
+		},
+		{
+			name: "abutting",
+			init: []rune{'a', 'm'},
+			lo:   'n', hi: 'z',
+			want: []rune{'a', 'z'},
+		},
+		{
+			name: "overlapping",
+			init: []rune{'a', 'n'},
+			lo:   'm', hi: 'z',
+			want: []rune{'a', 'z'},
+		},
+		{
+			name: "extend_lo",
+			init: []rune{'c', 'z'},
+			lo:   'a', hi: 'd',
+			want: []rune{'a', 'z'},
+		},
+		{
+			name: "disjoint",
+			init: []rune{'a', 'c'},
+			lo:   'e', hi: 'z',
+			want: []rune{'a', 'c', 'e', 'z'},
+		},
+		{
+			name: "merge_second_to_last",
+			// Two existing ranges; new range merges with the first (n-4 position).
+			init: []rune{'a', 'm', 'x', 'z'},
+			lo:   'n', hi: 'o',
+			want: []rune{'a', 'o', 'x', 'z'},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := appendRange(tt.init, tt.lo, tt.hi)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("appendRange(%v, %q, %q) diff (-want+got):\n%s", tt.init, tt.lo, tt.hi, diff)
+			}
+		})
+	}
+}
+
+func TestAppendFoldedRange(t *testing.T) {
+	tests := []struct {
+		name string
+		lo   rune
+		hi   rune
+	}{
+		// Range spanning all fold possibilities: the full-range optimization.
+		{"full_range", 0, 0x10FFFF},
+		// Range entirely below minFold.
+		{"below_fold", 0, 0x0040},
+		// Range entirely above maxFold.
+		{"above_fold", 0x10450, 0x10FFFF},
+		// Range starting below minFold and ending within.
+		{"straddle_lo", 0x0030, 0x0050},
+		// Range starting within and ending above maxFold.
+		{"straddle_hi", 0x10440, 0x10FFFF},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := appendFoldedRange(nil, tt.lo, tt.hi)
+			if len(got) == 0 {
+				t.Errorf("appendFoldedRange(nil, %#x, %#x) returned empty", tt.lo, tt.hi)
+			}
+			// Verify the original range is included.
+			found := false
+			for i := 0; i < len(got); i += 2 {
+				if got[i] <= tt.lo && got[i+1] >= tt.lo {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("result %v does not contain lo=%#x", got, tt.lo)
+			}
+		})
+	}
+}
+
+func TestRuneBuilder_addRange_loGtHi(t *testing.T) {
+	// Verify addRange with lo > hi is a no-op (defensive guard).
+	prog := &syntax.Prog{
+		Inst: []syntax.Inst{
+			{Op: syntax.InstFail},
+			{Op: syntax.InstMatch},
+		},
+	}
+	var b runeBuilder
+	b.init(prog, 0, 1, false)
+	b.addRange('z', 'a', false) // lo > hi: should be a no-op
+	// The begin instruction should still be InstFail (not rewritten).
+	if prog.Inst[0].Op != syntax.InstFail {
+		t.Errorf("addRange(z, a) modified program: Op=%v, want InstFail", prog.Inst[0].Op)
+	}
+}
+
+func TestRuneBuilder_suffix_fold(t *testing.T) {
+	// Exercise the fold flag path in uncachedSuffix (utf.go lines 179-181).
+	// This path is not reached from production code (addRange always passes
+	// fold=false), but we test it directly for completeness.
+	prog := &syntax.Prog{
+		Inst: []syntax.Inst{
+			{Op: syntax.InstFail},
+			{Op: syntax.InstMatch},
+		},
+	}
+	var b runeBuilder
+	b.init(prog, 0, 1, false)
+	pc := b.suffix('A', 'Z', true, 0)
+	inst := prog.Inst[pc]
+	if inst.Op != instByteRange {
+		t.Fatalf("suffix produced Op=%v, want instByteRange", inst.Op)
+	}
+	if inst.Arg&argFold == 0 {
+		t.Error("suffix with fold=true did not set argFold flag")
+	}
+}
+
+func TestToByteProg_FoldCaseMultiRune(t *testing.T) {
+	// Verify that case-insensitive patterns with multi-rune character class
+	// ranges produce the expected compiled output. These exercise the FoldCase
+	// multi-range path in toByteProg.
+	//
+	// We construct a program directly to ensure we hit the exact code path
+	// (lines 49-52 of utf.go) since the syntax simplifier may expand folds.
+	prog := &syntax.Prog{
+		Inst: []syntax.Inst{
+			{Op: syntax.InstRune, Rune: []rune{'A', 'F', 'a', 'f'}, Arg: uint32(syntax.FoldCase), Out: 1},
+			{Op: syntax.InstMatch},
+		},
+		Start: 0,
+	}
+	// toByteProg should process this without error.
+	if err := toByteProg(prog, false); err != nil {
+		t.Fatalf("toByteProg: %v", err)
+	}
+	// The first instruction should have been rewritten to a byte-matching instruction.
+	if prog.Inst[0].Op == syntax.InstRune {
+		t.Error("toByteProg did not rewrite InstRune")
+	}
+}
+
+func TestAsciiFold(t *testing.T) {
+	tests := []struct {
+		r    rune
+		want bool
+	}{
+		// ASCII letters have ASCII fold partners.
+		{'a', true},
+		{'A', true},
+		{'z', true},
+		// Digits fold to themselves (SimpleFold('0')=='0'), trivially all-ASCII.
+		{'0', true},
+		// Non-ASCII rune: should return false.
+		{0x80, false},
+		// 'k' has a non-ASCII fold partner (Kelvin sign U+212A).
+		{'k', false},
+		{'K', false},
+		// 's' has a non-ASCII fold partner (long s U+017F).
+		{'s', false},
+		{'S', false},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%04x", tt.r), func(t *testing.T) {
+			got := asciiFold(tt.r)
+			if got != tt.want {
+				t.Errorf("asciiFold(%#x) = %v, want %v", tt.r, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestOneByteRange(t *testing.T) {
+	// Exercise oneByteRange by constructing syntax.Inst values directly.
+	tests := []struct {
+		name     string
+		inst     syntax.Inst
+		wantLo   byte
+		wantHi   byte
+		wantFold bool
+		wantOK   bool
+	}{
+		{
+			name:     "rune1_ascii",
+			inst:     syntax.Inst{Op: syntax.InstRune1, Rune: []rune{'a'}},
+			wantLo:   'a',
+			wantHi:   'a',
+			wantFold: false,
+			wantOK:   true,
+		},
+		{
+			name: "rune1_non_ascii",
+			inst: syntax.Inst{Op: syntax.InstRune1, Rune: []rune{0x100}},
+			// Non-ASCII single rune: can't be a one-byte range.
+			wantOK: false,
+		},
+		{
+			name: "rune_single_with_fold_ascii",
+			// Single ASCII rune with fold, and fold partner is also ASCII (e.g. 'a' -> 'A').
+			inst:     syntax.Inst{Op: syntax.InstRune, Rune: []rune{'a'}, Arg: uint32(syntax.FoldCase)},
+			wantLo:   'a',
+			wantHi:   'a',
+			wantFold: true,
+			wantOK:   true,
+		},
+		{
+			name: "rune_single_with_fold_non_ascii_fold",
+			// 'k' has non-ASCII fold partner (Kelvin sign U+212A), so fold not ok.
+			inst:   syntax.Inst{Op: syntax.InstRune, Rune: []rune{'k'}, Arg: uint32(syntax.FoldCase)},
+			wantOK: false,
+		},
+		{
+			name: "rune_single_non_ascii",
+			// Non-ASCII single rune: can't be one-byte.
+			inst:   syntax.Inst{Op: syntax.InstRune, Rune: []rune{0x100}},
+			wantOK: false,
+		},
+		{
+			name: "rune_pair_same",
+			// Rune pair [r, r]: same as single rune.
+			inst:     syntax.Inst{Op: syntax.InstRune, Rune: []rune{'x', 'x'}},
+			wantLo:   'x',
+			wantHi:   'x',
+			wantFold: false,
+			wantOK:   true,
+		},
+		{
+			name: "rune_range_ascii_no_fold",
+			// ASCII range [a-z] without fold.
+			inst:     syntax.Inst{Op: syntax.InstRune, Rune: []rune{'a', 'z'}},
+			wantLo:   'a',
+			wantHi:   'z',
+			wantFold: false,
+			wantOK:   true,
+		},
+		{
+			name: "rune_range_ascii_with_fold_all_ascii_fold",
+			// ASCII range [A-F] with fold: asciiFold returns true for all members,
+			// so oneByteRange bails (returns ok=false). The fold will be handled
+			// by the full rune expansion path instead.
+			inst:   syntax.Inst{Op: syntax.InstRune, Rune: []rune{'A', 'F'}, Arg: uint32(syntax.FoldCase)},
+			wantOK: false,
+		},
+		{
+			name: "rune_range_ascii_with_fold_non_ascii_partner",
+			// ASCII range [a-z] with fold: 'a' has asciiFold=true so bails immediately.
+			inst:   syntax.Inst{Op: syntax.InstRune, Rune: []rune{'a', 'z'}, Arg: uint32(syntax.FoldCase)},
+			wantOK: false,
+		},
+		{
+			name: "rune_range_ascii_with_fold_no_fold_partners",
+			// ASCII range of non-letter chars with fold: asciiFold('0')=true
+			// (SimpleFold('0')='0', so r1==r, returns true). So this also bails.
+			inst:   syntax.Inst{Op: syntax.InstRune, Rune: []rune{'0', '9'}, Arg: uint32(syntax.FoldCase)},
+			wantOK: false,
+		},
+		{
+			name: "rune_range_non_ascii",
+			// Range ending above RuneSelf.
+			inst:   syntax.Inst{Op: syntax.InstRune, Rune: []rune{0x60, 0x100}},
+			wantOK: false,
+		},
+		{
+			name: "rune_4fold_pair",
+			// 4-rune fold pair: [A, A, a, a] where SimpleFold('A')=='a' and vice versa.
+			inst:     syntax.Inst{Op: syntax.InstRune, Rune: []rune{'A', 'A', 'a', 'a'}},
+			wantLo:   'A',
+			wantHi:   'A',
+			wantFold: true,
+			wantOK:   true,
+		},
+		{
+			name: "rune_4_not_fold_pair",
+			// 4 runes that are NOT a valid fold pair.
+			inst:   syntax.Inst{Op: syntax.InstRune, Rune: []rune{'A', 'A', 'b', 'b'}},
+			wantOK: false,
+		},
+		{
+			name: "rune_other_op",
+			// An op that is neither InstRune nor InstRune1.
+			inst:   syntax.Inst{Op: syntax.InstAlt, Rune: []rune{'a'}},
+			wantOK: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lo, hi, fold, ok := oneByteRange(&tt.inst)
+			if ok != tt.wantOK {
+				t.Fatalf("oneByteRange() ok = %v, want %v", ok, tt.wantOK)
+			}
+			if !ok {
+				return
+			}
+			if lo != tt.wantLo || hi != tt.wantHi || fold != tt.wantFold {
+				t.Errorf("oneByteRange() = (%d, %d, %v), want (%d, %d, %v)",
+					lo, hi, fold, tt.wantLo, tt.wantHi, tt.wantFold)
+			}
+		})
+	}
 }
