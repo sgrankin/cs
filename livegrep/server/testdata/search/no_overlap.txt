@@ -1,0 +1,141 @@
+# Search for "package" — one match per file, no overlap within any result.
+txtar=simple.txtar
+q=package
+context_lines=3
+
+{
+  "info": {
+    "total_time": 0,
+    "why": "NONE",
+    "ResultsCount": 4,
+    "HasMore": false,
+    "QueryTime": 0
+  },
+  "results": [
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "main.go",
+      "lines": [
+        {
+          "lno": 1,
+          "context_before": null,
+          "context_after": [
+            "",
+            "import \"fmt\"",
+            ""
+          ],
+          "bounds": [
+            0,
+            7
+          ],
+          "line": "package main",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "sub/deep.go",
+      "lines": [
+        {
+          "lno": 1,
+          "context_before": null,
+          "context_after": [
+            "",
+            "func Deep() {}"
+          ],
+          "bounds": [
+            0,
+            7
+          ],
+          "line": "package sub",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "sub/other.go",
+      "lines": [
+        {
+          "lno": 1,
+          "context_before": null,
+          "context_after": [
+            "",
+            "func Other() {}"
+          ],
+          "bounds": [
+            0,
+            7
+          ],
+          "line": "package sub",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "util.go",
+      "lines": [
+        {
+          "lno": 1,
+          "context_before": null,
+          "context_after": [
+            "",
+            "func util() {}"
+          ],
+          "bounds": [
+            0,
+            7
+          ],
+          "line": "package main",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    }
+  ],
+  "file_results": [],
+  "search_type": "normal",
+  "query": {
+    "Line": "package",
+    "File": null,
+    "NotFile": null,
+    "Repo": "",
+    "NotRepo": "",
+    "Tags": "",
+    "NotTags": "",
+    "RepoFilter": null,
+    "FoldCase": false,
+    "MaxMatches": 50,
+    "FilenameOnly": false,
+    "ContextLines": 3
+  },
+  "facets": [
+    {
+      "key": "ext",
+      "values": [
+        {
+          "value": ".go",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "key": "repo",
+      "values": [
+        {
+          "value": "myrepo",
+          "count": 4
+        }
+      ]
+    }
+  ]
+}

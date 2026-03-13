@@ -16,17 +16,12 @@ import (
 )
 
 func (s *server) makeSearchScriptData() (cs.SearchIndex, string) {
-	sampleRepo := ""
 	bk := s.bk
 	info := bk.Info()
-	trees := []string{}
-	for _, tree := range info.Trees {
-		if sampleRepo == "" {
-			sampleRepo = tree.Name
-		}
-		trees = append(trees, tree.Name)
+	sampleRepo := ""
+	if len(info.Trees) > 0 {
+		sampleRepo = info.Trees[0].Name
 	}
-
 	return bk, sampleRepo
 }
 
@@ -97,7 +92,7 @@ func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *htt
 	if !result.Query.FilenameOnly && len(files) > 10 {
 		files = files[:10]
 	}
-	filenames := []templ.Component{}
+	filenames := make([]templ.Component, 0, len(files))
 	for _, r := range files {
 		filenames = append(filenames, views.FilenameMatch(r))
 	}
@@ -109,7 +104,6 @@ func (s *server) streamSearch(ctx context.Context, w http.ResponseWriter, r *htt
 		}
 		writeData(ctx, w, views.Partial("#code-results", "append", templ.Join(matches...)))
 	}
-	return
 }
 
 func writeData(ctx context.Context, w http.ResponseWriter, fragment templ.Component) {

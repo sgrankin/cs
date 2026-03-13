@@ -72,13 +72,6 @@ func (s DirListingSort) Less(i, j int) bool {
 	return s[i].Name < s[j].Name
 }
 
-type gitTreeEntry struct {
-	Mode       string
-	ObjectType string
-	ObjectId   string
-	ObjectName string
-}
-
 func viewPath(repo, commit string, name ...string) string {
 	return path.Join("/view/", repo+"@"+commit+"/+/"+path.Join(name...))
 }
@@ -116,7 +109,7 @@ func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*view
 	} else {
 		dirContent = mkDirContent(backend, files, repoName, commit, path)
 	}
-	segments := mkPathSegments(backend, repoName, commit, path)
+	segments := mkPathSegments(repoName, commit, path)
 	url, domain := externalURL(repoName, commit, path)
 	return &views.FileViewerContext{
 		Backend:             backend.Name(),
@@ -131,7 +124,7 @@ func buildFileData(backend cs.SearchIndex, repoName, commit, path string) (*view
 	}, nil
 }
 
-func mkPathSegments(backend cs.SearchIndex, repoName, commit, p string) []views.BreadCrumbEntry {
+func mkPathSegments(repoName, commit, p string) []views.BreadCrumbEntry {
 	splits := strings.Split(p, "/")
 	segments := make([]views.BreadCrumbEntry, len(splits))
 	for i, name := range splits {

@@ -1,0 +1,117 @@
+# Three "target" matches: alpha-beta overlap (clipped), beta-gamma no overlap.
+txtar=overlap.txtar
+tree=r
+version=v
+q=target
+context_lines=3
+
+{
+  "info": {
+    "total_time": 0,
+    "why": "NONE",
+    "ResultsCount": 3,
+    "HasMore": false,
+    "QueryTime": 0
+  },
+  "results": [
+    {
+      "tree": "r",
+      "version": "v",
+      "path": "overlap.go",
+      "lines": [
+        {
+          "lno": 5,
+          "context_before": [
+            "line two",
+            "line three",
+            "line four"
+          ],
+          "context_after": [
+            "line six"
+          ],
+          "bounds": [
+            0,
+            6
+          ],
+          "line": "target alpha",
+          "ClipBefore": false,
+          "ClipAfter": true
+        },
+        {
+          "lno": 8,
+          "context_before": [
+            "line seven"
+          ],
+          "context_after": [
+            "line nine",
+            "line ten",
+            "line eleven"
+          ],
+          "bounds": [
+            0,
+            6
+          ],
+          "line": "target beta",
+          "ClipBefore": true,
+          "ClipAfter": false
+        },
+        {
+          "lno": 18,
+          "context_before": [
+            "line fifteen",
+            "line sixteen",
+            "line seventeen"
+          ],
+          "context_after": [
+            "line nineteen",
+            "line twenty",
+            "line twenty one"
+          ],
+          "bounds": [
+            0,
+            6
+          ],
+          "line": "target gamma",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    }
+  ],
+  "file_results": [],
+  "search_type": "normal",
+  "query": {
+    "Line": "target",
+    "File": null,
+    "NotFile": null,
+    "Repo": "",
+    "NotRepo": "",
+    "Tags": "",
+    "NotTags": "",
+    "RepoFilter": null,
+    "FoldCase": false,
+    "MaxMatches": 50,
+    "FilenameOnly": false,
+    "ContextLines": 3
+  },
+  "facets": [
+    {
+      "key": "ext",
+      "values": [
+        {
+          "value": ".go",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "key": "repo",
+      "values": [
+        {
+          "value": "r",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

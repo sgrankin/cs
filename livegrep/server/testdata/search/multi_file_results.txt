@@ -1,0 +1,160 @@
+# Search for "func" — matches in multiple files. ResultsCount = total lines.
+txtar=simple.txtar
+q=func
+
+{
+  "info": {
+    "total_time": 0,
+    "why": "NONE",
+    "ResultsCount": 5,
+    "HasMore": false,
+    "QueryTime": 0
+  },
+  "results": [
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "main.go",
+      "lines": [
+        {
+          "lno": 5,
+          "context_before": [
+            "",
+            "import \"fmt\"",
+            ""
+          ],
+          "context_after": [
+            "\tfmt.Println(\"hello world\")"
+          ],
+          "bounds": [
+            0,
+            4
+          ],
+          "line": "func hello() {",
+          "ClipBefore": false,
+          "ClipAfter": true
+        },
+        {
+          "lno": 9,
+          "context_before": [
+            "}",
+            ""
+          ],
+          "context_after": [
+            "\thello()",
+            "}"
+          ],
+          "bounds": [
+            0,
+            4
+          ],
+          "line": "func main() {",
+          "ClipBefore": true,
+          "ClipAfter": false
+        }
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "sub/deep.go",
+      "lines": [
+        {
+          "lno": 3,
+          "context_before": [
+            "package sub",
+            ""
+          ],
+          "context_after": null,
+          "bounds": [
+            0,
+            4
+          ],
+          "line": "func Deep() {}",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "sub/other.go",
+      "lines": [
+        {
+          "lno": 3,
+          "context_before": [
+            "package sub",
+            ""
+          ],
+          "context_after": null,
+          "bounds": [
+            0,
+            4
+          ],
+          "line": "func Other() {}",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "util.go",
+      "lines": [
+        {
+          "lno": 3,
+          "context_before": [
+            "package main",
+            ""
+          ],
+          "context_after": null,
+          "bounds": [
+            0,
+            4
+          ],
+          "line": "func util() {}",
+          "ClipBefore": false,
+          "ClipAfter": false
+        }
+      ]
+    }
+  ],
+  "file_results": [],
+  "search_type": "normal",
+  "query": {
+    "Line": "func",
+    "File": null,
+    "NotFile": null,
+    "Repo": "",
+    "NotRepo": "",
+    "Tags": "",
+    "NotTags": "",
+    "RepoFilter": null,
+    "FoldCase": false,
+    "MaxMatches": 50,
+    "FilenameOnly": false,
+    "ContextLines": 3
+  },
+  "facets": [
+    {
+      "key": "ext",
+      "values": [
+        {
+          "value": ".go",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "key": "repo",
+      "values": [
+        {
+          "value": "myrepo",
+          "count": 4
+        }
+      ]
+    }
+  ]
+}

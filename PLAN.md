@@ -10,6 +10,7 @@
 
 ## Search & Indexing
 
+- [ ] Move context overlap dedup into search engine (searchBlob already knows adjacent matches; should not emit duplicate context lines, removing need for server-side fixup in api.go)
 - [ ] Support other repo sources beyond GitHub (+ corresponding external link formats)
 - [ ] Webhook-triggered repo updates (avoid waiting for poll reindex)
 - [ ] Add benchmarking code for index & search

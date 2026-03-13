@@ -1,0 +1,28 @@
+A simple Go project for general server testing.
+-- main.go --
+package main
+
+import "fmt"
+
+func hello() {
+	fmt.Println("hello world")
+}
+
+func main() {
+	hello()
+}
+-- util.go --
+package main
+
+func util() {}
+-- sub/deep.go --
+package sub
+
+func Deep() {}
+-- sub/other.go --
+package sub
+
+func Other() {}
+-- README.md --
+# Test Project
+This is a readme.

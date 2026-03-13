@@ -1,0 +1,23 @@
+A file with closely-spaced and widely-spaced matches for context overlap testing.
+-- overlap.go --
+line one
+line two
+line three
+line four
+target alpha
+line six
+line seven
+target beta
+line nine
+line ten
+line eleven
+line twelve
+line thirteen
+line fourteen
+line fifteen
+line sixteen
+line seventeen
+target gamma
+line nineteen
+line twenty
+line twenty one

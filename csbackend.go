@@ -251,6 +251,7 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		})
 		facetResults = append(facetResults, Facet{key, fv})
 	}
+	sort.Slice(facetResults, func(i, j int) bool { return facetResults[i].Key < facetResults[j].Key })
 
 	return &CodeSearchResult{
 		Stats:       SearchStats{ExitReason: exitReason},

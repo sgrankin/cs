@@ -33,6 +33,30 @@ type Repo interface {
 
 type indexBuilder struct{}
 
+// BuildIndexFromFS creates a search index at indexPath from all regular files in fsys.
+func BuildIndexFromFS(indexPath string, fsys fs.FS) error {
+	wix := index.Create(indexPath)
+	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		f, err := fsys.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		wix.Add(path, f)
+		return nil
+	})
+	if err != nil {
+		wix.Close()
+		return fmt.Errorf("building index: %w", err)
+	}
+	wix.Flush()
+	wix.Close()
+	return nil
+}
+
 // BuildIndex creates a new index at `path` with the given `repos`.
 func BuildIndex(path string, repos []Repo) error {
 	log.Printf("Building index at %q", path)

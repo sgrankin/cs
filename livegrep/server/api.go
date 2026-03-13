@@ -4,15 +4,10 @@
 package server
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"log"
-	"maps"
-	"math"
 	"net/http"
-	"path"
-	"slices"
 	"strings"
 	"time"
 
@@ -62,7 +57,8 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 
 var ErrTimedOut = errors.New("timed out talking to backend")
 
-func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Query) (*api.ReplySearch, error) {
+func (s *server) doSearch(ctx context.Context, q *cs.Query) (*api.ReplySearch, error) {
+	backend := s.bk
 	start := time.Now()
 
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -131,8 +127,6 @@ func (s *server) doSearch(ctx context.Context, backend cs.SearchIndex, q *cs.Que
 }
 
 func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySearch, error) {
-	backend := s.bk
-
 	if q.Line == "" {
 		return nil, nil
 	}
@@ -144,7 +138,7 @@ func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySe
 		q.ContextLines = 3
 	}
 
-	reply, err := s.doSearch(ctx, backend, &q)
+	reply, err := s.doSearch(ctx, &q)
 	if err != nil {
 		log.Printf("error in search err=%s", err)
 		return nil, err
@@ -153,7 +147,7 @@ func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySe
 	reply.Info.QueryTime = time.Duration(reply.Info.TotalTime * int64(time.Millisecond))
 
 	// Count results:
-	reply.Info.HasMore = reply.Info.ExitReason != "NONE"
+	reply.Info.HasMore = reply.Info.ExitReason != string(cs.ExitReasonNone)
 	if q.FilenameOnly {
 		reply.Info.ResultsCount = len(reply.FileResults)
 	} else {
@@ -161,22 +155,6 @@ func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySe
 			reply.Info.ResultsCount += len(r.Lines)
 		}
 	}
-
-	// What extensions should we propose filtering for?
-	extensionsCount := map[string]int{}
-	for _, r := range reply.Results {
-		extensionsCount[path.Ext(r.Path)] += len(r.Lines)
-	}
-	extensions := slices.Collect(maps.Keys(extensionsCount))
-	extensions = slices.DeleteFunc(extensions, func(e string) bool {
-		return e == "" || extensionsCount[e] < 2
-	})
-	slices.SortFunc(extensions, func(e1, e2 string) int {
-		return cmp.Or(
-			-cmp.Compare(extensionsCount[e1], extensionsCount[e2]),
-			cmp.Compare(e1, e2),
-		)
-	})
 
 	// Remove overlapping context lines:
 	for _, r := range reply.Results {
@@ -193,7 +171,7 @@ func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySe
 			// Try to split the context between the previous match and this one.
 			// Uneven splits should leave the latter element with the larger piece.
 
-			splitAt := int(math.Ceil(float64(left.LineNumber+right.LineNumber) / 2.0))
+			splitAt := (left.LineNumber + right.LineNumber + 1) / 2
 			if splitAt < rightFirstline {
 				splitAt = rightFirstline
 			} else if splitAt > leftLastLine+1 {

@@ -1,0 +1,106 @@
+# Verify default MaxMatches and ContextLines are applied.
+txtar=simple.txtar
+q=hello
+default_max_matches=200
+
+{
+  "info": {
+    "total_time": 0,
+    "why": "NONE",
+    "ResultsCount": 3,
+    "HasMore": false,
+    "QueryTime": 0
+  },
+  "results": [
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "main.go",
+      "lines": [
+        {
+          "lno": 5,
+          "context_before": [
+            "",
+            "import \"fmt\"",
+            ""
+          ],
+          "context_after": [],
+          "bounds": [
+            5,
+            10
+          ],
+          "line": "func hello() {",
+          "ClipBefore": false,
+          "ClipAfter": true
+        },
+        {
+          "lno": 6,
+          "context_before": [],
+          "context_after": [
+            "}"
+          ],
+          "bounds": [
+            14,
+            19
+          ],
+          "line": "\tfmt.Println(\"hello world\")",
+          "ClipBefore": true,
+          "ClipAfter": true
+        },
+        {
+          "lno": 10,
+          "context_before": [
+            "",
+            "func main() {"
+          ],
+          "context_after": [
+            "}"
+          ],
+          "bounds": [
+            1,
+            6
+          ],
+          "line": "\thello()",
+          "ClipBefore": true,
+          "ClipAfter": false
+        }
+      ]
+    }
+  ],
+  "file_results": [],
+  "search_type": "normal",
+  "query": {
+    "Line": "hello",
+    "File": null,
+    "NotFile": null,
+    "Repo": "",
+    "NotRepo": "",
+    "Tags": "",
+    "NotTags": "",
+    "RepoFilter": null,
+    "FoldCase": false,
+    "MaxMatches": 200,
+    "FilenameOnly": false,
+    "ContextLines": 3
+  },
+  "facets": [
+    {
+      "key": "ext",
+      "values": [
+        {
+          "value": ".go",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "key": "repo",
+      "values": [
+        {
+          "value": "myrepo",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+# Filename-only search for "main" — matches main.go by name.
+txtar=simple.txtar
+q=main
+filename_only=true
+max_matches=10
+
+{
+  "info": {
+    "total_time": 0,
+    "why": "NONE",
+    "ResultsCount": 1,
+    "HasMore": false,
+    "QueryTime": 0
+  },
+  "results": [],
+  "file_results": [
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "main.go",
+      "bounds": [
+        0,
+        4
+      ]
+    }
+  ],
+  "search_type": "filename_only",
+  "query": {
+    "Line": "main",
+    "File": null,
+    "NotFile": null,
+    "Repo": "",
+    "NotRepo": "",
+    "Tags": "",
+    "NotTags": "",
+    "RepoFilter": null,
+    "FoldCase": false,
+    "MaxMatches": 10,
+    "FilenameOnly": true,
+    "ContextLines": 3
+  },
+  "facets": null
+}

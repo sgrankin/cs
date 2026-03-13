@@ -1,0 +1,142 @@
+# Filename-only search: ResultsCount should equal len(FileResults).
+txtar=manymatches.txtar
+q=hello
+filename_only=true
+default_max_matches=100
+
+{
+  "info": {
+    "total_time": 0,
+    "why": "NONE",
+    "ResultsCount": 12,
+    "HasMore": false,
+    "QueryTime": 0
+  },
+  "results": [],
+  "file_results": [
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello1.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello2.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello3.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello4.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello5.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello6.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello7.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello8.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello9.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello_test.go",
+      "bounds": [
+        0,
+        5
+      ]
+    },
+    {
+      "tree": "myrepo",
+      "version": "v1",
+      "path": "hello_world.go",
+      "bounds": [
+        0,
+        5
+      ]
+    }
+  ],
+  "search_type": "filename_only",
+  "query": {
+    "Line": "hello",
+    "File": null,
+    "NotFile": null,
+    "Repo": "",
+    "NotRepo": "",
+    "Tags": "",
+    "NotTags": "",
+    "RepoFilter": null,
+    "FoldCase": false,
+    "MaxMatches": 100,
+    "FilenameOnly": true,
+    "ContextLines": 3
+  },
+  "facets": null
+}

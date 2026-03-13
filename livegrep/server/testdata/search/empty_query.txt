@@ -1,0 +1,5 @@
+# Empty query returns null.
+txtar=simple.txtar
+q=
+
+null

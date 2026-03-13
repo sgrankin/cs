@@ -224,6 +224,19 @@ func TestParseQuery(t *testing.T) {
 			cs.Query{Line: "zoo", NotFile: []string{"a", "c", "b", `\.rb$`}, FoldCase: true},
 			true,
 		},
+
+		// literal mode: -file and -path should be QuoteMeta'd
+		{
+			`-file:a.b -path:c.d zoo`,
+			cs.Query{Line: "zoo", NotFile: []string{`a\.b`, `c\.d`}, FoldCase: true},
+			false,
+		},
+		// literal mode: repo and -repo should be QuoteMeta'd
+		{
+			`repo:a.b -repo:c.d zoo`,
+			cs.Query{Line: "zoo", Repo: `a\.b`, NotRepo: `c\.d`, FoldCase: true},
+			false,
+		},
 	}
 
 	for _, tc := range cases {
@@ -252,6 +265,8 @@ func TestParseQueryError(t *testing.T) {
 		{"a file:((abc()())()) c"},
 		{"a repo:b repo:c"},
 		{"a -repo:b -repo:c"},
+		{"a tags:b tags:c"},
+		{"a -tags:b -tags:c"},
 	}
 
 	for _, tc := range cases {
