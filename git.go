@@ -17,7 +17,7 @@ import (
 	gitplumb "github.com/go-git/go-git/v5/plumbing"
 	gitobj "github.com/go-git/go-git/v5/plumbing/object"
 	gittrans "github.com/go-git/go-git/v5/plumbing/transport"
-	"github.com/google/go-github/v57/github"
+	"github.com/google/go-github/v72/github"
 )
 
 func openGitRepo(gitPath string) (*git.Repository, error) {
