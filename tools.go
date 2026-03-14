@@ -1,3 +1,6 @@
+// Copyright Sergey Grankin
+// SPDX-License-Identifier: BSD-2-Clause
+
 //go:build tools
 
 package tools

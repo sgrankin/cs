@@ -1,3 +1,6 @@
+// Copyright Sergey Grankin
+// SPDX-License-Identifier: BSD-2-Clause
+
 // Minimal browser test harness, inspired by Go's testing package.
 //
 // Test files export functions named test* that receive a T.

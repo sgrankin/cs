@@ -1,6 +1,6 @@
-// Copyright 2011 The Go Authors.  All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2011 The Go Authors. All rights reserved.
+// Copyright Sergey Grankin
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Package regexp implements regular expression search tuned for
 // use in grep-like programs.

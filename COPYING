@@ -1,14 +1,19 @@
-Code in /livegrep and /codesearch directories is distributed under their respective licenses.
-See COPYING/LICENCE there.
+This project contains code from multiple sources, each under its own license.
+See SPDX-License-Identifier headers in individual files for per-file terms.
 
-Bundled code in /livegrep/server/static/... is distributed under the respective licences.
-See \*_/_.LEGAL.txt for specific terms.
+codesearch/         BSD-3-Clause    The Go Authors          codesearch/LICENSE
+server/chroma/      MIT             Alec Thomas             (inline in source)
+server/ web/        BSD-2-Clause    Nelson Elhage           COPYING.livegrep
+                    BSD-2-Clause    Sergey Grankin           (below)
 
-The rest of the code is:
+Bundled build output in server/static/ is distributed under the respective
+licenses. See *.LEGAL.txt for specific terms.
+
+Everything not otherwise attributed is:
 
 ---
 
-Copyright (c) Sergey Grankin
+Copyright Sergey Grankin
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

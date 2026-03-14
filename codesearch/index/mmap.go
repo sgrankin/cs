@@ -1,3 +1,7 @@
+// Copyright 2011 The Go Authors. All rights reserved.
+// Copyright Sergey Grankin
+// SPDX-License-Identifier: BSD-3-Clause
+
 package index
 
 import (

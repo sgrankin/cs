@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 //
+// Copyright Sergey Grankin
+// SPDX-License-Identifier: BSD-2-Clause
 // Browser test runner for Lit components.
 //
 // Finds all *.test.ts files, bundles them with esbuild, serves the bundle
@@ -8,7 +10,7 @@
 //
 // Usage:
 //   bun run test                           # run all *.test.ts
-//   bun run test livegrep/server/web       # run tests in one directory
+//   bun run test web                       # run tests in one directory
 //   bun run test:coverage                  # run with per-file line coverage
 //
 // Requires Playwright browsers: npx playwright install chromium

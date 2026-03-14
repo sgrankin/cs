@@ -1,4 +1,4 @@
-// Copyright 2024 Sergey Grankin
+// Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
 package main

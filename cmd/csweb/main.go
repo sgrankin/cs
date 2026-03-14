@@ -1,4 +1,5 @@
 // Copyright 2011-2013 Nelson Elhage
+// Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
 package main
@@ -15,7 +16,7 @@ import (
 	"github.com/goccy/go-yaml"
 
 	"sgrankin.dev/cs"
-	"sgrankin.dev/cs/livegrep/server"
+	"sgrankin.dev/cs/server"
 )
 
 var (

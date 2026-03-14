@@ -6,12 +6,13 @@ Full-text code search tool: livegrep-inspired UI on a modified codesearch backen
 
 - **Backend**: Go, templ (HTML templates), chroma (syntax highlighting), go-git, go-github
 - **Frontend**: TypeScript + Lit web components, HTMX, Bootstrap, jQuery, esbuild
-- **Build**: `go generate ./...` (runs bun install, templ generate, esbuild via `livegrep/server/build.mjs`)
+- **Build**: `go generate ./...` (runs bun install, templ generate, esbuild via `web/build.mjs`)
 
 ## Key Directories
 
 - `codesearch/` — Modified Google codesearch: trigram index, DFA regex engine, mmap'd blob storage
-- `livegrep/server/` — HTTP server, routes, API, templ views, frontend assets (`web/`)
+- `server/` — HTTP server, routes, API, templ views, embedded static assets
+- `web/` — Frontend TypeScript/CSS source, esbuild config
 - `cmd/csweb/` — Main server binary
 - `cmd/csbuild/` — Standalone index builder
 - Root `.go` files — Config, git sync, index management, search API
@@ -27,7 +28,7 @@ go run ./cmd/csweb -listen=:8910 -config=config.yaml -rebuild-interval=30m
 
 - Server-rendered HTML via templ + HTMX for interactivity
 - All JS/CSS bundled via esbuild at `go generate` time (no CDN)
-- Frontend source: `livegrep/server/web/*.ts` and `*.tsx`
+- Frontend source: `web/*.ts` and `*.tsx`
 - Node deps managed via bun (`bun.lock`)
 
 ## Go Style
@@ -56,7 +57,7 @@ Address any gopls diagnostics (type errors, unused imports, etc.) visible in cha
 **Table-driven by default.** If there are 2+ cases for the same function, use a test table with `t.Run`. Don't write separate `TestFooBasic`, `TestFooEdge`, `TestFooError` functions when a single `TestFoo` with a `[]struct{ name string; ... }` table covers them. This is the first thing to reach for, not an optimization.
 
 **Data-driven over hand-written assertions.** Prefer txtar/golden file patterns over hand-checking individual fields:
-- **Golden JSON tests** (`testdata/search/*.txt` or `*.txtar`): config + expected output separated by blank line. Run with `-update` to regenerate. See `livegrep/server/search_test.go` and `search_test.go` for the pattern.
+- **Golden JSON tests** (`testdata/search/*.txt` or `*.txtar`): config + expected output separated by blank line. Run with `-update` to regenerate. See `server/search_test.go` and `search_test.go` for the pattern.
 - **txtar for test fixtures** (`testdata/index/*.txtar`): source files for building real indexes. Prefer real implementations over fakes/mocks.
 - When the input data controls the output shape, use real implementations. When you need precise output control that real implementations can't provide (e.g., non-deterministic concurrent results), use structural assertions in Go tests.
 
@@ -82,11 +83,11 @@ bun run test:coverage      # V8 coverage → per-file line report
 
 ## Frontend Testing
 
-Tests live in `livegrep/server/web/*.test.ts`. No test frameworks — just plain functions:
+Tests live in `web/*.test.ts`. No test frameworks — just plain functions:
 
-- **Test harness** (`test-harness.ts`): runs exported `test*` functions, reports pass/fail per test. `eq(got, want)` for value comparison.
-- **Runner** (`run-tests.mjs`): esbuild bundles tests, Playwright opens in headless Chromium, reads console output.
-- **Components** to test go in `components.ts` (pure Lit, no side effects). Components that depend on jQuery/htmx stay in `codesearch_ui.tsx`.
+- **Test harness** (`testing/harness.ts`): runs exported `test*` functions, reports pass/fail per test. `eq(got, want)` for value comparison.
+- **Runner** (`testing/web-runner.mjs`): esbuild bundles tests, Playwright opens in headless Chromium, reads console output.
+- **Components** to test go in `web/components.ts` (pure Lit, no side effects). Components that depend on jQuery/htmx stay in `web/codesearch_ui.tsx`.
 - Run via `bun run test` (requires sandbox bypass for Chromium).
 
 ## Code Review

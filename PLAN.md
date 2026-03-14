@@ -99,8 +99,7 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
 
 ### Build tooling
 
-- Replace custom Go esbuild wrapper (`livegrep/server/build/`) with esbuild CLI + `esbuild.config.mjs`
-- Run via `bunx esbuild` — bun already manages deps
+- [x] Replace custom Go esbuild wrapper with `web/build.mjs`
 - Static assets checked in (so `go install` works without node toolchain)
 - Dev workflow: watch mode that keeps assets up to date during development
 - Update Procfile accordingly
