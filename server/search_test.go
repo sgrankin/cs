@@ -70,7 +70,7 @@ func TestSearchGolden(t *testing.T) {
 			if v, ok := cfg["default_max_matches"]; ok {
 				serveCfg.DefaultMaxMatches, _ = strconv.Atoi(v)
 			}
-			srv := New(serveCfg, idx)
+			srv := New(serveCfg, idx, StaticFS())
 
 			// Build query.
 			q := cs.Query{Line: cfg["q"]}

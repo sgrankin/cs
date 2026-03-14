@@ -7,6 +7,7 @@ type Page struct {
 	JSPath        string
 	CSSPath       string
 	IncludeHeader bool
+	DevMode       bool
 	Config        cs.ServeConfig
 	BodyAttrs     templ.Attributes
 }
@@ -58,8 +59,34 @@ templ layout(p Page) {
 			if p.Config.Templates.FooterHTML  != "" {
 				@templ.Raw(p.Config.Templates.FooterHTML)
 			}
+			if p.DevMode {
+				@livereloadScript()
+			}
 		</body>
 	</html>
+}
+
+templ livereloadScript() {
+	<script>
+		(function() {
+			var reconnectDelay = 100;
+			function connect() {
+				var es = new EventSource("/debug/livereload");
+				es.onerror = function() {
+					es.close();
+					setTimeout(function() {
+						reconnectDelay = Math.min(reconnectDelay * 2, 2000);
+						fetch("/debug/livereload").then(function() {
+							location.reload();
+						}).catch(function() {
+							connect();
+						});
+					}, reconnectDelay);
+				};
+			}
+			connect();
+		})();
+	</script>
 }
 
 templ Partial(target, swap string, contents templ.Component) {

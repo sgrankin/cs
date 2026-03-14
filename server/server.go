@@ -8,6 +8,7 @@ import (
 	"context"
 	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 
@@ -20,16 +21,30 @@ import (
 type server struct {
 	http.Handler
 
-	config cs.ServeConfig
-	bk     cs.SearchIndex
+	config   cs.ServeConfig
+	bk       cs.SearchIndex
+	staticFS fs.FS
+	devMode  bool
 
 	Templates map[string]*template.Template
 }
 
-func New(cfg cs.ServeConfig, index cs.SearchIndex) *server {
+// Option configures a server.
+type Option func(*server)
+
+// WithDevMode enables development features: live reload on server restart.
+func WithDevMode() Option {
+	return func(s *server) { s.devMode = true }
+}
+
+func New(cfg cs.ServeConfig, index cs.SearchIndex, staticFS fs.FS, opts ...Option) *server {
 	srv := &server{
-		config: cfg,
-		bk:     index,
+		config:   cfg,
+		bk:       index,
+		staticFS: staticFS,
+	}
+	for _, o := range opts {
+		o(srv)
 	}
 
 	mux := http.NewServeMux()
@@ -47,16 +62,29 @@ func New(cfg cs.ServeConfig, index cs.SearchIndex) *server {
 	return srv
 }
 
+// StaticFS returns the embedded static filesystem, for use as the default.
+func StaticFS() fs.FS {
+	sub, _ := fs.Sub(staticFS, "static")
+	return sub
+}
+
+func (s *server) page(title string) views.Page {
+	return views.Page{
+		Title:   title,
+		DevMode: s.devMode,
+		Config:  s.config,
+	}
+}
+
 func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/search", http.StatusSeeOther)
 }
 
 func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	views.About(views.Page{
-		Title:         "about",
-		IncludeHeader: true,
-		CSSPath:       "static/codesearch_ui.css",
-	}).Render(r.Context(), w)
+	p := s.page("about")
+	p.IncludeHeader = true
+	p.CSSPath = "static/codesearch_ui.css"
+	views.About(p).Render(r.Context(), w)
 }
 
 func (s *server) ServeHealthcheck(w http.ResponseWriter, r *http.Request) {

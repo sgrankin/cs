@@ -26,6 +26,8 @@ var (
 		"The config file.")
 	indexPath = flag.String("index", "",
 		"The path to the index file(s).  Allows serving an index without a config.")
+	staticDir = flag.String("static-dir", "",
+		"Serve static assets from this directory instead of the embedded files. For development.")
 
 	rebuildInterval = flag.Duration("rebuild-interval", 0,
 		"When set, build the index and then fetch/rebuild every duration.  Avoids running csbuild separately.")
@@ -60,8 +62,16 @@ func main() {
 		log.Fatal("An index is required")
 	}
 
+	var opts []server.Option
+	staticFS := server.StaticFS()
+	if *staticDir != "" {
+		log.Printf("Serving static assets from %s (dev mode)", *staticDir)
+		staticFS = os.DirFS(*staticDir)
+		opts = append(opts, server.WithDevMode())
+	}
+
 	index := cs.NewSearchIndex(cfg.Index)
-	srv := server.New(cfg.Serve, index)
+	srv := server.New(cfg.Serve, index, staticFS, opts...)
 	go func() {
 		for range time.Tick(10 * time.Second) {
 			index.Reload()

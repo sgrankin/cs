@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/CAFxX/httpcompression"
-
-	"sgrankin.dev/cs"
 )
 
 func addRoutes(mux *http.ServeMux, srv *server) {
@@ -21,9 +19,12 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	mux.Handle("GET /about", ctxHandlerFunc(srv.ServeAbout))
 	mux.Handle("GET /opensearch.xml", ctxHandlerFunc(srv.ServeOpensearch))
 	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSearch))
-	mux.Handle("GET /static/", cs.EmbedFSServer(staticFS))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(srv.staticFS)))
 	mux.Handle("GET /view/{path...}", ctxHandlerFunc(srv.ServeFile))
 
+	if srv.devMode {
+		mux.Handle("GET /debug/livereload", http.HandlerFunc(serveLivereload))
+	}
 	mux.Handle("GET /debug/healthcheck", http.HandlerFunc(srv.ServeHealthcheck))
 	mux.Handle("GET /debug/vars", expvar.Handler())
 	mux.HandleFunc("GET /debug/pprof/", pprof.Index)
@@ -49,6 +50,16 @@ func withTimeout(h http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 		h.ServeHTTP(w, r)
 	})
+}
+
+// serveLivereload holds an SSE connection open. When the server restarts,
+// the connection drops and the client-side script reloads the page.
+func serveLivereload(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.WriteHeader(http.StatusOK)
+	http.NewResponseController(w).Flush()
+	<-r.Context().Done()
 }
 
 var withCompression func(http.Handler) http.Handler

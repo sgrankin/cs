@@ -38,13 +38,11 @@ func (s *server) ServeFile(ctx context.Context, w http.ResponseWriter, r *http.R
 		http.Error(w, "Error reading file: "+err.Error(), 500)
 		return
 	}
-	views.FileView(views.Page{
-		Title:         fileData.PathSegments[len(fileData.PathSegments)-1].Name,
-		JSPath:        "static/fileview.js",
-		CSSPath:       "static/fileview.css",
-		IncludeHeader: false,
-		BodyAttrs:     templ.Attributes{"data-search-url-template": "/search?q={query}&repo=" + url.QueryEscape(repoName)},
-	}, *fileData).Render(r.Context(), w)
+	p := s.page(fileData.PathSegments[len(fileData.PathSegments)-1].Name)
+	p.JSPath = "static/fileview.js"
+	p.CSSPath = "static/fileview.css"
+	p.BodyAttrs = templ.Attributes{"data-search-url-template": "/search?q={query}&repo=" + url.QueryEscape(repoName)}
+	views.FileView(p, *fileData).Render(r.Context(), w)
 }
 
 func externalURL(repo, commit, path string) (url, name string) {

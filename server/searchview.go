@@ -40,13 +40,12 @@ func (s *server) ServeSearch(ctx context.Context, w http.ResponseWriter, r *http
 
 	q, err := extractQuery(r)
 
+	p := s.page(pageTitle(q))
+	p.JSPath = "static/codesearch_ui.js"
+	p.CSSPath = "static/codesearch_ui.css"
+	p.IncludeHeader = true
 	views.Index(
-		views.Page{
-			Title:         pageTitle(q),
-			JSPath:        "static/codesearch_ui.js",
-			CSSPath:       "static/codesearch_ui.css",
-			IncludeHeader: true,
-		},
+		p,
 		views.IndexPageData{
 			Backend:         backend,
 			SampleRepo:      sampleRepo,

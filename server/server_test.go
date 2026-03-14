@@ -14,7 +14,7 @@ import (
 
 func newTestServer(index cs.SearchIndex) *server {
 	cfg := cs.ServeConfig{DefaultMaxMatches: 50}
-	return New(cfg, index)
+	return New(cfg, index, StaticFS())
 }
 
 func TestNew(t *testing.T) {
