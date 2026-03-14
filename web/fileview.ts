@@ -4,46 +4,45 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-import jQuery from "jquery";
+// window.find is non-standard but supported in all browsers.
+declare global {
+    interface Window {
+        find(string: string, caseSensitive?: boolean, backwards?: boolean): boolean;
+    }
+}
+
 import "./codesearch.css";
 import "./fileview.css";
-import * as api from "./api.ts";
 
 function getSelectedText() {
     return window.getSelection()?.toString() || "";
 }
 
-function scrollToRange(range: {start: number; end: number}, elementContainer: JQuery) {
-    // - If we have a single line, scroll the viewport so that the element is
-    // at 1/3 of the viewport.
-    // - If we have a range, try and center the range in the viewport
-    // - If the range is to high to fit in the viewport, fallback to the single
-    //   element scenario for the first line
-    let viewport = jQuery(window);
-    let viewportHeight = viewport.height() || 0;
-
+function scrollToRange(range: {start: number; end: number}, container: Element) {
+    // - If we have a single line, scroll so the element is at 1/3 of the viewport.
+    // - If we have a range, try and center the range in the viewport.
+    // - If the range is too tall for the viewport, fall back to the single-line behavior.
+    let viewportHeight = window.innerHeight;
     let scrollOffset = Math.floor(viewportHeight / 3.0);
 
-    let firstLineElement = elementContainer.find("#L" + range.start);
-    if (!firstLineElement.length) {
-        // We were given a scroll offset to a line number that doesn't exist in the page, bail
-        return;
-    }
+    let firstLine = container.querySelector("#L" + range.start) as HTMLElement | null;
+    if (!firstLine) return;
+    let firstRect = firstLine.getBoundingClientRect();
+
     if (range.start != range.end) {
-        // We have a range, try and center the entire range.
-        // If it's too high for the viewport, fallback to revealing the first element.
-        let lastLineElement = elementContainer.find("#L" + range.end);
-        let rangeHeight =
-            lastLineElement.offset().top + lastLineElement.height() - firstLineElement.offset().top;
-        if (rangeHeight <= viewportHeight) {
-            // Range fits in viewport, center it
-            scrollOffset = 0.5 * (viewportHeight - rangeHeight);
-        } else {
-            scrollOffset = firstLineElement.height() / 2; // Stick to (almost) the top of the viewport
+        let lastLine = container.querySelector("#L" + range.end) as HTMLElement | null;
+        if (lastLine) {
+            let lastRect = lastLine.getBoundingClientRect();
+            let rangeHeight = lastRect.top + lastRect.height - firstRect.top;
+            if (rangeHeight <= viewportHeight) {
+                scrollOffset = 0.5 * (viewportHeight - rangeHeight);
+            } else {
+                scrollOffset = firstRect.height / 2; // Stick to (almost) the top
+            }
         }
     }
 
-    viewport.scrollTop(firstLineElement.offset().top - scrollOffset);
+    window.scrollTo(0, firstRect.top + window.scrollY - scrollOffset);
 }
 
 function setHash(hash: string) {
@@ -58,33 +57,29 @@ function parseHashForLineRange(hashString: string) {
     let parseMatch = hashString.match(/#L(\d+)(?:-L?(\d+))?/);
 
     if (parseMatch && parseMatch.length === 3) {
-        // We have a match on the regex expression
         let startLine = parseInt(parseMatch[1], 10);
         let endLine = parseInt(parseMatch[2], 10);
         if (isNaN(endLine) || endLine < startLine) {
             endLine = startLine;
         }
-        return {
-            start: startLine,
-            end: endLine,
-        };
+        return {start: startLine, end: endLine};
     }
 
     return null;
 }
 
-function addHighlightClassesForRange(range: {start: number; end: number}, root: JQuery) {
-    let idSelectors: string[] = [];
-    for (let lineNumber = range.start; lineNumber <= range.end; lineNumber++) {
-        idSelectors.push("#L" + lineNumber);
+function addHighlightClassesForRange(range: {start: number; end: number}, root: Element) {
+    const selectors: string[] = [];
+    for (let i = range.start; i <= range.end; i++) selectors.push("#L" + i);
+    for (const el of root.querySelectorAll(selectors.join(","))) {
+        el.classList.add("highlighted");
     }
-    root.find(idSelectors.join(",")).addClass("highlighted");
 }
 
-function expandRangeToElement(element: JQuery) {
+function expandRangeToElement(element: HTMLElement) {
     let range = parseHashForLineRange(document.location.hash);
     if (range) {
-        let elementLine = parseInt(element.attr("id").replace("L", ""), 10);
+        let elementLine = parseInt(element.id.replace("L", ""), 10);
         if (elementLine < range.start) {
             range.end = range.start;
             range.start = elementLine;
@@ -96,42 +91,48 @@ function expandRangeToElement(element: JQuery) {
 }
 
 function init() {
-    let root = jQuery(".file-content");
-    let lineNumberContainer = root.find(".line-numbers");
-    let helpScreen = jQuery(".help-screen");
+    let root = document.querySelector(".file-content")!;
+    let helpScreen = document.querySelector(".help-screen")!;
+    if (!root || !helpScreen) return;
+    // Note: the CSS and JS expect ".line-numbers" but chroma renders ".chroma-lnlinks".
+    // Use both selectors until the chroma class names are aligned.
+    let lineNumberContainer = root.querySelector(".line-numbers, .chroma-lnlinks");
 
     function doSearch(query: string, newTab = false) {
-        let url = jQuery("body")!
-            .attr("data-search-url-template")!
-            .replace("{query}", encodeURIComponent(query));
+        let url = document.body.getAttribute("data-search-url-template")!.replace("{query}", encodeURIComponent(query));
         if (newTab) window.open(url);
         else window.location.href = url;
     }
 
     function showHelp() {
-        helpScreen
-            .removeClass("hidden")
-            .children()
-            .on("click", function (event) {
-                // Prevent clicks inside the element to reach the document
-                event.stopImmediatePropagation();
-                return true;
-            });
-
-        jQuery(document).on("click", hideHelp);
+        helpScreen.classList.remove("hidden");
+        // Prevent clicks inside the help screen from reaching the document dismiss handler.
+        for (const child of helpScreen.children) {
+            child.addEventListener("click", stopPropagation);
+        }
+        document.addEventListener("click", hideHelp);
     }
 
     function hideHelp() {
-        helpScreen.addClass("hidden").children().off("click");
-        jQuery(document).off("click", hideHelp);
-        return true;
+        helpScreen.classList.add("hidden");
+        for (const child of helpScreen.children) {
+            child.removeEventListener("click", stopPropagation);
+        }
+        document.removeEventListener("click", hideHelp);
+    }
+
+    function stopPropagation(event: Event) {
+        event.stopImmediatePropagation();
     }
 
     function handleHashChange(scrollElementIntoView = true) {
-        // Clear current highlights
-        lineNumberContainer.find(".highlighted").removeClass("highlighted");
+        if (!lineNumberContainer) return;
+        // Clear current highlights.
+        for (const el of lineNumberContainer.querySelectorAll(".highlighted")) {
+            el.classList.remove("highlighted");
+        }
 
-        // Highlight the current range from the hash, if any
+        // Highlight the current range from the hash, if any.
         let range = parseHashForLineRange(document.location.hash);
         if (range) {
             addHighlightClassesForRange(range, lineNumberContainer);
@@ -140,9 +141,11 @@ function init() {
             }
         }
 
-        // Update the external-browse link
-        let link = jQuery("#external-link");
-        link.attr("href", getExternalLink(link.attr("data-href-template") as string, range));
+        // Update the external-browse link.
+        let link = document.getElementById("external-link") as HTMLAnchorElement | null;
+        if (link) {
+            link.href = getExternalLink(link.getAttribute("data-href-template")!, range);
+        }
     }
 
     function getLineNumber(range: {start: number; end: number} | null) {
@@ -152,9 +155,8 @@ function init() {
         } else if (range.start == range.end) {
             return range.start;
         } else {
-            // We blindly assume that the external viewer supports linking to a
-            // range of lines. Github doesn't support this, but highlights the
-            // first line given, which is close enough.
+            // We blindly assume the external viewer supports linking to a range.
+            // GitHub doesn't, but highlights the first line, which is close enough.
             return range.start + "-" + range.end;
         }
     }
@@ -174,7 +176,7 @@ function init() {
     function processKeyEvent(key: string) {
         switch (key) {
             case "Enter": {
-                // Perform a new search with the selected text, if any
+                // Perform a new search with the selected text, if any.
                 let selectedText = getSelectedText();
                 if (selectedText) {
                     doSearch(selectedText, true);
@@ -191,19 +193,21 @@ function init() {
                 return true;
             }
             case "Escape": {
-                // Avoid swallowing the important escape key event unless we're sure we want to
-                if (helpScreen.hasClass("hidden")) {
+                // Don't swallow Escape unless the help screen is visible.
+                if (helpScreen.classList.contains("hidden")) {
                     return false;
                 }
                 hideHelp();
-                jQuery("#query").trigger("blur");
+                (document.getElementById("query") as HTMLElement)?.blur();
                 return true;
             }
             case "v": {
-                // Visually highlight the external link to indicate what happened
-                let link = jQuery("#external-link");
-                link.trigger("focus");
-                window.location.href = link.attr("href") as string;
+                // Visually highlight the external link to indicate what happened.
+                let link = document.getElementById("external-link") as HTMLAnchorElement | null;
+                if (link) {
+                    link.focus();
+                    window.location.href = link.href;
+                }
                 return true;
             }
             case "n":
@@ -218,95 +222,88 @@ function init() {
         return false;
     }
 
-    function initializeActionButtons(root: JQuery) {
-        // Map out action name to function call, and automate the details of actually hooking up the event handling.
-        let ACTION_MAP = {
-            search: doSearch,
+    // Map action names to handlers, and hook up click/auxclick on matching elements.
+    function initializeActionButtons(container: Element) {
+        let ACTION_MAP: Record<string, () => void> = {
+            search: () => doSearch(getSelectedText()),
             help: showHelp,
         };
 
         for (let actionName in ACTION_MAP) {
-            root.on(
-                "click auxclick",
-                '[data-action-name="' + actionName + '"]',
-                // We can't use the action mapped handler directly here since the iterator (`actioName`)
-                // will keep changing in the closure of the inline function.
-                // Generating a click handler on the fly removes the dependency on closure which
-                // makes this work as one would expect. #justjsthings.
-                (function (handler) {
-                    return function (event) {
-                        event.preventDefault();
-                        event.stopImmediatePropagation(); // Prevent immediately closing modals etc.
-                        handler();
-                    };
-                })(ACTION_MAP[actionName]),
-            );
+            let handler = ACTION_MAP[actionName];
+            for (const el of container.querySelectorAll(`[data-action-name="${actionName}"]`)) {
+                let listener = (event: Event) => {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    handler();
+                };
+                el.addEventListener("click", listener);
+                el.addEventListener("auxclick", listener);
+            }
         }
     }
 
-    let showSelectionReminder = function () {
-        jQuery(".without-selection").hide();
-        jQuery(".with-selection").show();
-    };
+    function showSelectionReminder() {
+        for (const el of document.querySelectorAll(".without-selection")) (el as HTMLElement).style.display = "none";
+        for (const el of document.querySelectorAll(".with-selection")) (el as HTMLElement).style.display = "";
+    }
 
-    let hideSelectionReminder = function () {
-        jQuery(".without-selection").show();
-        jQuery(".with-selection").hide();
-    };
+    function hideSelectionReminder() {
+        for (const el of document.querySelectorAll(".without-selection")) (el as HTMLElement).style.display = "";
+        for (const el of document.querySelectorAll(".with-selection")) (el as HTMLElement).style.display = "none";
+    }
 
     function initializePage() {
-        // Initial range detection for when the page is loaded
+        // Initial range detection for when the page is loaded.
         handleHashChange();
 
-        // Allow shift clicking links to expand the highlight range
-        lineNumberContainer.on("click", "a", function (event) {
+        // Allow shift-clicking links to expand the highlight range.
+        lineNumberContainer?.addEventListener("click", (event) => {
+            let target = (event.target as HTMLElement).closest("a");
+            if (!target) return;
             event.preventDefault();
             if (event.shiftKey) {
-                expandRangeToElement(jQuery(event.target));
+                expandRangeToElement(target);
             } else {
-                setHash(jQuery(event.target).attr("href"));
+                setHash(target.getAttribute("href")!);
             }
             handleHashChange(false);
         });
 
-        jQuery(window).on("hashchange", function (event) {
+        window.addEventListener("hashchange", (event) => {
             event.preventDefault();
-            // The url was updated with a new range
             handleHashChange();
         });
 
-        jQuery(document).on("keydown", (event) => {
+        document.addEventListener("keydown", (event) => {
             // Filter out key events when the user has focused an input field.
-            if (jQuery(event.target).is("input,textarea")) return;
+            if ((event.target as HTMLElement).matches("input,textarea")) return;
             // Filter out key if a modifier is pressed.
             if (event.altKey || event.ctrlKey || event.metaKey) return;
             if (processKeyEvent(event.key)) event.preventDefault();
         });
 
-        jQuery(document).on("mouseup", function () {
-            let selectedText = getSelectedText();
-            if (selectedText) {
+        document.addEventListener("mouseup", () => {
+            if (getSelectedText()) {
                 showSelectionReminder();
             } else {
                 hideSelectionReminder();
             }
         });
 
-        initializeActionButtons(jQuery(".header .header-actions"));
+        initializeActionButtons(document.querySelector(".header .header-actions")!);
     }
 
     // The native browser handling of hashes in the location is to scroll
     // to the element that has a name matching the id. We want to prevent
     // this since we want to take control over scrolling ourselves, and the
     // most reliable way to do this is to hide the elements until the page
-    // has loaded. We also need defer our own scroll handling since we can't
-    // access the geometry of the DOM elements until they are visible.
-    setTimeout(function () {
-        lineNumberContainer.css({display: "block"});
+    // has loaded. We also need to defer our own scroll handling since we
+    // can't access the geometry of the DOM elements until they are visible.
+    setTimeout(() => {
+        if (lineNumberContainer) (lineNumberContainer as HTMLElement).style.display = "block";
         initializePage();
     }, 1);
 }
 
-jQuery(() => {
-    init();
-});
+document.addEventListener("DOMContentLoaded", init);

@@ -7,7 +7,6 @@
 import "./codesearch.css";
 
 import htmx from "htmx.org";
-import jQuery from "jquery";
 import {LitElement, html} from "lit";
 import {customElement, property} from "lit/decorators.js";
 
@@ -33,7 +32,7 @@ export class SearchFilterButton extends LitElement {
     private _apply(e: Event) {
         let input = htmx.find("#searchbox") as HTMLInputElement;
         input.value =
-            (jQuery("#regex").is(":checked") ? this.regexFilter : this.rawFilter) +
+            ((document.getElementById("regex") as HTMLInputElement)?.checked ? this.regexFilter : this.rawFilter) +
             " " +
             input.value;
         htmx.trigger("#searchbox", "input");
