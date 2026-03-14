@@ -2,113 +2,56 @@
 
 ## Bugs
 
-- [ ] Stabilize search output in lexical order (block on long-pole)
-- [ ] Add spinner for slow initial search (paging-in feels like a hang)
+- [ ] Stabilize search output in lexical order — addressed by frontend rewrite (ordered streaming)
 - [ ] Run git GC periodically
-- [ ] Clicking filter buttons should always set history (vs debouncing search-as-you-type)
-- [ ] Thin line separator should only separate non-consecutive lines when context is off; otherwise only thick separator between sequences
+- [ ] Clicking filter buttons should always set history — addressed by frontend rewrite (pushState/replaceState policy)
+- [ ] Thin line separator should only separate non-consecutive lines when context is off — addressed by frontend rewrite (contiguous line ranges with null separators)
 
 ## Search & Indexing
 
-- [ ] Move context overlap dedup into search engine (searchBlob already knows adjacent matches; should not emit duplicate context lines, removing need for server-side fixup in api.go)
+- [ ] Move context overlap dedup into search engine — addressed by frontend rewrite (line range merging)
 - [ ] Support other repo sources beyond GitHub (+ corresponding external link formats)
 - [ ] Webhook-triggered repo updates (avoid waiting for poll reindex)
 - [ ] Add benchmarking code for index & search
 - [ ] Add index & search CLI tools for manual usage
 - [ ] Port 64-bit index changes from upstream codesearch
+- [ ] Add intersection (`&`) and complement (`~`) operators to `codesearch/regexp` DFA engine
+  - Theoretically grounded: Brzozowski 1964 derivatives, RE# (Varatalu et al., POPL 2025) shows input-linear matching with these operators
+  - DFA intersection via product construction (pair states, intersect transitions); complement by swapping accept/non-accept states
+  - Enables: file/repo filters compiled into the search regex as a single DFA walk instead of separate passes; negative filters via complement; better trigram selectivity from combined patterns
+  - RE# also supports restricted lookarounds (normalizable to `(?<=B)E(?=A)`, no nesting) via complement rewriting (`(?!S)` → `(?=~(S_*)\z)`). Useful for context-aware matching (e.g. "match only inside function bodies"). Bounded lookarounds mid-pattern rewritten using intersection.
+  - Limitation: requires POSIX (leftmost-longest) semantics, not PCRE (leftmost-greedy). Intersection under backtracking semantics has unclear intended behavior.
+  - Reference: `/Users/sgrankin/Downloads/3704837.pdf`
+- [ ] Positional trigram index
+  - Current index stores file IDs per trigram; adding byte offsets enables position-aware matching
+  - For fixed-width patterns (no variable-length quantifiers like `*`, `+`, `?`, `{n,m}` where n≠m), trigrams have known offsets from match start → intersect posting lists with offset constraints → exact match locations without regex scanning
+  - Covers literals (`bananan`), character classes (`bana[nN]a`), fixed repetitions (`bana[pn]{3}a`) — any pattern where every trigram position is deterministic
+  - Example: `bana[nN]an` → trigrams `ban`, `ana` at fixed offsets. Intersect with offset constraints = match positions. Just read surrounding lines for context.
+  - Eliminates the full-file regex scan for the common case (most real searches are literals or simple patterns). Line retrieval from known positions is much faster.
+  - Similar to Zoekt's (Google code search) positional trigram approach
+  - grep.app corroborates: fixed-width patterns like `bana[pn]{3}a` are fast, while `.`-heavy patterns hit scan limits
+  - Tradeoff: larger index (positions per trigram vs just file IDs). Acceptable for curated indexes.
+- [ ] Search time/complexity budget
+  - When trigram selectivity is poor (e.g. `.` in pattern → huge posting list), cap search work by time rather than just match count
+  - Return partial results with `truncated: true` flag; user sees results immediately and can refine
+  - Different from MaxMatches (caps successful matches) — time budget caps *work* (useful when scanning many non-matching files)
+  - Could detect upfront via posting list size estimate, or use a shorter `context.WithTimeout`
+  - grep.app exhibits this: regex `banana.n` returns 10 results with `partial: true` vs 553 for literal `bananan` — their scan hits a time/complexity limit
 
 ## Frontend Rewrite
 
-Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
+Detailed plan in [`specs/frontend-rewrite.md`](specs/frontend-rewrite.md).
 
-### Drop
-- HTMX, jQuery, Bootstrap, bootstrap-select, templ (for frontend pages)
-- Server-side syntax highlighting (chroma) — move to client
+Summary: Lit SPA consuming JSONL streaming API, client-side routing + query parsing, tree-sitter WASM syntax highlighting. Phases: API & Backend → Client Infrastructure → Search View → File View → Cleanup & Polish.
 
-### Keep / Add
-- **Lit** web components + `@lit-labs/signals` for reactivity
-- **`@lit-labs/virtualizer`** for large result lists and repo selector
-- **arborium** (tree-sitter WASM) for client-side syntax highlighting
-  - Progressive enhancement: render plain text immediately, highlight async as grammars load
-  - Enables highlighting in search result snippets (not just file view)
-- **esbuild** for bundling
-- **PWA**: service worker for static asset caching + app shell
-
-### Architecture
-
-**Server**: JSON API + static file serving. Initial HTML shell via Go `html/template` (not templ).
-
-**API** (new, clean):
-- `GET /api/search` — SSE stream of result batches (JSON)
-- `GET /api/file` — file content (plain text)
-- `GET /api/paths` — directory listing
-- `GET /api/repos` — available repos + metadata
-- Redesign result format: return contiguous line ranges (not per-match with overlapping context). Server deduplicates and merges context before sending.
-
-**Client-side query parsing**:
-- Client parses structured operators (`repo:`, `path:`, `file:`, `ext:`, case/literal toggles)
-- Client sends structured query to API: `{line: "regex", repo: [...], path: [...], ...}`
-- Server always receives clean structured queries with regexes
-- Keeps the "simple text box with power syntax" UX
-
-**State**:
-- URL is source of truth for all search state
-- `@lit-labs/signals` for reactive state, bidirectional sync with URL params
-- Defaults: regex on, smart case. No saved preferences.
-
-**Search-as-you-type**:
-- Client-side debouncing (~100ms)
-- AbortController cancels in-flight requests on new input
-- Server uses context cancellation to stop work immediately
-- SSE streaming: results appear incrementally as they arrive
-
-**Pages** (client-side routing, no framework — `URLPattern` or simple matcher):
-- Search view: query input, facet sidebar, streaming results
-- File view: breadcrumbs, syntax-highlighted code, line selection
-- About
-
-**Keyboard shortcuts**: focus search, navigate results, open file, etc. Keyboard-first UX.
-
-**Accessibility**: ARIA roles on custom components (facets, result navigation, dropdowns).
-
-**Theme**: Light theme default (system7/win2k-ish, low contrast, easy on astigmatism). Dark theme via `prefers-color-scheme`, find one that's similarly not terrible. Syntax theme follows app theme.
-
-**Code splitting**: esbuild, two entry points (search view, file view) sharing common Lit code.
-
-**SSE resilience**: Show partial results + "incomplete" indicator on disconnect. Next keystroke retries anyway.
-
-**OpenSearch**: Keep `opensearch.xml` for browser address bar integration.
-
-### Key Components
-
-**Result list**:
-- Virtualized for large result sets
-- Contiguous line ranges with match highlighting
-- Facet sidebar that modifies query
-
-**Facets**:
-- Server returns facet counts for: repo, org, path prefix, file extension
-- Top N values with counts per facet
-- Click to add filter to query, shift-click to exclude
-- Facet keys map to query operators (`repo:`, `org:`, `path:`, `ext:`)
-- Two modes of repo filtering — need both:
-  - **Pre-filter** (before searching): scope to specific repos upfront, like current dropdown
-  - **Post-filter** (facets in results): see distribution, click to narrow after searching
-  - Design question: what's the right lightweight pre-filter UI? (full multi-select is heavy;
-    could be repo groups, `repo:` syntax, or a simpler scoping control)
-
-### Build tooling
-
-- [x] Replace custom Go esbuild wrapper with `web/build.mjs`
-- Static assets checked in (so `go install` works without node toolchain)
-- Dev workflow: watch mode that keeps assets up to date during development
-- Update Procfile accordingly
-
-### Suggested Build Order
-1. API types & endpoints (the contract)
-2. Search view (query input, streaming results, facets)
-3. File view (breadcrumbs, code display, line selection)
-4. Polish (themes, PWA, code splitting, keyboard shortcuts)
+Key decisions:
+- JSONL streaming (not SSE) via `fetch()` + `ReadableStream`
+- Two orthogonal filter types: operators (regex, from query text) and facets (exact, from sidebar clicks). Round-trip symmetric with server response.
+- `/raw/` endpoint for immutable file content + directory listings
+- Embedded init data in HTML shell (repos, initial results) — no separate `/api/repos`
+- Ordered streaming via per-repo channels drained in sorted order (fixes "stabilize search output" bug)
+- Drop templ entirely; Go `html/template` for the SPA shell
+- PWA manifest only (no service worker)
 
 ## Features
 
@@ -119,14 +62,10 @@ Goal: low-dependency PWA replacing the current Lit+HTMX+jQuery+Bootstrap stack.
 
 ## Frontend Testing
 
-- **`@web/test-runner`** — runs tests in real browser (headless Chrome via Playwright)
-  - Mocha + Chai built in, `--coverage` for 100% target
-- **`axe-core`** — accessibility rule engine, run against each component
-- Plain assertions, hand-written fixture helper (no `@open-wc/testing`)
-- Per component: rendering, interactions, events, reactive updates, ARIA correctness
+- Custom test harness (Playwright + V8 coverage) — `@web/test-runner` was tried and rejected as unnecessary overhead
+- Plain assertions, hand-written fixture helper
+- Per component: rendering, interactions, events, reactive updates
 - **Playwright MCP** for interactive visual evaluation during development
-  - Same Playwright engine as test-runner — no extra browser dependency
-  - Navigate, screenshot, inspect, click — used by Claude to verify UI visually
 
 ## CLI & Integration Testing
 
