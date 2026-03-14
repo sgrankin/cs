@@ -4,15 +4,6 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-// Bootstrap depends on a global jQuery existing.
-// Imports are resolved at file load... so set the global jquery in a separate module.
-import "./globals.ts";
-
-import "bootstrap-select";
-import "bootstrap-select/dist/css/bootstrap-select.css";
-import "./bootstrap/css/bootstrap.css";
-import "./bootstrap/js/bootstrap";
-
 import "./codesearch.css";
 
 import htmx from "htmx.org";
@@ -22,10 +13,9 @@ import {customElement, property} from "lit/decorators.js";
 
 // Re-export pure components from components.ts.
 export {MatchStr, FilenameMatch, MatchLine} from "./components.ts";
+export {RepoSelect} from "./repo-select.ts";
 
 htmx.config.transitions = false;
-// Reload on history navigation so that the repo selector is reinits (it's mangled on HTMX processing).
-htmx.config.historyReload = true;
 
 @customElement("filter-button")
 export class SearchFilterButton extends LitElement {
@@ -50,36 +40,6 @@ export class SearchFilterButton extends LitElement {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    initRepoSelector();
-});
-
-function initRepoSelector() {
-    let repos = jQuery("#repos");
-    repos.on("refreshed.bs.select", () => {
-        let headers = jQuery(this).parent().find(".dropdown-header");
-        headers.css("cursor", "pointer");
-        headers.on("click", (event) => {
-            event.stopPropagation();
-            let optgroup = jQuery('#repos optgroup[label="' + jQuery(this).text() + '"]');
-            let allSelected = !optgroup.children("option:not(:selected)").length;
-            optgroup.children().prop("selected", !allSelected);
-            repos.selectpicker("refresh").trigger("input");
-        });
-    });
-    jQuery(window).on("keyup", ".bootstrap-select .bs-searchbox input", (event) => {
-        if (event.key == "Enter") {
-            jQuery(this).val("");
-            repos.selectpicker("refresh");
-        }
-    });
-    jQuery(window).on("keyup", (keyevent) => {
-        if (keyevent.key == "Tab" && jQuery(".bootstrap-select button:focus").length) {
-            repos.selectpicker("toggle");
-            jQuery(".bootstrap-select .bs-searchbox input").trigger("focus");
-        }
-    });
-}
 
 // ============================================================================
 // SSE History Management Hack

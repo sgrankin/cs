@@ -47,10 +47,6 @@
     --color-syntax-function: #9a050f;
     --color-syntax-tag: #00009f;
 
-    --color-bootstrap-button-background: var(--color-background-subtle);
-    --color-bootstrap-select-background: var(--color-background-subtle);
-    --color-bootstrap-select-background-hover: var(--color-background-hover);
-
     color-scheme: light;
 }
 
@@ -98,61 +94,12 @@
         --color-syntax-function: #d2a8ff;
         --color-syntax-tag: #7ee787;
 
-        --color-bootstrap-button-background: var(--color-background-subtle);
-        --color-bootstrap-select-background: var(--color-background-subtle);
-        --color-bootstrap-select-background-hover: var(--color-background-hover);
-
         color-scheme: dark;
     }
 }
 
 html {
     overflow-y: scroll;
-}
-
-.bootstrap-select.dropdown .dropdown-menu .notify,
-.bootstrap-select.dropdown .no-results {
-    background: var(--color-bootstrap-select-background);
-}
-
-.bootstrap-select.dropdown .btn {
-    background: var(--color-bootstrap-select-background);
-    border-color: var(--color-border-default);
-    color: var(--color-foreground-muted);
-}
-
-.bootstrap-select.dropdown .btn:hover {
-    background: var(--color-bootstrap-select-background-hover);
-    border-color: var(--color-border-default);
-    color: var(--color-foreground) !important;
-}
-
-.bootstrap-select.dropdown .no-results {
-    background-color: inherit !important;
-}
-
-.bootstrap-select input[type="search"] {
-    box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-}
-
-.dropdown-menu > .active > a,
-.dropdown-menu > .active > a:hover,
-.dropdown-menu > .active > a:focus {
-    background-color: var(--color-background-hover);
-}
-
-.dropdown-menu {
-    background: var(--color-bootstrap-select-background);
-}
-
-.dropdown-menu > li > a {
-    color: var(--color-foreground);
-}
-
-.dropdown-menu > li > a:hover {
-    color: var(--color-foreground);
-    background: var(--color-bootstrap-select-background-hover);
 }
 
 body {
@@ -764,13 +711,6 @@ div.example {
 .example .link {
     font-size: 80%;
     float: right;
-}
-
-/* limit the damage bootstrap does to our styling */
-
-.btn,
-.dropdown-menu {
-    font-size: 12px;
 }
 
 #searcharea,

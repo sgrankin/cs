@@ -363,21 +363,11 @@ templ searchOptions(index cs.SearchIndex, params url.Values) {
 		</div>
 		<div class="search-option">
 			<span class="label">Repo:</span>
-			<select
-				name="repo"
-				id="repos"
-				multiple
-				class="selectpicker"
-				data-actions-box="true"
-				data-selected-text-format="count > 4"
-				data-count-selected-text="({0} repositories)"
-				data-none-selected-text="(all repositories)"
-				data-live-search="true"
-				data-width="auto"
-				data-virtual-scroll="true"
-			>
-				@repoOptions(index, params["repo"])
-			</select>
+			<repo-select>
+				<select name="repo" id="repos" multiple>
+					@repoOptions(index, params["repo"])
+				</select>
+			</repo-select>
 		</div>
 	</div>
 }
