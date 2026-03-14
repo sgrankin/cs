@@ -5,7 +5,7 @@ Full-text code search tool: livegrep-inspired UI on a modified codesearch backen
 ## Tech Stack
 
 - **Backend**: Go, templ (HTML templates), chroma (syntax highlighting), go-git, go-github
-- **Frontend**: TypeScript + Lit web components, HTMX, Bootstrap, jQuery, esbuild
+- **Frontend**: TypeScript + Lit web components, HTMX, esbuild
 - **Build**: `go generate ./...` (runs bun install, templ generate, esbuild via `web/build.mjs`)
 
 ## Key Directories
@@ -23,6 +23,15 @@ Full-text code search tool: livegrep-inspired UI on a modified codesearch backen
 go generate ./...                    # Rebuild frontend assets + templ
 go run ./cmd/csweb -listen=:8910 -config=config.yaml -rebuild-interval=30m
 ```
+
+## Dev Workflow
+
+Use the tools already configured for this project:
+
+- **Dev server**: `go tool goreman start` — runs build:watch + auto-restarting server via Procfile
+- **Browser testing**: Playwright MCP — not cdp-cli or other alternatives
+- **Background tasks**: use `run_in_background`, stop with `TaskStop(task_id)` — never `lsof`/`kill`
+- **Static dev mode**: `-static-dir=server/static` serves assets from disk + enables SSE livereload
 
 ## Conventions
 
@@ -43,11 +52,11 @@ All must pass before committing:
 
 ```bash
 go tool goimports -w .     # format and fix imports
-go test ./...              # all tests must pass
+go test -coverprofile=cover.out ./...; awk -f .claude/scripts/cover-uncovered.awk cover.out
 go vet ./...               # must be clean
 go tool staticcheck ./...  # must be clean (pinned in go.mod)
 go tool govulncheck ./...  # no known vulnerabilities (pinned in go.mod)
-bun run test               # frontend component tests (requires sandbox bypass)
+bun run test               # frontend tests with coverage (requires sandbox bypass)
 ```
 
 Address any gopls diagnostics (type errors, unused imports, etc.) visible in changed files.
@@ -76,9 +85,9 @@ go test -coverprofile=cover.out ./...; awk -f .claude/scripts/cover-uncovered.aw
 
 Output is one line per file with uncovered line ranges (e.g. `api.go: 54-58,90-92`). Should produce no output.
 
-Frontend coverage:
+Frontend coverage (always runs with `bun run test`):
 ```bash
-bun run test:coverage      # V8 coverage → per-file line report
+bun run test               # V8 coverage → per-file line report
 ```
 
 ## Frontend Testing
@@ -86,10 +95,12 @@ bun run test:coverage      # V8 coverage → per-file line report
 Tests live in `web/*.test.ts`. No test frameworks — just plain functions:
 
 - **Test harness** (`testing/harness.ts`): runs exported `test*` functions, reports pass/fail per test. `eq(got, want)` for value comparison.
-- **Runner** (`testing/web-runner.mjs`): esbuild bundles tests, Playwright opens in headless Chromium, reads console output.
-- **Components** to test go in `web/components.ts` (pure Lit, no side effects). Components that depend on jQuery/htmx stay in `web/codesearch_ui.tsx`.
+- **Runner** (`testing/web-runner.mjs`): esbuild bundles tests, Playwright opens in headless Chromium, reads console output. Always runs with coverage.
+- **Components** to test go in `web/components.ts` (pure Lit, no side effects). Components that depend on htmx stay in `web/codesearch_ui.tsx`.
 - Run via `bun run test` (requires sandbox bypass for Chromium).
 
 ## Code Review
 
 Before finalizing a change, run `/simplify` then `/review` (code-reviewer agent). Focus on things mechanical checks can't catch: correctness, test quality, design issues, subtle bugs. Don't duplicate the pre-commit checklist.
+
+**Rewrites must preserve comments.** When rewriting a file (e.g. replacing jQuery with native DOM), use incremental Edit replacements — not full-file Write — to preserve surrounding context. If a full rewrite is unavoidable, read the original first and explicitly carry over all non-trivial comments. The /simplify review agents should also check for stripped comments.
