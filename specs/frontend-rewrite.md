@@ -12,6 +12,8 @@ The existing `api/types.go` TODO (line 57) already calls for contiguous line ran
 
 Build new endpoints alongside existing HTML routes. Zero frontend impact. Includes backend changes for ordered streaming.
 
+**Status**: Core endpoints implemented. Remaining: ordered streaming, embedded init data, facet param parsing (f.ext, f.repo, f.path), `context`/`max` query params.
+
 ### `GET /api/search` — JSONL streaming search
 
 The only API endpoint. Returns `application/x-ndjson` — one JSON object per line, streamed via `fetch()` + `ReadableStream`.
@@ -87,22 +89,31 @@ Replace `ContextBefore`/`ContextAfter`/`ClipBefore`/`ClipAfter` with contiguous 
 
 ### Files
 
-| Action | File | Notes |
-|--------|------|-------|
-| Create | `server/jsonapi.go` | `/api/search` handler, JSONL encoding |
-| Create | `server/jsonapi_test.go` | Golden JSON tests (same pattern as `search_test.go`) |
-| Modify | `server/api/types.go` | Add JSONL event types, line range types; keep old types |
-| Modify | `server/routes.go` | Register `/api/search`, `/raw/` routes |
-| Modify | `server/api.go` | Extract line-range merge as reusable function |
-| Create | `server/raw.go` | `/raw/` handler (file content + directory listings) |
-| Modify | `csbackend.go` | Ordered streaming: per-repo channels, sorted drain |
+| Status | Action | File | Notes |
+|--------|--------|------|-------|
+| Done | Create | `server/jsonapi.go` | `/api/search` handler, JSONL encoding |
+| Done | Create | `server/jsonapi_test.go` | Tests for JSONL handler (structure, overlap, caching) |
+| Done | Modify | `server/api/types.go` | Add JSONL event types, line range types; keep old types |
+| Done | Create | `server/api/types_test.go` | CompactLines marshal/unmarshal round-trip tests |
+| Done | Modify | `server/routes.go` | Register `/api/search`, `/raw/` routes |
+| Done | Modify | `server/api.go` | `mergeLineResults`, `applyQueryDefaults` |
+| Done | Create | `server/raw.go` | `/raw/` handler (file content + directory listings) |
+| Done | Create | `server/raw_test.go` | Tests for raw handler |
+| Done | Modify | `codesearch/index/read.go` | Fix `Names()` for empty prefix (root dir listing) |
+| TODO | Modify | `csbackend.go` | Ordered streaming: per-repo channels, sorted drain |
+
+### Implementation notes
+
+- Current `/api/search` reuses `extractQuery` (same params as old HTML search). New facet params (`f.ext`, `f.repo`, `f.path`) and `context`/`max` params not yet wired — add when frontend needs them.
+- Search is batch-then-serialize (not truly streaming). True streaming requires the ordered streaming refactor.
+- `SearchIndex.Data()` returns `""` for both missing files and empty files — document this limitation or change the interface later.
 
 ### Verify
-- `go test ./...` — golden tests pass, existing tests unchanged
-- `curl /api/search?q=hello` returns valid JSONL
-- `curl /raw/repo/ver/+/file.go` returns file bytes with immutable cache headers
-- `curl /raw/repo/ver/+/dir/` returns JSON directory listing
-- Existing templ frontend still works unchanged
+- [x] `go test ./...` — all tests pass, existing tests unchanged
+- [x] `curl /api/search?q=hello` returns valid JSONL
+- [x] `curl /raw/repo/ver/+/file.go` returns file bytes with immutable cache headers
+- [x] `curl /raw/repo/ver/+/dir/` returns JSON directory listing
+- [x] Existing templ frontend still works unchanged
 
 ---
 
