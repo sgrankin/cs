@@ -12,7 +12,7 @@ The existing `api/types.go` TODO (line 57) already calls for contiguous line ran
 
 Build new endpoints alongside existing HTML routes. Zero frontend impact. Includes backend changes for ordered streaming.
 
-**Status**: Core endpoints implemented. Remaining: ordered streaming, embedded init data, facet param parsing (f.ext, f.repo, f.path), `context`/`max` query params.
+**Status**: Complete. All endpoints, query params, facet filters, and ordered streaming implemented. Remaining for later phases: embedded init data in HTML shell (Phase 1 dependency).
 
 ### `GET /api/search` — JSONL streaming search
 
@@ -100,12 +100,13 @@ Replace `ContextBefore`/`ContextAfter`/`ClipBefore`/`ClipAfter` with contiguous 
 | Done | Create | `server/raw.go` | `/raw/` handler (file content + directory listings) |
 | Done | Create | `server/raw_test.go` | Tests for raw handler |
 | Done | Modify | `codesearch/index/read.go` | Fix `Names()` for empty prefix (root dir listing) |
-| TODO | Modify | `csbackend.go` | Ordered streaming: per-repo channels, sorted drain |
+| Done | Modify | `csbackend.go` | Ordered streaming: per-repo channels, sorted drain |
 
 ### Implementation notes
 
-- Current `/api/search` reuses `extractQuery` (same params as old HTML search). New facet params (`f.ext`, `f.repo`, `f.path`) and `context`/`max` params not yet wired — add when frontend needs them.
-- Search is batch-then-serialize (not truly streaming). True streaming requires the ordered streaming refactor.
+- `extractQuery` handles all params: `q`, `repo`, `fold_case`, `literal`, `context`, `max`, `f.repo`, `f.ext`, `f.path`.
+- Search uses per-repo channels drained in sorted order. All repos search concurrently with shared parallelism semaphore. Within each repo, results sorted by file path.
+- Search is currently batch-then-serialize per repo (not truly streaming to client). True HTTP streaming can be added by writing JSONL events as each repo drains.
 - `SearchIndex.Data()` returns `""` for both missing files and empty files — document this limitation or change the interface later.
 
 ### Verify

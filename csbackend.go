@@ -18,10 +18,10 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
-
 	"sgrankin.dev/cs/codesearch/index"
 	"sgrankin.dev/cs/codesearch/regexp"
 )
@@ -159,29 +159,73 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		newPathPrefixFilter(q.FacetPaths),
 	)
 
-	fileSearchChan := make(chan []FileResult)
-	ctxFileSearch, cancelFileSearch := context.WithCancel(ctx)
-	go func(ctx context.Context) {
-		defer close(fileSearchChan)
-		wg, ctx := errgroup.WithContext(ctx)
-		wg.SetLimit(runtime.GOMAXPROCS(0))
-		for _, searcher := range searchers {
-			wg.Go(func() error {
-				r := searcher.SearchFileNames(ctx, re.Clone(), fileFilter.Clone(), q.MaxMatches)
-				if len(r) > 0 {
-					select {
-					case fileSearchChan <- r:
-					case <-ctx.Done():
-					}
-				}
-				return nil
-			})
-		}
-		wg.Wait()
-	}(ctxFileSearch)
+	// Sort searchers by repo name for deterministic output ordering.
+	sort.Slice(searchers, func(i, j int) bool {
+		return searchers[i].repo < searchers[j].repo
+	})
 
+	// Per-repo result channels: all repos search concurrently, results drained in sorted order.
+	const chanBuffer = 64
+	type repoSearch struct {
+		searcher *indexSearcher
+		results  chan SearchResult
+		files    chan []FileResult
+	}
+	repos := make([]repoSearch, len(searchers))
+	ctxSearch, cancelSearch := context.WithCancel(ctx)
+
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0)) // shared parallelism limiter
+
+	for i, s := range searchers {
+		repos[i] = repoSearch{
+			searcher: s,
+			results:  make(chan SearchResult, chanBuffer),
+			files:    make(chan []FileResult, 1),
+		}
+		rs := &repos[i]
+
+		// Launch file name search.
+		go func() {
+			defer close(rs.files)
+			r := rs.searcher.SearchFileNames(ctxSearch, re.Clone(), fileFilter.Clone(), q.MaxMatches)
+			if len(r) > 0 {
+				select {
+				case rs.files <- r:
+				case <-ctxSearch.Done():
+				}
+			}
+		}()
+
+		// Launch content search with per-file parallelism via shared semaphore.
+		if !q.FilenameOnly {
+			go func() {
+				defer close(rs.results)
+				var wg sync.WaitGroup
+				for f := range rs.searcher.SearchFiles(ctxSearch, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches) {
+					sem <- struct{}{} // acquire
+					wg.Add(1)
+					go func() {
+						defer func() { <-sem; wg.Done() }()
+						result := f()
+						if result != nil {
+							select {
+							case rs.results <- *result:
+							case <-ctxSearch.Done():
+							}
+						}
+					}()
+				}
+				wg.Wait()
+			}()
+		} else {
+			close(rs.results)
+		}
+	}
+
+	// Drain results in repo-sorted order for deterministic output.
 	exitReason := ExitReasonNone
 	searchResults := []SearchResult{}
+	fileResults := []FileResult{}
 	facets := map[string]map[string]int{}
 	incFacet := func(key, val string) {
 		if val == "" {
@@ -193,59 +237,44 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		facets[key][val] += 1
 	}
 
-	if !q.FilenameOnly {
-		searchChan := make(chan SearchResult)
-		ctxSearch, cancelSearch := context.WithCancel(ctx)
-		go func(ctx context.Context) {
-			defer close(searchChan)
-			wg, ctx := errgroup.WithContext(ctx)
-			wg.SetLimit(runtime.GOMAXPROCS(0))
-			for _, searcher := range searchers {
-				for f := range searcher.SearchFiles(ctx, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches) {
-					wg.Go(func() error {
-						result := f()
-						if result != nil {
-							select {
-							case searchChan <- *result:
-							case <-ctx.Done():
-							}
-						}
-						return nil
-					})
-				}
-			}
-			wg.Wait()
-		}(ctxSearch)
-
-		nMatches := 0
-		for r := range searchChan {
-			searchResults = append(searchResults, r)
+	nMatches := 0
+	for i := range repos {
+		// Drain code results for this repo, sort by path within repo.
+		var repoResults []SearchResult
+		for r := range repos[i].results {
+			repoResults = append(repoResults, r)
 			incFacet("repo", r.File.Tree)
 			incFacet("ext", path.Ext(r.File.Path))
-			// TODO: path facet that excludes the common path filter.
-
 			nMatches += len(r.Lines)
-			if nMatches > q.MaxMatches {
-				exitReason = ExitReasonMatchLimit
-				break
-			}
 		}
-		cancelSearch()
-		sort.Slice(searchResults, func(i, j int) bool { return searchResults[i].File.Less(searchResults[j].File) })
-	}
+		// Tree and Version are constant within a repo's results; Path alone determines order.
+		sort.Slice(repoResults, func(a, b int) bool {
+			return repoResults[a].File.Path < repoResults[b].File.Path
+		})
+		searchResults = append(searchResults, repoResults...)
 
-	fileResults := []FileResult{}
-	for r := range fileSearchChan {
-		fileResults = append(fileResults, r...)
-		if len(fileResults) > q.MaxMatches {
-			if q.FilenameOnly {
-				exitReason = ExitReasonMatchLimit
+		// Drain file results for this repo.
+		for r := range repos[i].files {
+			fileResults = append(fileResults, r...)
+		}
+		if q.FilenameOnly {
+			nMatches = len(fileResults)
+		}
+
+		if nMatches > q.MaxMatches {
+			exitReason = ExitReasonMatchLimit
+			cancelSearch()
+			// Drain all remaining channels (including current repo) to unblock goroutines.
+			for j := i; j < len(repos); j++ {
+				for range repos[j].results {
+				}
+				for range repos[j].files {
+				}
 			}
 			break
 		}
 	}
-	cancelFileSearch()
-	sort.Slice(fileResults, func(i, j int) bool { return fileResults[i].File.Less(fileResults[j].File) })
+	cancelSearch()
 
 	facetResults := []Facet{}
 	for key, values := range facets {
