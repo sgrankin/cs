@@ -287,8 +287,11 @@ func (ix *Index) DataAtName(name string) []byte {
 
 func (ix *Index) Names(prefix []byte) [][]byte {
 	if len(prefix) == 0 {
-		// TODO Return all names
-		return nil
+		result := make([][]byte, 0, ix.numName)
+		for i := range ix.numName {
+			result = append(result, ix.NameBytes(uint32(i)))
+		}
+		return result
 	}
 
 	start := sort.Search(ix.numName, func(i int) bool {

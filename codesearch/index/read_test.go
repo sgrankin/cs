@@ -154,9 +154,9 @@ func TestNames(t *testing.T) {
 			want:   nil,
 		},
 		{
-			name:   "empty prefix",
+			name:   "empty prefix returns all",
 			prefix: "",
-			want:   nil,
+			want:   []string{"src/a.go", "src/b.go", "src/c.go", "test/d.go", "test/e.go", "vendor/f.go"},
 		},
 		{
 			name:   "prefix beyond all names",
