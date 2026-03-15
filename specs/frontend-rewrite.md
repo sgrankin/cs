@@ -171,6 +171,8 @@ Go handler serves minimal HTML page that loads `app.js`. Embeds init data. Uses 
 
 ## Phase 2: Search View
 
+**Status**: Complete. All search components implemented and wired to state/API layer.
+
 Build the search UI as Lit components consuming the JSONL API. One component at a time, tested in isolation, then integrated.
 
 ### Component tree
@@ -235,6 +237,8 @@ Build the search UI as Lit components consuming the JSONL API. One component at 
 ---
 
 ## Phase 3: File View
+
+**Status**: Complete (plain text). Components built without syntax highlighting. Tree-sitter WASM deferred.
 
 Build file view components without syntax highlighting first. Add tree-sitter WASM as a separate step after the plain-text view works.
 

@@ -89,10 +89,9 @@ func TestServeSPA(t *testing.T) {
 	tests := []struct {
 		path string
 	}{
-		{"/new/"},
-		{"/new/search"},
-		{"/new/view/repo/ver/+/file.go"},
-		{"/new/about"},
+		{"/search"},
+		{"/view/repo/ver/+/file.go"},
+		{"/about"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {

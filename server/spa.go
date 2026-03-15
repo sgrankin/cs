@@ -16,6 +16,7 @@ var spaTemplate = template.Must(template.New("spa").Parse(`<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}}</title>
+<link rel="stylesheet" href="/static/app.css">
 <link rel="search" type="application/opensearchdescription+xml" title="codesearch" href="/opensearch.xml">
 </head>
 <body>

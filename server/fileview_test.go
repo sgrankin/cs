@@ -6,8 +6,6 @@ package server
 
 import (
 	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
@@ -365,48 +363,6 @@ func TestBuildFileDataExternalURL(t *testing.T) {
 	}
 	if result.ExternalDomain != "GitHub" {
 		t.Errorf("ExternalDomain = %q, want %q", result.ExternalDomain, "GitHub")
-	}
-}
-
-func TestServeFileBlob(t *testing.T) {
-	idx := simpleIndex(t)
-	srv := newTestServer(idx)
-
-	req := httptest.NewRequest("GET", "/view/myrepo@abc123/+/main.go", nil)
-	w := httptest.NewRecorder()
-	srv.ServeHTTP(w, req)
-
-	resp := w.Result()
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-}
-
-func TestServeFileDirectory(t *testing.T) {
-	idx := simpleIndex(t)
-	srv := newTestServer(idx)
-
-	req := httptest.NewRequest("GET", "/view/myrepo@abc123/+/sub", nil)
-	w := httptest.NewRecorder()
-	srv.ServeHTTP(w, req)
-
-	resp := w.Result()
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-}
-
-func TestServeFileNotFound(t *testing.T) {
-	idx := simpleIndex(t)
-	srv := newTestServer(idx)
-
-	req := httptest.NewRequest("GET", "/view/myrepo@abc123/+/nonexistent.go", nil)
-	w := httptest.NewRecorder()
-	srv.ServeHTTP(w, req)
-
-	resp := w.Result()
-	if resp.StatusCode != http.StatusInternalServerError {
-		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusInternalServerError)
 	}
 }
 

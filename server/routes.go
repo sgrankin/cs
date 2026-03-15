@@ -16,15 +16,13 @@ import (
 func addRoutes(mux *http.ServeMux, srv *server) {
 	// TODO? pass dependencies explicitly instead of just `srv`
 	mux.Handle("GET /{$}", ctxHandlerFunc(srv.ServeRoot))
-	mux.Handle("GET /about", ctxHandlerFunc(srv.ServeAbout))
+	mux.Handle("GET /about", ctxHandlerFunc(srv.ServeSPA))
 	mux.Handle("GET /opensearch.xml", ctxHandlerFunc(srv.ServeOpensearch))
-	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSearch))
+	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSPA))
 	mux.Handle("GET /api/search", ctxHandlerFunc(srv.ServeAPISearch))
 	mux.Handle("GET /raw/{path...}", ctxHandlerFunc(srv.ServeRaw))
-	// SPA shell — serves the new frontend at /new/ paths.
-	mux.Handle("GET /new/{path...}", ctxHandlerFunc(srv.ServeSPA))
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(srv.staticFS)))
-	mux.Handle("GET /view/{path...}", ctxHandlerFunc(srv.ServeFile))
+	mux.Handle("GET /view/{path...}", ctxHandlerFunc(srv.ServeSPA))
 
 	if srv.devMode {
 		mux.Handle("GET /debug/livereload", http.HandlerFunc(serveLivereload))
