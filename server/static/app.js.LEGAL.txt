@@ -82,3 +82,10 @@ lit-html/directive-helpers.js:
    * Copyright 2020 Google LLC
    * SPDX-License-Identifier: BSD-3-Clause
    */
+
+lit-html/directives/class-map.js:
+  /**
+   * @license
+   * Copyright 2018 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   */
