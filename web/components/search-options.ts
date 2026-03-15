@@ -1,76 +1,122 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html, css} from 'lit';
+import {LitElement, html} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
+import type {SearchOptions} from '../query.ts';
+
+/** Init data embedded by the server in window.__CS_INIT. */
+interface InitData {
+  repos?: {label: string; repos: string[]}[];
+}
+
+function getInitData(): InitData {
+  return (window as any).__CS_INIT ?? {};
+}
 
 /**
- * Case sensitivity and literal mode toggle buttons.
+ * Case sensitivity and literal mode controls.
  *
  * Fires `options-change` custom event when toggles change.
+ * Renders light DOM matching the old templ structure:
+ *   .search-options > .search-option elements with radios and checkboxes
  */
 @customElement('cs-search-options')
-export class SearchOptions extends LitElement {
-  @property({type: Boolean}) caseSensitive = false;
-  @property({type: Boolean}) literal = false;
+export class SearchOptionsComponent extends LitElement {
+  @property({type: Object}) options: SearchOptions = {};
+
+  createRenderRoot() { return this; }
 
   render() {
+    const foldCase = this.options.caseSensitive ? 'false' : 'auto';
     return html`
-      <div class="options">
-        <button
-          class=${this.caseSensitive ? 'active' : ''}
-          @click=${this.toggleCase}
-          title="Case sensitive search"
-        >Aa</button>
-        <button
-          class=${this.literal ? 'active' : ''}
-          @click=${this.toggleLiteral}
-          title="Literal (non-regex) search"
-        >.*</button>
+      <div class="search-options">
+        <div class="search-option">
+          <span class="label">Case:</span>
+          <input
+            type="radio"
+            name="fold_case"
+            value="false"
+            id="case-match"
+            tabindex="3"
+            .checked=${foldCase === 'false'}
+            @change=${() => this.setCase('false')}
+          />
+          <label for="case-match">match</label>
+          <input
+            type="radio"
+            name="fold_case"
+            value="auto"
+            id="case-auto"
+            tabindex="4"
+            .checked=${foldCase === 'auto'}
+            @change=${() => this.setCase('auto')}
+          />
+          <label for="case-auto">auto</label>
+          [<span class="tooltip-target">?<div class="tooltip">Case-sensitive if the query contains capital letters</div></span>]
+          <input
+            type="radio"
+            name="fold_case"
+            value="true"
+            id="case-ignore"
+            tabindex="5"
+            .checked=${foldCase === 'true'}
+            @change=${() => this.setCase('true')}
+          />
+          <label for="case-ignore">ignore</label>
+        </div>
+        <div class="search-option">
+          <span class="label">Literal:</span>
+          <input
+            type="checkbox"
+            name="literal"
+            id="literal"
+            tabindex="6"
+            .checked=${this.options.literal ?? false}
+            @change=${this.toggleLiteral}
+          />
+        </div>
+        <div class="search-option">
+          <span class="label">Repo:</span>
+          <repo-select>
+            <select name="repo" id="repos" multiple>
+              ${this.renderRepoOptions()}
+            </select>
+          </repo-select>
+        </div>
       </div>
     `;
   }
 
-  private toggleCase() {
-    this.caseSensitive = !this.caseSensitive;
+  private renderRepoOptions() {
+    const data = getInitData();
+    if (!data.repos) return '';
+    return data.repos.map(group => html`
+      <optgroup label=${group.label}>
+        ${group.repos.map(repo => {
+          const base = repo.split('/').pop() ?? repo;
+          return html`<option value=${repo} data-tokens=${repo}>${base}</option>`;
+        })}
+      </optgroup>
+    `);
+  }
+
+  private setCase(value: string) {
+    const caseSensitive = value === 'false';
+    this.options = {...this.options, caseSensitive};
     this.fireChange();
   }
 
   private toggleLiteral() {
-    this.literal = !this.literal;
+    this.options = {...this.options, literal: !this.options.literal};
     this.fireChange();
   }
 
   private fireChange() {
     this.dispatchEvent(new CustomEvent('options-change', {
-      detail: {caseSensitive: this.caseSensitive, literal: this.literal},
+      detail: this.options,
       bubbles: true,
       composed: true,
     }));
   }
-
-  static styles = css`
-    .options {
-      display: flex;
-      gap: 4px;
-    }
-    button {
-      font-family: 'Menlo', 'Consolas', monospace;
-      font-size: 12px;
-      padding: 4px 8px;
-      border: 1px solid var(--color-border-default);
-      border-radius: 4px;
-      background: var(--color-background);
-      color: var(--color-foreground-muted);
-      cursor: pointer;
-    }
-    button:hover {
-      background: var(--color-background-hover);
-    }
-    button.active {
-      background: var(--color-foreground-accent);
-      color: var(--color-background);
-      border-color: var(--color-foreground-accent);
-    }
-  `;
 }
