@@ -13,6 +13,7 @@ import './codesearch.css';
 
 // Import view components.
 import './views/search-view.ts';
+import './views/file-view.ts';
 
 /**
  * Top-level application shell.
@@ -32,7 +33,7 @@ export class CsApp extends SignalWatcher(LitElement) {
       case 'search':
         return html`<cs-search-view></cs-search-view>`;
       case 'view':
-        return html`<div class="placeholder">File view: ${route.path} (Phase 3)</div>`;
+        return html`<cs-file-view .path=${route.path ?? ''}></cs-file-view>`;
       case 'about':
         return html`<div class="placeholder">About (Phase 4)</div>`;
       default:
