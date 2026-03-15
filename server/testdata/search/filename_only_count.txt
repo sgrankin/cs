@@ -133,6 +133,8 @@ default_max_matches=100
     "Tags": "",
     "NotTags": "",
     "RepoFilter": null,
+    "FacetExtensions": null,
+    "FacetPaths": null,
     "FoldCase": false,
     "MaxMatches": 100,
     "FilenameOnly": true,

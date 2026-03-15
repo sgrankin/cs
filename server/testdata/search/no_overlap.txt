@@ -113,6 +113,8 @@ context_lines=3
     "Tags": "",
     "NotTags": "",
     "RepoFilter": null,
+    "FacetExtensions": null,
+    "FacetPaths": null,
     "FoldCase": false,
     "MaxMatches": 50,
     "FilenameOnly": false,

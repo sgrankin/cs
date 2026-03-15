@@ -169,6 +169,66 @@ func TestServeAPISearchOverlapMerge(t *testing.T) {
 	}
 }
 
+func TestServeAPISearchFacetFilter(t *testing.T) {
+	// simple.txtar has: main.go, util.go, sub/deep.go, sub/other.go, README.md
+	idx := simpleIndex(t)
+	srv := newTestServer(idx)
+
+	tests := []struct {
+		name        string
+		url         string
+		wantResults bool // expect at least one result
+	}{
+		{
+			name:        "f.ext filters to .go files",
+			url:         "/api/search?q=func&f.ext=.go",
+			wantResults: true,
+		},
+		{
+			name:        "f.ext filters out all results",
+			url:         "/api/search?q=func&f.ext=.py",
+			wantResults: false,
+		},
+		{
+			name:        "f.path filters to sub/",
+			url:         "/api/search?q=func&f.path=sub/",
+			wantResults: true,
+		},
+		{
+			name:        "context param works",
+			url:         "/api/search?q=hello&context=0",
+			wantResults: true,
+		},
+		{
+			name:        "max param works",
+			url:         "/api/search?q=func&max=1",
+			wantResults: true,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tc.url, nil)
+			w := httptest.NewRecorder()
+			srv.ServeHTTP(w, req)
+
+			if w.Result().StatusCode != http.StatusOK {
+				t.Fatalf("status = %d, body: %s", w.Result().StatusCode, w.Body.String())
+			}
+			lines := nonEmptyLines(w.Body.String())
+			hasResult := false
+			for _, line := range lines {
+				if strings.HasPrefix(line, `{"type":"result"`) {
+					hasResult = true
+					break
+				}
+			}
+			if hasResult != tc.wantResults {
+				t.Errorf("hasResult = %v, want %v; body:\n%s", hasResult, tc.wantResults, w.Body.String())
+			}
+		})
+	}
+}
+
 func nonEmptyLines(s string) []string {
 	var result []string
 	for _, line := range strings.Split(s, "\n") {

@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,6 +54,25 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 			query.FoldCase = !strings.ContainsAny(query.Line, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 		}
 	}
+
+	// Context lines and max matches (for /api/search).
+	if v, ok := params["context"]; ok {
+		if n, err := strconv.Atoi(v[0]); err == nil && n >= 0 {
+			query.ContextLines = n
+		}
+	}
+	if v, ok := params["max"]; ok {
+		if n, err := strconv.Atoi(v[0]); err == nil && n > 0 {
+			query.MaxMatches = n
+		}
+	}
+
+	// Facet filters (for /api/search): exact-match, AND'd with operators.
+	if v, ok := params["f.repo"]; ok {
+		query.RepoFilter = append(query.RepoFilter, v...)
+	}
+	query.FacetExtensions = params["f.ext"]
+	query.FacetPaths = params["f.path"]
 
 	return query, err
 }

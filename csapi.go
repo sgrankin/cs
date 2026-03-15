@@ -41,6 +41,11 @@ type Query struct {
 
 	RepoFilter []string // Additional exact-match repository filter
 
+	// Facet filters: exact-match, AND'd with regex filters above.
+	// Multiple values within each facet OR together.
+	FacetExtensions []string // e.g. [".go", ".py"] — match file extension
+	FacetPaths      []string // e.g. ["src/", "lib/"] — match path prefix
+
 	FoldCase     bool // Ignore case when searching.
 	MaxMatches   int  // Max matches to return.  Must be set.
 	FilenameOnly bool // Search for `Line` only in file names.

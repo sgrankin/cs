@@ -149,10 +149,15 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		return nil, err
 	}
 
-	fileFilter, err := newRegexpFilter(strings.Join(q.File, "|"), strings.Join(q.NotFile, "|"))
+	regexFileFilter, err := newRegexpFilter(strings.Join(q.File, "|"), strings.Join(q.NotFile, "|"))
 	if err != nil {
 		return nil, err
 	}
+	fileFilter := newCompositeFilter(
+		regexFileFilter,
+		newExtensionFilter(q.FacetExtensions),
+		newPathPrefixFilter(q.FacetPaths),
+	)
 
 	fileSearchChan := make(chan []FileResult)
 	ctxFileSearch, cancelFileSearch := context.WithCancel(ctx)

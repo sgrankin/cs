@@ -370,7 +370,7 @@ func TestIndexSearcherSearchFilesEarlyBreak(t *testing.T) {
 
 	// Consume only the first result, then break.
 	count := 0
-	for f := range searcher.SearchFiles(context.Background(), re, nil, 0, 100) {
+	for f := range searcher.SearchFiles(context.Background(), re, acceptAllFilter{}, 0, 100) {
 		result := f()
 		if result != nil {
 			count++

@@ -114,6 +114,67 @@ func TestExtractQuery(t *testing.T) {
 	}
 }
 
+func TestExtractQueryNewParams(t *testing.T) {
+	tests := []struct {
+		name    string
+		url     string
+		wantCtx int
+		wantMax int
+		wantExt []string
+		wantPfx []string
+	}{
+		{
+			name:    "context param",
+			url:     "/api/search?q=hello&context=5",
+			wantCtx: 5,
+		},
+		{
+			name:    "max param",
+			url:     "/api/search?q=hello&max=100",
+			wantMax: 100,
+		},
+		{
+			name:    "f.ext facet",
+			url:     "/api/search?q=hello&f.ext=.go&f.ext=.py",
+			wantExt: []string{".go", ".py"},
+		},
+		{
+			name:    "f.path facet",
+			url:     "/api/search?q=hello&f.path=src/&f.path=lib/",
+			wantPfx: []string{"src/", "lib/"},
+		},
+		{
+			name: "invalid context ignored",
+			url:  "/api/search?q=hello&context=-1",
+		},
+		{
+			name: "invalid max ignored",
+			url:  "/api/search?q=hello&max=0",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			r := httptest.NewRequest("GET", tc.url, nil)
+			q, err := extractQuery(r)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tc.wantCtx != 0 && q.ContextLines != tc.wantCtx {
+				t.Errorf("ContextLines = %d, want %d", q.ContextLines, tc.wantCtx)
+			}
+			if tc.wantMax != 0 && q.MaxMatches != tc.wantMax {
+				t.Errorf("MaxMatches = %d, want %d", q.MaxMatches, tc.wantMax)
+			}
+			if !slices.Equal(q.FacetExtensions, tc.wantExt) {
+				t.Errorf("FacetExtensions = %v, want %v", q.FacetExtensions, tc.wantExt)
+			}
+			if !slices.Equal(q.FacetPaths, tc.wantPfx) {
+				t.Errorf("FacetPaths = %v, want %v", q.FacetPaths, tc.wantPfx)
+			}
+		})
+	}
+}
+
 func TestDoSearchError(t *testing.T) {
 	idx := simpleIndex(t)
 	srv := newTestServer(idx)

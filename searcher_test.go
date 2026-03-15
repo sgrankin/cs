@@ -241,15 +241,13 @@ func TestRegexpFilter(t *testing.T) {
 		accept  string
 		reject  string
 		wantErr bool
-		wantNil bool // expect nil filter
 		checks  []check
 	}{
 		{
-			name:    "nil filter for empty patterns",
-			accept:  "",
-			reject:  "",
-			wantNil: true,
-			checks:  []check{{"anything", true}},
+			name:   "accept-all filter for empty patterns",
+			accept: "",
+			reject: "",
+			checks: []check{{"anything", true}},
 		},
 		{
 			name:   "accept only",
@@ -299,9 +297,6 @@ func TestRegexpFilter(t *testing.T) {
 			}
 			if err != nil {
 				t.Fatalf("newRegexpFilter returned error: %v", err)
-			}
-			if tt.wantNil && f != nil {
-				t.Fatal("expected nil filter")
 			}
 			for _, c := range tt.checks {
 				if got := f.Accept([]byte(c.input)); got != c.want {
@@ -370,6 +365,103 @@ func TestSetFilter(t *testing.T) {
 		f := newSetFilter(nil)
 		if f.Accept([]byte("anything")) {
 			t.Error("empty setFilter should reject everything")
+		}
+	})
+}
+
+func TestExtensionFilter(t *testing.T) {
+	tests := []struct {
+		name       string
+		extensions []string
+		input      string
+		want       bool
+	}{
+		{"matches .go", []string{".go"}, "src/main.go", true},
+		{"matches .py", []string{".go", ".py"}, "script.py", true},
+		{"no match", []string{".go"}, "readme.md", false},
+		{"no extension", []string{".go"}, "Makefile", false},
+		{"dotfile", []string{".gitignore"}, ".gitignore", true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newExtensionFilter(tc.extensions)
+			if got := f.Accept([]byte(tc.input)); got != tc.want {
+				t.Errorf("Accept(%q) = %v, want %v", tc.input, got, tc.want)
+			}
+		})
+	}
+
+	t.Run("nil for empty", func(t *testing.T) {
+		f := newExtensionFilter(nil)
+		if f != nil {
+			t.Error("expected nil for empty extensions")
+		}
+	})
+}
+
+func TestPathPrefixFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		prefixes []string
+		input    string
+		want     bool
+	}{
+		{"matches prefix", []string{"src/"}, "src/main.go", true},
+		{"matches one of many", []string{"src/", "lib/"}, "lib/util.go", true},
+		{"no match", []string{"src/"}, "test/main.go", false},
+		{"exact match", []string{"README.md"}, "README.md", true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newPathPrefixFilter(tc.prefixes)
+			if got := f.Accept([]byte(tc.input)); got != tc.want {
+				t.Errorf("Accept(%q) = %v, want %v", tc.input, got, tc.want)
+			}
+		})
+	}
+
+	t.Run("nil for empty", func(t *testing.T) {
+		f := newPathPrefixFilter(nil)
+		if f != nil {
+			t.Error("expected nil for empty prefixes")
+		}
+	})
+}
+
+func TestCompositeFilter(t *testing.T) {
+	ext := newExtensionFilter([]string{".go"})
+	pfx := newPathPrefixFilter([]string{"src/"})
+	both := newCompositeFilter(ext, pfx)
+
+	tests := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{"matches both", "src/main.go", true},
+		{"extension only", "test/main.go", false},
+		{"prefix only", "src/readme.md", false},
+		{"neither", "test/readme.md", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := both.Accept([]byte(tc.input)); got != tc.want {
+				t.Errorf("Accept(%q) = %v, want %v", tc.input, got, tc.want)
+			}
+		})
+	}
+
+	t.Run("all nil returns accept-all", func(t *testing.T) {
+		f := newCompositeFilter(nil, nil)
+		if !f.Accept([]byte("anything")) {
+			t.Error("all-nil composite should accept anything")
+		}
+	})
+
+	t.Run("single non-nil unwraps", func(t *testing.T) {
+		f := newCompositeFilter(nil, ext, nil)
+		if _, ok := f.(*extensionFilter); !ok {
+			t.Errorf("single non-nil should unwrap, got %T", f)
 		}
 	})
 }

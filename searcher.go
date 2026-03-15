@@ -51,7 +51,7 @@ func (b *indexSearcher) Paths(prefix string) []File {
 
 func (b *indexSearcher) SearchFileNames(
 	ctx context.Context,
-	re *regexp.Regexp, fileFilter *regexpFilter,
+	re *regexp.Regexp, ff fileFilter,
 	maxMatches int,
 ) []FileResult {
 	res := []FileResult{}
@@ -60,7 +60,7 @@ func (b *indexSearcher) SearchFileNames(
 			return nil // Cancelled!
 		}
 		path := b.ix.NameBytes(fileid)
-		if !fileFilter.Accept(path) {
+		if !ff.Accept(path) {
 			continue
 		}
 		m := regexp.Match(re, path)
@@ -86,7 +86,7 @@ func (b *indexSearcher) SearchFileNames(
 // It yields functions that perform the search on individual files, and result any matches found.
 func (b *indexSearcher) SearchFiles(
 	ctx context.Context,
-	re *regexp.Regexp, fileFilter *regexpFilter,
+	re *regexp.Regexp, ff fileFilter,
 	contextLines, maxMatches int,
 ) iter.Seq[func() *SearchResult] {
 	return func(yield func(func() *SearchResult) bool) {
@@ -96,7 +96,7 @@ func (b *indexSearcher) SearchFiles(
 				return // Cancelled!
 			}
 			name := b.ix.NameBytes(postings[i])
-			if !fileFilter.Accept(name) {
+			if !ff.Accept(name) {
 				continue
 			}
 			if !yield(func() *SearchResult {
@@ -218,14 +218,120 @@ func lastLines(b []byte, n int) []string {
 // RegexpFilter creates a filter function based on the given regexp.
 // Either or both accept or reject parameters can be empty, in which case they're not used.
 // If both are empty, the returned function always returns true.
+// fileFilter is the interface for filename acceptance checks.
+type fileFilter interface {
+	Accept(s []byte) bool
+	Clone() fileFilter
+}
+
+// compositeFilter ANDs multiple fileFilters together.
+type compositeFilter struct {
+	filters []fileFilter
+}
+
+func newCompositeFilter(filters ...fileFilter) fileFilter {
+	var nonNil []fileFilter
+	for _, f := range filters {
+		if f != nil {
+			nonNil = append(nonNil, f)
+		}
+	}
+	if len(nonNil) == 0 {
+		return acceptAllFilter{}
+	}
+	if len(nonNil) == 1 {
+		return nonNil[0]
+	}
+	return &compositeFilter{nonNil}
+}
+
+// acceptAllFilter accepts all filenames (no-op filter).
+type acceptAllFilter struct{}
+
+func (acceptAllFilter) Accept([]byte) bool  { return true }
+func (f acceptAllFilter) Clone() fileFilter { return f }
+
+func (f *compositeFilter) Accept(s []byte) bool {
+	for _, ff := range f.filters {
+		if !ff.Accept(s) {
+			return false
+		}
+	}
+	return true
+}
+
+func (f *compositeFilter) Clone() fileFilter {
+	cloned := make([]fileFilter, len(f.filters))
+	for i, ff := range f.filters {
+		cloned[i] = ff.Clone()
+	}
+	return &compositeFilter{cloned}
+}
+
+// extensionFilter accepts files whose extension matches one of the accepted values.
+type extensionFilter struct {
+	accept map[string]bool
+}
+
+func newExtensionFilter(extensions []string) fileFilter {
+	if len(extensions) == 0 {
+		return nil
+	}
+	m := make(map[string]bool, len(extensions))
+	for _, ext := range extensions {
+		m[ext] = true
+	}
+	return &extensionFilter{m}
+}
+
+func (f *extensionFilter) Accept(s []byte) bool {
+	// Find the last dot in the filename.
+	name := string(s)
+	for i := len(name) - 1; i >= 0; i-- {
+		if name[i] == '.' {
+			return f.accept[name[i:]]
+		}
+		if name[i] == '/' {
+			break
+		}
+	}
+	return false // no extension
+}
+
+func (f *extensionFilter) Clone() fileFilter { return f } // immutable
+
+// pathPrefixFilter accepts files whose path starts with one of the accepted prefixes.
+type pathPrefixFilter struct {
+	prefixes []string
+}
+
+func newPathPrefixFilter(prefixes []string) fileFilter {
+	if len(prefixes) == 0 {
+		return nil
+	}
+	return &pathPrefixFilter{prefixes: prefixes}
+}
+
+func (f *pathPrefixFilter) Accept(s []byte) bool {
+	name := string(s)
+	for _, prefix := range f.prefixes {
+		if len(name) >= len(prefix) && name[:len(prefix)] == prefix {
+			return true
+		}
+	}
+	return false
+}
+
+func (f *pathPrefixFilter) Clone() fileFilter { return f } // immutable
+
 type regexpFilter struct {
 	acceptRe *regexp.Regexp
 	rejectRe *regexp.Regexp
 }
 
-func newRegexpFilter(accept, reject string) (*regexpFilter, error) {
+func newRegexpFilter(accept, reject string) (fileFilter, error) {
 	if accept == "" && reject == "" {
-		return nil, nil
+		return acceptAllFilter{}, nil
 	}
 	var acceptRe *regexp.Regexp
 	var err error
@@ -253,7 +359,7 @@ func (f *regexpFilter) Accept(s []byte) bool {
 		(f.rejectRe == nil || regexp.Match(f.rejectRe, s) == regexp.NilRange)
 }
 
-func (f *regexpFilter) Clone() *regexpFilter {
+func (f *regexpFilter) Clone() fileFilter {
 	if f == nil {
 		return nil
 	}
