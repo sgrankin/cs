@@ -103,17 +103,16 @@ type CompactLines []LineGroup
 func (cl CompactLines) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteByte('[')
-	first := true
+	written := false // whether any element has been written
 	for gi, group := range cl {
-		if gi > 0 {
+		if gi > 0 && written {
 			buf.WriteString(",null")
-			first = false
 		}
 		for _, line := range group {
-			if !first {
+			if written {
 				buf.WriteByte(',')
 			}
-			first = false
+			written = true
 			buf.WriteByte('[')
 			fmt.Fprintf(&buf, "%d,", line.Number)
 			textJSON, _ := json.Marshal(line.Text)

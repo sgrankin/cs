@@ -128,17 +128,23 @@ func (s *server) doSearch(ctx context.Context, q *cs.Query) (*api.ReplySearch, e
 	return reply, nil
 }
 
-func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySearch, error) {
-	if q.Line == "" {
-		return nil, nil
-	}
+const defaultContextLines = 3
 
+// applyQueryDefaults fills in zero-valued query fields with server defaults.
+func (s *server) applyQueryDefaults(q *cs.Query) {
 	if q.MaxMatches == 0 {
 		q.MaxMatches = s.config.DefaultMaxMatches
 	}
 	if q.ContextLines == 0 {
-		q.ContextLines = 3
+		q.ContextLines = defaultContextLines
 	}
+}
+
+func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySearch, error) {
+	if q.Line == "" {
+		return nil, nil
+	}
+	s.applyQueryDefaults(&q)
 
 	reply, err := s.doSearch(ctx, &q)
 	if err != nil {

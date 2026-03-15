@@ -29,12 +29,10 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		writeJSONLine(w, api.DoneEvent{Type: "done"})
 		return
 	}
-	if q.MaxMatches == 0 {
-		q.MaxMatches = s.config.DefaultMaxMatches
-	}
-	if q.ContextLines == 0 {
-		q.ContextLines = 3
-	}
+	s.applyQueryDefaults(&q)
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	start := time.Now()
 	searchResult, err := s.bk.Search(ctx, q)
@@ -52,7 +50,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 	for _, fr := range searchResult.FileResults {
 		writeJSONLine(w, api.FileMatchEvent{
 			Type:  "file",
-			Path:  fr.File.Tree + "/" + fr.File.Version + "/+/" + fr.File.Path,
+			Path:  resultFilePath(fr.File),
 			Match: [2]int{fr.Bounds.Left, fr.Bounds.Right},
 		})
 		total++
@@ -63,7 +61,7 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		groups := mergeLineResults(sr.Lines)
 		writeJSONLine(w, api.SearchResultEvent{
 			Type:  "result",
-			Path:  sr.File.Tree + "/" + sr.File.Version + "/+/" + sr.File.Path,
+			Path:  resultFilePath(sr.File),
 			Lines: api.CompactLines(groups),
 		})
 		total += len(sr.Lines)
@@ -84,26 +82,35 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 		total, searchResult.Stats.ExitReason, time.Since(start).Milliseconds())
 }
 
+// resultFilePath builds the linkable path for a search result: repo/version/+/filepath.
+func resultFilePath(f cs.File) string {
+	return f.Tree + "/" + f.Version + "/+/" + f.Path
+}
+
 // emitFacets converts search engine facets to a FacetsEvent and writes it.
 func emitFacets(w http.ResponseWriter, facets []cs.Facet) {
 	event := api.FacetsEvent{Type: "facets"}
 	for _, f := range facets {
-		buckets := make([]api.FacetBucket, len(f.Values))
-		for i, v := range f.Values {
-			buckets[i] = api.FacetBucket{Value: v.Value, Count: v.Count}
-		}
 		switch f.Key {
 		case "ext":
-			event.Ext = buckets
+			event.Ext = convertFacetBuckets(f.Values)
 		case "repo":
-			event.Repo = buckets
+			event.Repo = convertFacetBuckets(f.Values)
 		case "path":
-			event.Path = buckets
+			event.Path = convertFacetBuckets(f.Values)
 		}
 	}
 	if len(event.Ext) > 0 || len(event.Repo) > 0 || len(event.Path) > 0 {
 		writeJSONLine(w, event)
 	}
+}
+
+func convertFacetBuckets(values []cs.FacetValue) []api.FacetBucket {
+	buckets := make([]api.FacetBucket, len(values))
+	for i, v := range values {
+		buckets[i] = api.FacetBucket{Value: v.Value, Count: v.Count}
+	}
+	return buckets
 }
 
 func writeJSONLine(w http.ResponseWriter, v any) {
