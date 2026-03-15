@@ -21,6 +21,8 @@ func addRoutes(mux *http.ServeMux, srv *server) {
 	mux.Handle("GET /search", ctxHandlerFunc(srv.ServeSearch))
 	mux.Handle("GET /api/search", ctxHandlerFunc(srv.ServeAPISearch))
 	mux.Handle("GET /raw/{path...}", ctxHandlerFunc(srv.ServeRaw))
+	// SPA shell — serves the new frontend at /new/ paths.
+	mux.Handle("GET /new/{path...}", ctxHandlerFunc(srv.ServeSPA))
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(srv.staticFS)))
 	mux.Handle("GET /view/{path...}", ctxHandlerFunc(srv.ServeFile))
 

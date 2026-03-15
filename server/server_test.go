@@ -83,6 +83,38 @@ func TestServeOpensearch(t *testing.T) {
 	}
 }
 
+func TestServeSPA(t *testing.T) {
+	srv := newTestServer(simpleIndex(t))
+
+	tests := []struct {
+		path string
+	}{
+		{"/new/"},
+		{"/new/search"},
+		{"/new/view/repo/ver/+/file.go"},
+		{"/new/about"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.path, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tc.path, nil)
+			w := httptest.NewRecorder()
+			srv.ServeHTTP(w, req)
+
+			resp := w.Result()
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("GET %s status = %d, want %d", tc.path, resp.StatusCode, http.StatusOK)
+			}
+			body := w.Body.String()
+			if !strings.Contains(body, "<cs-app>") {
+				t.Errorf("GET %s body should contain <cs-app>, got: %s", tc.path, body[:100])
+			}
+			if !strings.Contains(body, "app.js") {
+				t.Errorf("GET %s body should reference app.js", tc.path)
+			}
+		})
+	}
+}
+
 func TestServeAbout(t *testing.T) {
 	srv := newTestServer(simpleIndex(t))
 	req := httptest.NewRequest("GET", "/about", nil)

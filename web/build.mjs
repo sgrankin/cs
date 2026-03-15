@@ -17,6 +17,7 @@ const opts = {
     entryPoints: [
         join(dir, "codesearch_ui.tsx"),
         join(dir, "fileview.ts"),
+        join(dir, "app.ts"),
     ],
     outdir: join(dir, "../server/static"),
     bundle: true,
