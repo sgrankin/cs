@@ -5,12 +5,14 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"testing"
 
 	"sgrankin.dev/cs"
+	"sgrankin.dev/cs/server/api"
 )
 
 func TestExtractQuery(t *testing.T) {
@@ -170,5 +172,120 @@ func TestExtractQueryViaHTTP(t *testing.T) {
 	resp := w.Result()
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+}
+
+func TestMergeLineResults(t *testing.T) {
+	tests := []struct {
+		name    string
+		results []cs.LineResult
+		want    string // JSON of CompactLines
+	}{
+		{
+			name:    "empty",
+			results: nil,
+			want:    "[]",
+		},
+		{
+			name: "single match no context",
+			results: []cs.LineResult{
+				{LineNumber: 5, Line: "target", Bounds: cs.Bounds{Left: 0, Right: 6}},
+			},
+			want: `[[5,"target",[[0,6]]]]`,
+		},
+		{
+			name: "single match with context",
+			results: []cs.LineResult{
+				{
+					LineNumber:    5,
+					Line:          "target",
+					Bounds:        cs.Bounds{Left: 0, Right: 6},
+					ContextBefore: []string{"line three", "line four"},
+					ContextAfter:  []string{"line six", "line seven"},
+				},
+			},
+			want: `[[3,"line three"],[4,"line four"],[5,"target",[[0,6]]],[6,"line six"],[7,"line seven"]]`,
+		},
+		{
+			name: "overlapping context merged into single group",
+			results: []cs.LineResult{
+				{
+					LineNumber:    5,
+					Line:          "target alpha",
+					Bounds:        cs.Bounds{Left: 0, Right: 6},
+					ContextBefore: []string{"line three", "line four"},
+					ContextAfter:  []string{"line six", "line seven"},
+				},
+				{
+					LineNumber:    8,
+					Line:          "target beta",
+					Bounds:        cs.Bounds{Left: 0, Right: 6},
+					ContextBefore: []string{"line six", "line seven"},
+					ContextAfter:  []string{"line nine", "line ten"},
+				},
+			},
+			// Lines 3-10: merged into one contiguous group
+			want: `[[3,"line three"],[4,"line four"],[5,"target alpha",[[0,6]]],[6,"line six"],[7,"line seven"],[8,"target beta",[[0,6]]],[9,"line nine"],[10,"line ten"]]`,
+		},
+		{
+			name: "non-overlapping creates two groups",
+			results: []cs.LineResult{
+				{
+					LineNumber:    5,
+					Line:          "target alpha",
+					Bounds:        cs.Bounds{Left: 0, Right: 6},
+					ContextBefore: []string{"line four"},
+					ContextAfter:  []string{"line six"},
+				},
+				{
+					LineNumber:    20,
+					Line:          "target beta",
+					Bounds:        cs.Bounds{Left: 0, Right: 6},
+					ContextBefore: []string{"line nineteen"},
+					ContextAfter:  []string{"line twenty one"},
+				},
+			},
+			want: `[[4,"line four"],[5,"target alpha",[[0,6]]],[6,"line six"],null,[19,"line nineteen"],[20,"target beta",[[0,6]]],[21,"line twenty one"]]`,
+		},
+		{
+			name: "adjacent matches (no gap)",
+			results: []cs.LineResult{
+				{LineNumber: 5, Line: "alpha", Bounds: cs.Bounds{Left: 0, Right: 5}},
+				{LineNumber: 6, Line: "beta", Bounds: cs.Bounds{Left: 0, Right: 4}},
+			},
+			want: `[[5,"alpha",[[0,5]]],[6,"beta",[[0,4]]]]`,
+		},
+		{
+			name: "context line overlaps with match line",
+			results: []cs.LineResult{
+				{
+					LineNumber:   5,
+					Line:         "alpha",
+					Bounds:       cs.Bounds{Left: 0, Right: 5},
+					ContextAfter: []string{"shared line"},
+				},
+				{
+					LineNumber:    6,
+					Line:          "shared line",
+					Bounds:        cs.Bounds{Left: 0, Right: 6},
+					ContextBefore: []string{"alpha"},
+				},
+			},
+			// Line 6 appears as context of result[0] and as match of result[1].
+			// The match bounds should be preserved.
+			want: `[[5,"alpha",[[0,5]]],[6,"shared line",[[0,6]]]]`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			groups := mergeLineResults(tc.results)
+			got, err := json.Marshal(api.CompactLines(groups))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(got) != tc.want {
+				t.Errorf("mergeLineResults:\n  got  %s\n  want %s", got, tc.want)
+			}
+		})
 	}
 }

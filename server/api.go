@@ -9,6 +9,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -192,4 +193,69 @@ func (s *server) searchForRequest(ctx context.Context, q cs.Query) (*api.ReplySe
 		asJSON{reply.Info})
 
 	return reply, nil
+}
+
+// mergeLineResults converts search engine LineResults (each with ContextBefore/ContextAfter)
+// into contiguous LineGroups with deduplication. Overlapping context is merged; non-contiguous
+// groups become separate entries (rendered as null separators in JSONL).
+func mergeLineResults(results []cs.LineResult) []api.LineGroup {
+	if len(results) == 0 {
+		return nil
+	}
+
+	// Build an ordered set of lines, deduplicating by line number.
+	// Match lines take precedence (have bounds); context lines don't.
+	type lineEntry struct {
+		number int
+		text   string
+		bounds [][2]int
+	}
+	seen := map[int]*lineEntry{}
+
+	addLine := func(num int, text string, bounds [][2]int) {
+		if e, ok := seen[num]; ok {
+			if len(bounds) > 0 {
+				e.bounds = append(e.bounds, bounds...)
+			}
+			return
+		}
+		seen[num] = &lineEntry{number: num, text: text, bounds: bounds}
+	}
+
+	for _, r := range results {
+		for i, text := range r.ContextBefore {
+			addLine(r.LineNumber-len(r.ContextBefore)+i, text, nil)
+		}
+		addLine(r.LineNumber, r.Line, [][2]int{{r.Bounds.Left, r.Bounds.Right}})
+		for i, text := range r.ContextAfter {
+			addLine(r.LineNumber+1+i, text, nil)
+		}
+	}
+
+	nums := make([]int, 0, len(seen))
+	for n := range seen {
+		nums = append(nums, n)
+	}
+	sort.Ints(nums)
+
+	var groups []api.LineGroup
+	var current api.LineGroup
+	prevNum := -2 // sentinel
+	for _, n := range nums {
+		if prevNum >= 0 && n != prevNum+1 {
+			groups = append(groups, current)
+			current = nil
+		}
+		e := seen[n]
+		current = append(current, api.ResultLine{
+			Number: e.number,
+			Text:   e.text,
+			Bounds: e.bounds,
+		})
+		prevNum = n
+	}
+	if len(current) > 0 {
+		groups = append(groups, current)
+	}
+	return groups
 }
