@@ -130,68 +130,121 @@ export function parseSnapshots(data: string): {name: string; input: string; want
     return cases;
 }
 
+/** A test module with its source file path. */
+interface TestModule {
+    file: string;
+    mod: Record<string, unknown>;
+}
+
+interface RunOptions {
+    verbose?: boolean;
+}
+
 // runAll finds all test* exports in the given modules, creates a T for each,
 // runs the function, then runs any subtests registered via t.run.
-export async function runAll(modules: Record<string, unknown>[]) {
-    let passed = 0;
-    let failed = 0;
+//
+// Default mode: one line per file ("ok" or "FAIL"), like `go test`.
+// Verbose mode (-v): every test and subtest printed with timing.
+export async function runAll(modules: TestModule[], opts: RunOptions = {}) {
+    const verbose = opts.verbose ?? false;
+    let totalPassed = 0;
+    let totalFailed = 0;
     const totalStart = performance.now();
 
-    for (const mod of modules) {
-        for (const [name, fn] of Object.entries(mod)) {
-            if (!name.startsWith("test") || typeof fn !== "function") continue;
+    // Group modules by file.
+    const byFile = new Map<string, Record<string, unknown>[]>();
+    for (const {file, mod} of modules) {
+        if (!byFile.has(file)) byFile.set(file, []);
+        byFile.get(file)!.push(mod);
+    }
 
-            const t = new T(name);
-            let topErr: Error | null = null;
-            try {
-                await fn(t);
-            } catch (e) {
-                topErr = e instanceof Error ? e : new Error(String(e));
-            }
+    for (const [file, mods] of byFile) {
+        const fileStart = performance.now();
+        let filePassed = 0;
+        let fileFailed = 0;
+        // Buffer failure output so we can print it after the file header in default mode.
+        const failOutput: string[] = [];
 
-            if (t._children.length === 0) {
-                const dur = fmtMs(performance.now() - totalStart);
-                if (topErr) {
-                    console.log(`FAIL  ${name} (${dur}): ${topErr.message}`);
-                    failed++;
-                } else {
-                    console.log(`PASS  ${name} (${dur})`);
-                    passed++;
+        if (verbose) console.log(`=== ${file}`);
+
+        for (const mod of mods) {
+            for (const [name, fn] of Object.entries(mod)) {
+                if (!name.startsWith("test") || typeof fn !== "function") continue;
+
+                const t = new T(name);
+                const testStart = performance.now();
+                let topErr: Error | null = null;
+                try {
+                    await fn(t);
+                } catch (e) {
+                    topErr = e instanceof Error ? e : new Error(String(e));
                 }
-                document.body.innerHTML = "";
-            } else {
-                if (topErr) {
-                    console.log(`FAIL  ${name}: ${topErr.message}`);
-                    failed++;
-                }
-                for (const child of t._children) {
-                    const fullName = `${name}/${child.name}`;
-                    const childStart = performance.now();
-                    try {
-                        await child.fn();
-                        console.log(`PASS  ${fullName} (${fmtMs(performance.now() - childStart)})`);
-                        passed++;
-                    } catch (e) {
-                        const msg = e instanceof Error ? e.message : String(e);
-                        console.log(`FAIL  ${fullName} (${fmtMs(performance.now() - childStart)}): ${msg}`);
-                        failed++;
+
+                if (t._children.length === 0) {
+                    if (topErr) {
+                        if (verbose) console.log(`    FAIL  ${name} (${fmtMs(performance.now() - testStart)}): ${topErr.message}`);
+                        else failOutput.push(`    FAIL  ${name}: ${topErr.message}`);
+                        fileFailed++;
+                    } else {
+                        if (verbose) console.log(`    PASS  ${name} (${fmtMs(performance.now() - testStart)})`);
+                        filePassed++;
                     }
                     document.body.innerHTML = "";
+                } else {
+                    if (topErr) {
+                        if (verbose) console.log(`    FAIL  ${name}: ${topErr.message}`);
+                        else failOutput.push(`    FAIL  ${name}: ${topErr.message}`);
+                        fileFailed++;
+                    }
+                    for (const child of t._children) {
+                        const childStart = performance.now();
+                        try {
+                            await child.fn();
+                            if (verbose) console.log(`    PASS  ${name}/${child.name} (${fmtMs(performance.now() - childStart)})`);
+                            filePassed++;
+                        } catch (e) {
+                            const msg = e instanceof Error ? e.message : String(e);
+                            if (verbose) console.log(`    FAIL  ${name}/${child.name} (${fmtMs(performance.now() - childStart)}): ${msg}`);
+                            else failOutput.push(`    FAIL  ${name}/${child.name}: ${msg}`);
+                            fileFailed++;
+                        }
+                        document.body.innerHTML = "";
+                    }
                 }
             }
         }
+
+        totalPassed += filePassed;
+        totalFailed += fileFailed;
+        const fileDur = fmtDuration(performance.now() - fileStart);
+
+        if (!verbose) {
+            if (fileFailed > 0) {
+                for (const line of failOutput) console.log(line);
+                console.log(`FAIL ${file}  ${fileDur}`);
+            } else {
+                console.log(`ok   ${file}  ${fileDur}`);
+            }
+        } else {
+            const status = fileFailed > 0 ? "FAIL" : "ok";
+            console.log(`${status}   ${file}  ${fileDur}`);
+        }
     }
 
-    const totalDur = ((performance.now() - totalStart) / 1000).toFixed(3);
-    if (failed > 0) {
-        console.log(`\n${passed} passed, ${failed} failed (${totalDur}s)`);
+    const totalDur = fmtDuration(performance.now() - totalStart);
+    if (totalFailed > 0) {
+        console.log(`\n${totalPassed} passed, ${totalFailed} failed (${totalDur})`);
         console.log("FAIL");
     } else {
-        console.log(`\n${passed} passed (${totalDur}s)`);
+        console.log(`\n${totalPassed} passed (${totalDur})`);
         console.log("PASS");
     }
 }
 
 function fmtMs(ms: number): string {
     return ms < 1 ? "<1ms" : Math.round(ms) + "ms";
+}
+
+function fmtDuration(ms: number): string {
+    return (ms / 1000).toFixed(3) + "s";
 }

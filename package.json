@@ -6,7 +6,8 @@
     "build:watch": "bun web/build.mjs --watch",
     "build:debug": "bun web/build.mjs --debug",
     "build:analyze": "bun web/build.mjs --analyze",
-    "test": "bun testing/web-runner.mjs --coverage"
+    "test": "bun testing/web-runner.mjs --coverage",
+    "test:verbose": "bun testing/web-runner.mjs --coverage -v"
   },
   "devDependencies": {
     "@lit-labs/observers": "2.1.0",

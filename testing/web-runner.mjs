@@ -27,7 +27,7 @@ const rootDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const wantCoverage = process.argv.includes("--coverage");
 
 // Parse directory filters from args. No filters = search everything.
-const dirs = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const dirs = process.argv.slice(2).filter((a) => !a.startsWith("--") && !a.startsWith("-"));
 const searchDirs = dirs.length > 0 ? dirs : ["."];
 
 // Recursively find *.test.ts files, skipping node_modules and testing/.
@@ -59,10 +59,12 @@ const bundlePath = join(outdir, "test-bundle.js");
 const entryPath = join(outdir, "entry.ts");
 
 const imports = entryPoints.map((e, i) => `import * as _${i} from "${join(rootDir, e)}";`);
+const verbose = process.argv.includes("-v") || process.argv.includes("--verbose");
+const modules = entryPoints.map((e, i) => `{file: ${JSON.stringify(e)}, mod: _${i}}`).join(", ");
 const entrySource = [
     ...imports,
     `import {runAll} from "${join(rootDir, "testing/harness.ts")}";`,
-    `runAll([${entryPoints.map((_, i) => `_${i}`).join(", ")}]);`,
+    `runAll([${modules}], {verbose: ${verbose}});`,
 ].join("\n");
 writeFileSync(entryPath, entrySource);
 
