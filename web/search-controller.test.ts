@@ -54,6 +54,13 @@ export function testSearchControllerCommit(t: T) {
         eq(urlOf(effects), "/search");
     });
 
+    t.run("empty query clears facets from URL", () => {
+        const c = new SearchController();
+        c.commit("hello", {}, {"f.ext": [".go"]});
+        const effects = c.commit("", {}, {"f.ext": [".go"]});
+        eq(urlOf(effects), "/search");
+    });
+
     t.run("empty query resets state", () => {
         const c = new SearchController();
         c.commit("hello");

@@ -140,13 +140,26 @@ export class SearchView extends SignalWatcher(LitElement) {
     const {key, value} = e.detail;
     const active = this.activeFacets;
     const current = active[key] ?? new Set();
-    const updated = new Set(current);
-    if (updated.has(value)) {
-      updated.delete(value);
+    let updated: Set<string>;
+
+    if (key === 'f.path') {
+      // Path facets replace: clicking a child replaces the parent.
+      // Clicking the active path clears it.
+      if (current.has(value)) {
+        updated = new Set();
+      } else {
+        updated = new Set([value]);
+      }
     } else {
-      updated.add(value);
+      // Other facets toggle additively.
+      updated = new Set(current);
+      if (updated.has(value)) {
+        updated.delete(value);
+      } else {
+        updated.add(value);
+      }
     }
-    // Build new facet params with the toggled value and trigger search.
+
     const newFacets = {...active, [key]: updated};
     const text = queryText.get();
     if (text) {

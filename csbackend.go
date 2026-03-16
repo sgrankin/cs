@@ -246,9 +246,7 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 			repoResults = append(repoResults, r)
 			incFacet("repo", r.File.Tree)
 			incFacet("ext", path.Ext(r.File.Path))
-			if idx := strings.Index(r.File.Path, "/"); idx >= 0 {
-				incFacet("path", r.File.Path[:idx+1])
-			}
+			incFacet("path", pathFacetValue(r.File.Path, q.FacetPaths))
 			nMatches += len(r.Lines)
 			if nMatches > q.MaxMatches {
 				limitHit = true
@@ -307,6 +305,32 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		FileResults: fileResults,
 		Facets:      facetResults,
 	}, nil
+}
+
+// pathFacetValue returns the directory prefix to use as a path facet for the
+// given file path. When active path filters exist, it returns the next directory
+// level below the deepest matching filter. Otherwise it returns the first
+// directory component.
+//
+// Examples (no active filters): "src/main.go" → "src/"
+// With filter "src/":           "src/clj/core.clj" → "src/clj/"
+// With filter "src/clj/":       "src/clj/core.clj" → "" (file, not dir)
+func pathFacetValue(filePath string, activePaths []string) string {
+	// Find the deepest active prefix that matches this file.
+	prefix := ""
+	for _, p := range activePaths {
+		if strings.HasPrefix(filePath, p) && len(p) > len(prefix) {
+			prefix = p
+		}
+	}
+
+	// Find the next "/" after the prefix to get one level deeper.
+	rest := filePath[len(prefix):]
+	idx := strings.Index(rest, "/")
+	if idx < 0 {
+		return "" // File at this level, not a subdirectory.
+	}
+	return filePath[:len(prefix)+idx+1]
 }
 
 type treeMeta struct {

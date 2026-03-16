@@ -22,18 +22,25 @@ export class FacetPanel extends LitElement {
   @property({type: Object}) selected: Record<string, Set<string>> = {};
 
   render() {
-    if (!this.facets) return nothing;
-    const sections = [
-      {label: 'Extension', key: 'f.ext', buckets: this.facets.ext},
-      {label: 'Repository', key: 'f.repo', buckets: this.facets.repo},
-      {label: 'Path', key: 'f.path', buckets: this.facets.path},
-    ].filter(s => s.buckets && s.buckets.length > 0);
+    const hasFacets = this.facets && (this.facets.ext?.length || this.facets.repo?.length || this.facets.path?.length);
+    const hasActive = Object.values(this.selected).some(s => s.size > 0);
+    if (!hasFacets && !hasActive) return nothing;
 
-    if (sections.length === 0) return nothing;
+    const sections = [
+      {label: 'Extension', key: 'f.ext', buckets: this.facets?.ext ?? []},
+      {label: 'Repository', key: 'f.repo', buckets: this.facets?.repo ?? []},
+      {label: 'Path', key: 'f.path', buckets: this.facets?.path ?? []},
+    ];
+
+    // Include sections that have buckets or active selections.
+    const visible = sections.filter(s =>
+      s.buckets.length > 0 || (this.selected[s.key]?.size ?? 0) > 0,
+    );
+    if (visible.length === 0) return nothing;
 
     return html`
       <div class="panel">
-        ${sections.map(s => this.renderSection(s.label, s.key, s.buckets!))}
+        ${visible.map(s => this.renderSection(s.label, s.key, s.buckets))}
       </div>
     `;
   }
@@ -42,10 +49,22 @@ export class FacetPanel extends LitElement {
     const active = this.selected[key] ?? new Set();
     // Sort by count descending, then alphabetically for ties.
     const sorted = [...buckets].sort((a, b) => b.c - a.c || a.v.localeCompare(b.v));
+    const shown = sorted.slice(0, 10);
+    const shownValues = new Set(shown.map(b => b.v));
+
+    // Active values not in current results — show as dimmed pills.
+    const stale = [...active].filter(v => !shownValues.has(v));
+
     return html`
       <div class="section">
         <span class="section-label">${label}</span>
-        ${sorted.slice(0, 10).map(b => html`
+        ${stale.map(v => html`
+          <button
+            class="pill stale"
+            @click=${() => this.toggle(key, v)}
+          >${v}</button>
+        `)}
+        ${shown.map(b => html`
           <button
             class=${active.has(b.v) ? 'pill active' : 'pill'}
             @click=${() => this.toggle(key, b.v)}
@@ -111,6 +130,11 @@ export class FacetPanel extends LitElement {
       background: var(--color-foreground-accent);
       color: var(--color-background);
       border-color: var(--color-foreground-accent);
+    }
+
+    .pill.stale {
+      opacity: 0.5;
+      border-style: dashed;
     }
 
     .count {

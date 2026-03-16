@@ -394,6 +394,32 @@ func TestSearchIndexInfoEmptyIndex(t *testing.T) {
 	}
 }
 
+func TestPathFacetValue(t *testing.T) {
+	tests := []struct {
+		name   string
+		path   string
+		active []string
+		want   string
+	}{
+		{"top-level dir", "src/main.go", nil, "src/"},
+		{"nested file no filter", "a/b/c.go", nil, "a/"},
+		{"root file", "main.go", nil, ""},
+		{"one level deeper", "src/clj/core.clj", []string{"src/"}, "src/clj/"},
+		{"two levels deeper", "src/clj/core/main.clj", []string{"src/", "src/clj/"}, "src/clj/core/"},
+		{"file at filter level", "src/main.go", []string{"src/"}, ""},
+		{"deepest filter wins", "a/b/c/d.go", []string{"a/", "a/b/"}, "a/b/c/"},
+		{"non-matching filter ignored", "lib/util.go", []string{"src/"}, "lib/"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := pathFacetValue(tc.path, tc.active)
+			if got != tc.want {
+				t.Errorf("pathFacetValue(%q, %v) = %q, want %q", tc.path, tc.active, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestBuildSearchIndex(t *testing.T) {
 	t.Run("fresh build", func(t *testing.T) {
 		remoteDir := initBareRemote(t) // has hello.txt with "hello\n"

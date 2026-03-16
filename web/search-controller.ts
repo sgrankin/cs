@@ -30,8 +30,10 @@ export class SearchController {
 
     if (!query) {
       this.lastCommittedUrl = '';
+      // Clear facets from URL when query is empty.
+      const cleanUrl = searchUrl(new URLSearchParams());
       return [
-        {type: 'replaceUrl', url, title},
+        {type: 'replaceUrl', url: cleanUrl, title},
         {type: 'clearResults'},
       ];
     }
