@@ -182,6 +182,12 @@ export async function testCodeViewerOnKeyDownSkipsModifiers(t: T) {
     eq(prevented, false, "ctrl+? should not be handled");
 }
 
+export async function testCodeViewerSelectionHintHidden(t: T) {
+    const el = await render(html`<cs-code-viewer .content=${"line1\nline2\n"}></cs-code-viewer>`) as CodeViewer;
+    const hint = el.renderRoot.querySelector('.selection-hint');
+    eq(hint, null, "selection hint should not be present when no text is selected");
+}
+
 export async function testCodeViewerEmptyContent(t: T) {
     const el = await render(html`<cs-code-viewer .content=${""}></cs-code-viewer>`) as CodeViewer;
     const lines = el.renderRoot.querySelectorAll('.line');

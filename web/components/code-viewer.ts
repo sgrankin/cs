@@ -41,23 +41,30 @@ export class CodeViewer extends LitElement {
   @property() externalUrl = '';
   @state() private selectedStart = -1;
   @state() private selectedEnd = -1;
+  @state() private hasSelection = false;
 
   connectedCallback() {
     super.connectedCallback();
     this.parseHash();
     window.addEventListener('hashchange', this.onHashChange);
     document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('selectionchange', this.onSelectionChange);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('hashchange', this.onHashChange);
     document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('selectionchange', this.onSelectionChange);
   }
 
   private onHashChange = () => {
     this.parseHash();
     this.scrollToSelection();
+  };
+
+  private onSelectionChange = () => {
+    this.hasSelection = (window.getSelection()?.toString() || '').length > 0;
   };
 
   private parseHash() {
@@ -189,6 +196,11 @@ export class CodeViewer extends LitElement {
     }
 
     return html`
+      ${this.hasSelection ? html`
+        <div class="selection-hint">
+          <kbd>/</kbd> search · <kbd>n</kbd> next · <kbd>p</kbd> prev · <kbd>Enter</kbd> new tab
+        </div>
+      ` : ''}
       <div class="viewer">
         ${lines.map((text, i) => {
           const lno = i + 1;
@@ -219,6 +231,20 @@ export class CodeViewer extends LitElement {
   }
 
   static styles = css`
+    .selection-hint {
+      font-size: 11px;
+      color: var(--color-foreground-subtle);
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .selection-hint kbd {
+      font-family: inherit;
+      font-size: 10px;
+      padding: 1px 4px;
+      border: 1px solid var(--color-border);
+      border-radius: 3px;
+      background: var(--color-background-secondary, rgba(128, 128, 128, 0.1));
+    }
     .viewer {
       font-family: 'Menlo', 'Consolas', monospace;
       font-size: 12px;
