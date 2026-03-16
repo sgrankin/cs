@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 import {LitElement, html, css} from 'lit';
-import {customElement, state} from 'lit/decorators.js';
+import {customElement} from 'lit/decorators.js';
 import {SignalWatcher} from '@lit-labs/signals';
+import {currentRoute} from '../router.ts';
 import {
   queryText, searchResults, limitedFileResults,
-  facets, searchDone, searchLoading, searchError, triggerSearch,
+  facets, searchDone, searchLoading, searchError, triggerSearch, immediateSearch,
   contextLines,
 } from '../state.ts';
 import type {SearchOptions} from '../query.ts';
@@ -26,10 +27,26 @@ import './search-help.ts';
  * Search view: orchestrates search input, options, results, facets.
  * Reads state from signals and dispatches search via triggerSearch().
  */
+/** Parse facet params (f.ext, f.repo, f.path) from URLSearchParams into Sets. */
+function parseFacetParams(params: URLSearchParams): Record<string, Set<string>> {
+  const result: Record<string, Set<string>> = {};
+  for (const key of ['f.ext', 'f.repo', 'f.path']) {
+    const values = params.getAll(key);
+    if (values.length > 0) {
+      result[key] = new Set(values);
+    }
+  }
+  return result;
+}
+
 @customElement('cs-search-view')
 export class SearchView extends SignalWatcher(LitElement) {
   private currentOptions: SearchOptions = {};
-  @state() private activeFacets: Record<string, Set<string>> = {};
+
+  /** Active facets derived from URL params (signal-reactive via currentRoute). */
+  private get activeFacets(): Record<string, Set<string>> {
+    return parseFacetParams(currentRoute.get().params);
+  }
 
   render() {
     const text = queryText.get();
@@ -55,6 +72,7 @@ export class SearchView extends SignalWatcher(LitElement) {
             .value=${text}
             .error=${error ?? ''}
             @search-input=${this.onSearchInput}
+            @search-submit=${this.onSearchSubmit}
           ></cs-search-input>
           <div class="query-hint">
             Special terms:
@@ -120,19 +138,28 @@ export class SearchView extends SignalWatcher(LitElement) {
 
   private onFacetToggle(e: CustomEvent<{key: string; value: string}>) {
     const {key, value} = e.detail;
-    const current = this.activeFacets[key] ?? new Set();
+    const active = this.activeFacets;
+    const current = active[key] ?? new Set();
     const updated = new Set(current);
     if (updated.has(value)) {
       updated.delete(value);
     } else {
       updated.add(value);
     }
-    this.activeFacets = {...this.activeFacets, [key]: updated};
-    this.reSearch();
+    // Build new facet params with the toggled value and trigger search.
+    const newFacets = {...active, [key]: updated};
+    const text = queryText.get();
+    if (text) {
+      immediateSearch(text, this.currentOptions, this.facetParamsFrom(newFacets));
+    }
   }
 
   private onSearchInput(e: CustomEvent<{value: string}>) {
-    triggerSearch(e.detail.value, this.currentOptions, this.facetParams());
+    triggerSearch(e.detail.value, this.currentOptions, this.facetParamsFrom(this.activeFacets));
+  }
+
+  private onSearchSubmit(e: CustomEvent<{value: string}>) {
+    immediateSearch(e.detail.value, this.currentOptions, this.facetParamsFrom(this.activeFacets));
   }
 
   private onOptionsChange(e: CustomEvent<SearchOptions>) {
@@ -143,7 +170,7 @@ export class SearchView extends SignalWatcher(LitElement) {
   private reSearch() {
     const text = queryText.get();
     if (text) {
-      triggerSearch(text, this.currentOptions, this.facetParams());
+      immediateSearch(text, this.currentOptions, this.facetParamsFrom(this.activeFacets));
     }
   }
 
@@ -152,10 +179,10 @@ export class SearchView extends SignalWatcher(LitElement) {
     return (window as any).__CS_INIT?.repos ?? [];
   }
 
-  /** Convert active facet Sets to string[] record for triggerSearch. */
-  private facetParams(): Record<string, string[]> {
+  /** Convert facet Sets to string[] record for triggerSearch/immediateSearch. */
+  private facetParamsFrom(facets: Record<string, Set<string>>): Record<string, string[]> {
     const params: Record<string, string[]> = {};
-    for (const [key, values] of Object.entries(this.activeFacets)) {
+    for (const [key, values] of Object.entries(facets)) {
       if (values.size > 0) {
         params[key] = [...values];
       }

@@ -6,18 +6,15 @@ import {customElement, property} from 'lit/decorators.js';
 import {prefixedInputStyles} from '../shared-styles.ts';
 
 /**
- * Search input with debounced input events.
+ * Search input.
  *
- * Fires `search-input` custom event after debounce period.
- * The event detail contains the current input value.
+ * Fires `search-input` on every keystroke (caller debounces).
+ * Fires `search-submit` on Enter for immediate search.
  */
 @customElement('cs-search-input')
 export class SearchInput extends LitElement {
   @property() value = '';
-  @property({type: Number}) debounce = 100;
   @property() error = '';
-
-  private timer: ReturnType<typeof setTimeout> | null = null;
 
   render() {
     return html`
@@ -47,25 +44,19 @@ export class SearchInput extends LitElement {
   }
 
   private onInput() {
-    if (this.timer) clearTimeout(this.timer);
     const input = this.renderRoot.querySelector('#searchbox') as HTMLInputElement;
-    this.timer = setTimeout(() => {
-      this.timer = null;
-      this.dispatchEvent(new CustomEvent('search-input', {
-        detail: {value: input.value},
-        bubbles: true,
-        composed: true,
-      }));
-    }, this.debounce);
+    this.dispatchEvent(new CustomEvent('search-input', {
+      detail: {value: input.value},
+      bubbles: true,
+      composed: true,
+    }));
   }
 
   private onKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
-      // Immediate search on Enter.
-      if (this.timer) clearTimeout(this.timer);
-      this.timer = null;
+      // Immediate search on Enter — bypass state.ts debounce.
       const input = this.renderRoot.querySelector('#searchbox') as HTMLInputElement;
-      this.dispatchEvent(new CustomEvent('search-input', {
+      this.dispatchEvent(new CustomEvent('search-submit', {
         detail: {value: input.value},
         bubbles: true,
         composed: true,

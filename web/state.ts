@@ -6,8 +6,9 @@
 
 import {signal, computed, type Signal} from '@lit-labs/signals';
 import {currentRoute} from './router.ts';
-import {buildSearchParams, parseQuery, type SearchOptions} from './query.ts';
+import {parseQuery, type SearchOptions} from './query.ts';
 import {searchStream, type ResultEvent, type FileMatchEvent, type FacetsEvent, type DoneEvent} from './api.ts';
+import {SearchController, type SearchEffect} from './search-controller.ts';
 
 // --- Search state ---
 
@@ -140,62 +141,75 @@ export async function executeSearch(): Promise<void> {
   }
 }
 
-// --- Debounced search trigger ---
+// --- Search controller and debounce wiring ---
 
+const controller = new SearchController();
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let lastPushedQuery = '';
 
-/**
- * Trigger a search with debounce and URL history management.
- *
- * First keystroke after idle -> pushState (creates back-button target).
- * Subsequent keystrokes within debounce -> replaceState (update in place).
- */
+/** Trigger a search with debounce. No URL/title updates until debounce fires. */
 export function triggerSearch(
   rawText: string,
   options: SearchOptions = {},
   facetParams: Record<string, string[]> = {},
 ): void {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-  }
-
-  const params = buildSearchParams(rawText, options, facetParams);
-  const isNewQuery = rawText !== lastPushedQuery;
-
-  // Update page title.
-  const title = rawText ? `${rawText} · code search` : 'code search';
-  document.title = title;
-
-  // Update URL immediately (replaceState during typing, pushState for new queries).
-  const search = params.toString();
-  const url = '/search' + (search ? '?' + search : '');
-  if (isNewQuery && lastPushedQuery !== '') {
-    history.pushState(null, title, url);
-    lastPushedQuery = rawText;
-  } else {
-    history.replaceState(null, title, url);
-    if (lastPushedQuery === '') lastPushedQuery = rawText;
-  }
-
-  // Update route signal to trigger re-renders.
-  currentRoute.set({
-    name: 'search',
-    params,
-  });
-
-  // Debounce the actual search execution.
+  if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     debounceTimer = null;
-    executeSearch();
-  }, 100);
+    applyEffects(controller.commit(rawText, options, facetParams));
+  }, 200);
 }
 
-// Auto-execute search on initial load if URL has a query.
+/** Execute search immediately (Enter key). Cancels pending debounce. */
+export function immediateSearch(
+  rawText: string,
+  options: SearchOptions = {},
+  facetParams: Record<string, string[]> = {},
+): void {
+  if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
+  applyEffects(controller.commit(rawText, options, facetParams));
+}
+
+// Execute search on initial load if URL has a query.
 {
-  const q = queryText.get();
+  const route = currentRoute.get();
+  const q = route.params.get('q') ?? '';
   if (q) {
-    document.title = `${q} · code search`;
-    executeSearch();
+    applyEffects(controller.commit(q));
+  }
+}
+
+// Re-execute search on back/forward navigation.
+window.addEventListener('popstate', () => {
+  const route = currentRoute.get();
+  const q = route.params.get('q') ?? '';
+  applyEffects(controller.popstate(q, route.params));
+});
+
+function applyEffects(effects: SearchEffect[]): void {
+  for (const effect of effects) {
+    switch (effect.type) {
+      case 'pushUrl':
+        history.pushState(null, effect.title, effect.url);
+        document.title = effect.title;
+        currentRoute.set({name: 'search', params: new URLSearchParams(new URL(effect.url, location.origin).search)});
+        break;
+      case 'replaceUrl':
+        history.replaceState(null, effect.title, effect.url);
+        document.title = effect.title;
+        currentRoute.set({name: 'search', params: new URLSearchParams(new URL(effect.url, location.origin).search)});
+        break;
+      case 'search':
+        executeSearch();
+        break;
+      case 'clearResults':
+        searchResults.set([]);
+        fileResults.set([]);
+        facets.set(null);
+        searchDone.set(null);
+        searchLoading.set(false);
+        searchError.set(null);
+        isFilenameOnly.set(false);
+        break;
+    }
   }
 }
