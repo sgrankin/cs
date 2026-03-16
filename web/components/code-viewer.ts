@@ -11,6 +11,30 @@ declare global {
 import {LitElement, html, css} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 
+// --- Pure functions (functional core, testable without DOM) ---
+
+/** Format a line selection as a string for URL substitution. */
+export function formatLineNumber(start: number, end: number): string {
+  if (start < 0) return '1';
+  if (start === end) return String(start);
+  return `${start}-L${end}`;
+}
+
+/** Resolve an external URL template by substituting {lno} with the line selection. */
+export function resolveExternalUrl(template: string, start: number, end: number): string {
+  if (!template) return '';
+  return template.replace('{lno}', formatLineNumber(start, end));
+}
+
+/** Parse a URL hash fragment into a line range. Returns [-1, -1] if invalid. */
+export function parseLineHash(hash: string): [number, number] {
+  const m = hash.match(/^#L(\d+)(?:-L?(\d+))?$/);
+  if (!m) return [-1, -1];
+  const start = parseInt(m[1], 10);
+  const end = m[2] ? parseInt(m[2], 10) : start;
+  return [start, end];
+}
+
 /**
  * Displays file content with line numbers and line selection.
  *
@@ -68,15 +92,9 @@ export class CodeViewer extends LitElement {
   };
 
   private parseHash() {
-    const hash = window.location.hash;
-    const m = hash.match(/^#L(\d+)(?:-L?(\d+))?$/);
-    if (m) {
-      this.selectedStart = parseInt(m[1], 10);
-      this.selectedEnd = m[2] ? parseInt(m[2], 10) : this.selectedStart;
-    } else {
-      this.selectedStart = -1;
-      this.selectedEnd = -1;
-    }
+    const [start, end] = parseLineHash(window.location.hash);
+    this.selectedStart = start;
+    this.selectedEnd = end;
   }
 
   /** Scroll the selected line(s) into view after render. */
@@ -117,18 +135,8 @@ export class CodeViewer extends LitElement {
   }
 
   /** Build the resolved external URL for the current line selection. */
-  private resolvedExternalUrl(): string {
-    const template = this.externalUrl;
-    if (!template) return '';
-    const lno = this.lineNumberString();
-    return template.replace('{lno}', lno);
-  }
-
-  /** Format the current line selection as a string for URL substitution. */
-  private lineNumberString(): string {
-    if (this.selectedStart < 0) return '1';
-    if (this.selectedStart === this.selectedEnd) return String(this.selectedStart);
-    return `${this.selectedStart}-L${this.selectedEnd}`;
+  resolvedExternalUrl(): string {
+    return resolveExternalUrl(this.externalUrl, this.selectedStart, this.selectedEnd);
   }
 
   private getSelectedText(): string {

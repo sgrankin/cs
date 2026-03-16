@@ -123,7 +123,7 @@ export async function testRepoSelectDropdown(t: T) {
     t.run("click opens", async () => {
         const el = await mkGrouped();
         await click(triggerButton(el));
-        eq(dropdownEl(el) !== null, true);
+        eq(dropdownEl(el)!.tagName, "DIV", "dropdown is open");
     });
 
     t.run("click again closes", async () => {
@@ -146,7 +146,8 @@ export async function testRepoSelectDropdown(t: T) {
         await click(triggerButton(el));
         const headers = groupHeaders(el).map((h) => h.textContent!.trim());
         eq(headers, ["github.com/org/", "github.com/other/"]);
-        eq(optionLabels(el).length, 4);
+        const labels = optionLabels(el).map((l) => l.textContent!.trim());
+        eq(labels, ["alpha", "beta", "gamma", "delta"]);
     });
 }
 
@@ -157,8 +158,7 @@ export async function testRepoSelectInteractions(t: T) {
         optionLabels(el)[0].querySelector("input")!.click();
         await (el as any).updateComplete;
         const sel = selectEl(el);
-        eq(sel.options[0].selected, true, "toggled option selected");
-        eq(sel.options[1].selected, false, "other option unchanged");
+        eq([...sel.options].map(o => o.selected), [true, false, false, false], "first toggled on");
     });
 
     t.run("select all / deselect all", async () => {

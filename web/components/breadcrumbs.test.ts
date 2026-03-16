@@ -36,6 +36,6 @@ export async function testBreadcrumbsNoPlus(t: T) {
         <cs-breadcrumbs path="noplushere"></cs-breadcrumbs>
     `) as Breadcrumbs;
     // Without /+/, should just show the path as text.
-    const text = el.renderRoot.textContent ?? '';
-    eq(text.includes("noplushere"), true, "shows raw path");
+    const text = (el.renderRoot.textContent ?? '').trim();
+    eq(text, "noplushere");
 }
