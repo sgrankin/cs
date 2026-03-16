@@ -42,14 +42,6 @@ export class SearchInput extends LitElement {
         <div id="regex-error">
           ${this.error ? html`<span id="errortext">${this.error}</span>` : nothing}
         </div>
-        <div class="query-hint">
-          Special terms:
-          <code>path:</code>
-          <code>-path:</code>
-          <code>repo:</code>
-          <code>-repo:</code>
-          <code>max_matches:</code>
-        </div>
       </div>
     `;
   }
@@ -107,22 +99,6 @@ export class SearchInput extends LitElement {
 
       #searchbox {
         font-size: 16px;
-      }
-
-      .query-hint {
-        padding-top: 5px;
-        font-size: 11px;
-        font-style: italic;
-        color: var(--color-foreground-subtle);
-      }
-
-      .query-hint code {
-        border: 1px solid var(--color-border-subtle);
-        border-radius: 3px;
-        background: var(--color-background-subtle);
-        font-style: normal;
-        margin: 0px 1px;
-        padding: 1px 3px;
       }
 
       #regex-error {

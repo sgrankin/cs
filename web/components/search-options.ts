@@ -6,15 +6,6 @@ import {customElement, property} from 'lit/decorators.js';
 import type {SearchOptions} from '../query.ts';
 import {tooltipStyles, labelStyles} from '../shared-styles.ts';
 
-/** Init data embedded by the server in window.__CS_INIT. */
-interface InitData {
-  repos?: {label: string; repos: string[]}[];
-}
-
-function getInitData(): InitData {
-  return (window as any).__CS_INIT ?? {};
-}
-
 /**
  * Case sensitivity and literal mode controls.
  *
@@ -23,6 +14,7 @@ function getInitData(): InitData {
 @customElement('cs-search-options')
 export class SearchOptionsComponent extends LitElement {
   @property({type: Object}) options: SearchOptions = {};
+  @property({type: Array}) repos: {label: string; repos: string[]}[] = [];
 
   render() {
     const foldCase = this.options.caseSensitive ? 'false' : 'auto';
@@ -86,9 +78,8 @@ export class SearchOptionsComponent extends LitElement {
   }
 
   private renderRepoOptions() {
-    const data = getInitData();
-    if (!data.repos) return '';
-    return data.repos.map(group => html`
+    if (!this.repos.length) return '';
+    return this.repos.map(group => html`
       <optgroup label=${group.label}>
         ${group.repos.map(repo => {
           const base = repo.split('/').pop() ?? repo;

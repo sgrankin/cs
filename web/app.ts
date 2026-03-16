@@ -27,6 +27,19 @@ export {RepoSelect} from './repo-select.ts';
 export class CsApp extends SignalWatcher(LitElement) {
   render() {
     const route = currentRoute.get();
+    return html`
+      <main>${this.renderView(route)}</main>
+      <footer>
+        <ul>
+          <li><a href="/">search</a></li>
+          <li><a href="/about">about</a></li>
+          <li><a href="https://github.com/sgrankin/cs">source</a></li>
+        </ul>
+      </footer>
+    `;
+  }
+
+  private renderView(route: import('./router.ts').Route) {
     switch (route.name) {
       case 'search':
         return html`<cs-search-view></cs-search-view>`;
@@ -44,6 +57,33 @@ export class CsApp extends SignalWatcher(LitElement) {
     css`
       :host {
         display: block;
+      }
+
+      footer {
+        font-size: 12px;
+        color: var(--color-foreground-subtle);
+        margin: 1em auto;
+        width: 40em;
+        text-align: center;
+      }
+
+      footer ul {
+        padding: 0;
+      }
+
+      footer li {
+        display: inline;
+      }
+
+      footer li::before {
+        content: "\\2219";
+        color: var(--color-foreground-subtle);
+        text-decoration: none;
+        margin: 5px;
+      }
+
+      footer li:first-child::before {
+        content: "";
       }
     `,
   ];

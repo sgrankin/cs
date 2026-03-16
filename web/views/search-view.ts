@@ -55,8 +55,17 @@ export class SearchView extends SignalWatcher(LitElement) {
             .error=${error ?? ''}
             @search-input=${this.onSearchInput}
           ></cs-search-input>
+          <div class="query-hint">
+            Special terms:
+            <code>path:</code>
+            <code>-path:</code>
+            <code>repo:</code>
+            <code>-repo:</code>
+            <code>max_matches:</code>
+          </div>
           <cs-search-options
             .options=${this.currentOptions}
+            .repos=${this.getRepos()}
             @options-change=${this.onOptionsChange}
           ></cs-search-options>
         </form>
@@ -105,13 +114,6 @@ export class SearchView extends SignalWatcher(LitElement) {
           <cs-search-help></cs-search-help>
         `}
       </div>
-      <footer id="header">
-        <ul>
-          <li><a href="/">search</a></li>
-          <li><a href="/about">about</a></li>
-          <li><a href="https://github.com/sgrankin/cs">source</a></li>
-        </ul>
-      </footer>
     `;
   }
 
@@ -142,6 +144,11 @@ export class SearchView extends SignalWatcher(LitElement) {
     if (text) {
       triggerSearch(text, this.currentOptions, this.facetParams());
     }
+  }
+
+  /** Read repo groups from server-embedded init data. */
+  private getRepos(): {label: string; repos: string[]}[] {
+    return (window as any).__CS_INIT?.repos ?? [];
   }
 
   /** Convert active facet Sets to string[] record for triggerSearch. */
@@ -201,33 +208,22 @@ export class SearchView extends SignalWatcher(LitElement) {
         margin-bottom: 15px;
       }
 
-      /* Footer */
-      #header {
-        font-size: 12px;
+      .query-hint {
+        padding-top: 5px;
+        font-size: 11px;
+        font-style: italic;
         color: var(--color-foreground-subtle);
-        margin: 1em auto;
-        width: 40em;
-        text-align: center;
       }
 
-      #header ul {
-        padding: 0;
+      .query-hint code {
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 3px;
+        background: var(--color-background-subtle);
+        font-style: normal;
+        margin: 0px 1px;
+        padding: 1px 3px;
       }
 
-      #header li {
-        display: inline;
-      }
-
-      #header li:before {
-        content: "\u2219";
-        color: var(--color-foreground-subtle);
-        text-decoration: none;
-        margin: 5px;
-      }
-
-      #header li:first-child:before {
-        content: "";
-      }
     `,
   ];
 }
