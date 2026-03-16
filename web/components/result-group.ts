@@ -1,9 +1,10 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html} from 'lit';
+import {LitElement, html, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import {splitResultPath, type ResultEvent, type ResultLine} from '../api.ts';
+import {resultPathStyles, linkStyles} from '../shared-styles.ts';
 import '../components.ts';
 
 // path helpers matching Go's path.Dir and path.Base.
@@ -20,15 +21,11 @@ function pathBase(p: string): string {
 
 /**
  * Renders one file's search results: header (file path) + line matches.
- * Uses light DOM matching the old templ structure:
- *   .file-group > .header > .header-path > a.result-path
- *   .match > .contents > <match-line> elements
  */
 @customElement('cs-result-group')
 export class ResultGroup extends LitElement {
   @property({type: Object}) result!: ResultEvent;
-
-  createRenderRoot() { return this; }
+  @property({type: Boolean, reflect: true, attribute: 'no-context'}) noContext = false;
 
   render() {
     const {repo, version, filePath} = splitResultPath(this.result.path);
@@ -94,4 +91,79 @@ export class ResultGroup extends LitElement {
     if (current.length > 0) groups.push(current);
     return groups;
   }
+
+  static styles = [
+    resultPathStyles,
+    linkStyles,
+    css`
+      :host {
+        display: block;
+      }
+
+      .file-group {
+        background: var(--color-file-group-background);
+        margin-bottom: 15px;
+        border: solid 1px var(--color-border-default);
+        border-left: solid 3px var(--color-file-group-accent);
+      }
+
+      .file-group .header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 5px;
+      }
+
+      .header-path {
+        flex-grow: 1;
+      }
+
+      .match {
+        display: block;
+        background-color: var(--color-background);
+      }
+
+      .match + .match {
+        margin-top: 5px;
+      }
+
+      .match .contents {
+        display: grid;
+        grid-template-columns: subgrid;
+        white-space: pre-wrap;
+        font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+        font-size: 12px;
+        padding: 10px 5px;
+        color: var(--color-foreground);
+        margin: 0;
+      }
+
+      .match:hover {
+        background-color: var(--color-background-subtle);
+      }
+
+      /* No-context mode: collapse match groups into compact form. */
+      :host([no-context]) .match .contents > * {
+        display: none;
+      }
+
+      :host([no-context]) .match {
+        border-top: none;
+        margin-top: 0;
+      }
+
+      :host([no-context]) .match .contents {
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+
+      :host([no-context]) .match:first-of-type .contents {
+        padding-top: 10px;
+      }
+
+      :host([no-context]) .match:last-of-type .contents {
+        padding-bottom: 10px;
+      }
+    `,
+  ];
 }

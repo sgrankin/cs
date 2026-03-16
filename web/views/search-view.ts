@@ -1,9 +1,8 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html, nothing} from 'lit';
+import {LitElement, html, css, nothing} from 'lit';
 import {customElement} from 'lit/decorators.js';
-import {classMap} from 'lit/directives/class-map.js';
 import {SignalWatcher} from '@lit-labs/signals';
 import {
   queryText, searchResults, limitedFileResults,
@@ -11,6 +10,7 @@ import {
   contextLines,
 } from '../state.ts';
 import type {SearchOptions} from '../query.ts';
+import {linkStyles, labelStyles} from '../shared-styles.ts';
 
 // Import child components.
 import '../components/search-input.ts';
@@ -23,12 +23,9 @@ import './search-help.ts';
 /**
  * Search view: orchestrates search input, options, results, facets.
  * Reads state from signals and dispatches search via triggerSearch().
- * Uses light DOM so codesearch.css styles apply.
  */
 @customElement('cs-search-view')
 export class SearchView extends SignalWatcher(LitElement) {
-  createRenderRoot() { return this; }
-
   private currentOptions: SearchOptions = {};
   private currentFacets: Record<string, string[]> = {};
 
@@ -75,8 +72,6 @@ export class SearchView extends SignalWatcher(LitElement) {
             <div
               id="results"
               tabindex="-1"
-              style="outline: none"
-              class=${classMap({'no-context': ctxLines <= 0})}
             >
               <div id="file-extensions">
                 ${facetData?.ext && facetData.ext.length > 0 ? html`
@@ -105,7 +100,7 @@ export class SearchView extends SignalWatcher(LitElement) {
               </div>
               <div id="code-results">
                 ${results.map(r => html`
-                  <cs-result-group .result=${r}></cs-result-group>
+                  <cs-result-group .result=${r} ?no-context=${ctxLines <= 0}></cs-result-group>
                 `)}
               </div>
             </div>
@@ -125,14 +120,10 @@ export class SearchView extends SignalWatcher(LitElement) {
   }
 
   private addExtFilter(ext: string) {
-    const input = document.getElementById('searchbox') as HTMLInputElement | null;
-    if (!input) return;
-    // Add file filter to query text.
-    input.value = `file:${ext} ${input.value}`;
-    // Fire a search-input event to trigger search.
-    this.onSearchInput(new CustomEvent('search-input', {
-      detail: {value: input.value},
-    }));
+    // Query the search input component within our shadow root.
+    const searchInput = this.renderRoot.querySelector('cs-search-input') as import('../components/search-input.ts').SearchInput | null;
+    if (!searchInput) return;
+    searchInput.appendQuery(`file:${ext} `);
   }
 
   private onSearchInput(e: CustomEvent<{value: string}>) {
@@ -146,6 +137,87 @@ export class SearchView extends SignalWatcher(LitElement) {
       triggerSearch(text, this.currentOptions, this.currentFacets);
     }
   }
+
+  static styles = [
+    linkStyles,
+    labelStyles,
+    css`
+      :host {
+        display: block;
+        line-height: normal;
+        font-size: 13px;
+      }
+
+      #searcharea {
+        width: 100%;
+        max-width: 1200px;
+        margin-top: 30px;
+        margin-bottom: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+        padding: 20px;
+        background: var(--color-background);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        box-sizing: border-box;
+      }
+
+      #searcharea > div {
+        flex: 1 1 auto;
+      }
+
+      #resultbox {
+        padding: 1em 3em;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      #results {
+        margin-top: 10px;
+        outline: none;
+        /* despite 'tabindex' that lets it receive keystrokes */
+      }
+
+      #file-extensions,
+      #path-results {
+        margin-bottom: 15px;
+      }
+
+      #file-extensions button {
+        margin-left: 4px;
+      }
+
+      /* Footer */
+      #header {
+        font-size: 12px;
+        color: var(--color-foreground-subtle);
+        margin: 1em auto;
+        width: 40em;
+        text-align: center;
+      }
+
+      #header ul {
+        padding: 0;
+      }
+
+      #header li {
+        display: inline;
+      }
+
+      #header li:before {
+        content: "\u2219";
+        color: var(--color-foreground-subtle);
+        text-decoration: none;
+        margin: 5px;
+      }
+
+      #header li:first-child:before {
+        content: "";
+      }
+    `,
+  ];
 }
 
 /** Split a JSONL result path (repo/version/+/filepath) into components. */

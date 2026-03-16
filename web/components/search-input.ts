@@ -1,25 +1,21 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html, nothing} from 'lit';
+import {LitElement, html, css, nothing} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
+import {prefixedInputStyles} from '../shared-styles.ts';
 
 /**
  * Search input with debounced input events.
  *
  * Fires `search-input` custom event after debounce period.
  * The event detail contains the current input value.
- *
- * Renders light DOM matching the old templ structure:
- *   .search-inputs > .prefixed-input.filter-code > label + input#searchbox
  */
 @customElement('cs-search-input')
 export class SearchInput extends LitElement {
   @property() value = '';
   @property({type: Number}) debounce = 100;
   @property() error = '';
-
-  createRenderRoot() { return this; }
 
   private timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -60,7 +56,7 @@ export class SearchInput extends LitElement {
 
   private onInput() {
     if (this.timer) clearTimeout(this.timer);
-    const input = this.querySelector('#searchbox') as HTMLInputElement;
+    const input = this.renderRoot.querySelector('#searchbox') as HTMLInputElement;
     this.timer = setTimeout(() => {
       this.timer = null;
       this.dispatchEvent(new CustomEvent('search-input', {
@@ -76,7 +72,7 @@ export class SearchInput extends LitElement {
       // Immediate search on Enter.
       if (this.timer) clearTimeout(this.timer);
       this.timer = null;
-      const input = this.querySelector('#searchbox') as HTMLInputElement;
+      const input = this.renderRoot.querySelector('#searchbox') as HTMLInputElement;
       this.dispatchEvent(new CustomEvent('search-input', {
         detail: {value: input.value},
         bubbles: true,
@@ -85,8 +81,58 @@ export class SearchInput extends LitElement {
     }
   }
 
+  /** Append text to the search query and trigger a search. */
+  appendQuery(text: string) {
+    const input = this.renderRoot.querySelector('#searchbox') as HTMLInputElement;
+    if (!input) return;
+    input.value += text;
+    this.dispatchEvent(new CustomEvent('search-input', {
+      detail: {value: input.value},
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
   /** Focus the input. */
   focus() {
-    (this.querySelector('#searchbox') as HTMLInputElement)?.focus();
+    (this.renderRoot.querySelector('#searchbox') as HTMLInputElement)?.focus();
   }
+
+  static styles = [
+    prefixedInputStyles,
+    css`
+      :host {
+        display: block;
+      }
+
+      #searchbox {
+        font-size: 16px;
+      }
+
+      .query-hint {
+        padding-top: 5px;
+        font-size: 11px;
+        font-style: italic;
+        color: var(--color-foreground-subtle);
+      }
+
+      .query-hint code {
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 3px;
+        background: var(--color-background-subtle);
+        font-style: normal;
+        margin: 0px 1px;
+        padding: 1px 3px;
+      }
+
+      #regex-error {
+        padding-top: 3px;
+      }
+
+      #errortext {
+        color: var(--color-foreground-error);
+        font-size: 14px;
+      }
+    `,
+  ];
 }

@@ -1,13 +1,12 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html} from 'lit';
+import {LitElement, html, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
+import {labelStyles} from '../shared-styles.ts';
 
 /**
  * Displays search result count and timing.
- * Uses light DOM, renders as #countarea content matching old templ:
- *   #countarea > #numresults + "matches" + #searchtimebox
  */
 @customElement('cs-result-stats')
 export class ResultStats extends LitElement {
@@ -15,8 +14,6 @@ export class ResultStats extends LitElement {
   @property({type: Number}) timeMs = 0;
   @property({type: Boolean}) truncated = false;
   @property({type: Boolean}) loading = false;
-
-  createRenderRoot() { return this; }
 
   render() {
     if (this.loading) {
@@ -33,4 +30,17 @@ export class ResultStats extends LitElement {
       </div>
     `;
   }
+
+  static styles = [
+    labelStyles,
+    css`
+      :host {
+        display: block;
+      }
+
+      #countarea {
+        text-align: right;
+      }
+    `,
+  ];
 }

@@ -3,10 +3,11 @@
 
 // SPA shell: routes to view components based on current URL.
 
-import {LitElement, html} from 'lit';
+import {LitElement, html, css} from 'lit';
 import {customElement} from 'lit/decorators.js';
 import {SignalWatcher} from '@lit-labs/signals';
 import {currentRoute} from './router.ts';
+import {linkStyles} from './shared-styles.ts';
 
 // Import global styles.
 import './codesearch.css';
@@ -21,12 +22,9 @@ export {RepoSelect} from './repo-select.ts';
 /**
  * Top-level application shell.
  * Reads the current route signal and renders the appropriate view.
- * Uses light DOM so global CSS applies.
  */
 @customElement('cs-app')
 export class CsApp extends SignalWatcher(LitElement) {
-  createRenderRoot() { return this; }
-
   render() {
     const route = currentRoute.get();
     switch (route.name) {
@@ -40,4 +38,13 @@ export class CsApp extends SignalWatcher(LitElement) {
         return html`<div class="placeholder">Not found</div>`;
     }
   }
+
+  static styles = [
+    linkStyles,
+    css`
+      :host {
+        display: block;
+      }
+    `,
+  ];
 }

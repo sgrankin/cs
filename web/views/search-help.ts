@@ -1,17 +1,15 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html} from 'lit';
+import {LitElement, html, css} from 'lit';
 import {customElement} from 'lit/decorators.js';
+import {linkStyles} from '../shared-styles.ts';
 
 /**
  * Help text displayed when no query is entered.
- * Uses light DOM matching the old templ #helparea structure.
  */
 @customElement('cs-search-help')
 export class SearchHelp extends LitElement {
-  createRenderRoot() { return this; }
-
   render() {
     return html`
       <div id="helparea">
@@ -55,4 +53,25 @@ export class SearchHelp extends LitElement {
       </div>
     `;
   }
+
+  static styles = [
+    linkStyles,
+    css`
+      #helparea {
+        width: 60em;
+        margin: auto;
+        color: #999;
+        padding-bottom: 100px;
+      }
+
+      .helpsection {
+        margin: auto;
+        text-align: center;
+      }
+
+      #helparea table {
+        width: 100%;
+      }
+    `,
+  ];
 }

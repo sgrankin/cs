@@ -1,9 +1,10 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html} from 'lit';
+import {LitElement, html, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import type {SearchOptions} from '../query.ts';
+import {tooltipStyles, labelStyles} from '../shared-styles.ts';
 
 /** Init data embedded by the server in window.__CS_INIT. */
 interface InitData {
@@ -18,14 +19,10 @@ function getInitData(): InitData {
  * Case sensitivity and literal mode controls.
  *
  * Fires `options-change` custom event when toggles change.
- * Renders light DOM matching the old templ structure:
- *   .search-options > .search-option elements with radios and checkboxes
  */
 @customElement('cs-search-options')
 export class SearchOptionsComponent extends LitElement {
   @property({type: Object}) options: SearchOptions = {};
-
-  createRenderRoot() { return this; }
 
   render() {
     const foldCase = this.options.caseSensitive ? 'false' : 'auto';
@@ -119,4 +116,29 @@ export class SearchOptionsComponent extends LitElement {
       composed: true,
     }));
   }
+
+  static styles = [
+    tooltipStyles,
+    labelStyles,
+    css`
+      :host {
+        display: block;
+      }
+
+      .search-options {
+        margin: 0;
+        font-size: 12px;
+        line-height: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: end;
+        align-items: center;
+        gap: 10pt;
+      }
+
+      .search-option {
+        white-space: nowrap;
+      }
+    `,
+  ];
 }
