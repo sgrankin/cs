@@ -285,24 +285,61 @@ Keep file view and search snippet components separate — different contexts (fu
 
 ## Phase 4: Cleanup & Polish
 
+**Status**: In progress. SPA serves all routes. Shadow DOM migration done. Facet pills done. Feature parity gaps identified.
+
 Each item is independent — one at a time, each a separate commit. No big batch.
 
-### Remove old frontend
+### Completed
+- [x] SPA serves `/search`, `/view/`, `/about` (replaces old handlers)
+- [x] Shadow DOM migration — all components use Lit best practices
+- [x] Shared styles module (`web/shared-styles.ts`)
+- [x] Facet pill panel with extension + repo filters via `f.ext`/`f.repo` params
+- [x] MaxMatches enforcement fixed
+- [x] Embedded init data (`window.__CS_INIT` with repo list)
+
+### Feature parity gaps (see `specs/feature-parity.md` for full comparison)
+
+**Search page:**
+- [ ] Page title updates with query ("query · code search") — #23
+- [ ] Path/directory prefix facet in backend — #21
+- [ ] Facet re-filtering: clicking a facet removes other options (known UX issue, defer)
+
+**File view:**
+- [ ] Syntax highlighting (tree-sitter WASM or server-side fallback) — #29
+- [ ] Keyboard shortcuts (/, ?, v, n/p, Enter, Escape) — #24
+- [ ] External source links (GitHub URL generation) — #25
+- [ ] Help modal overlay — #26
+- [ ] Text selection actions (search selected, next/prev match) — #27
+- [ ] README detection in directory listings — #28
+- [ ] Scroll-to-line behavior (1/3 viewport positioning)
+
+**Other:**
+- [ ] About page content — #30
+- [ ] Component responsibility refactoring — #19
+
+### Remove old frontend (after parity achieved)
 - Delete: `web/codesearch_ui.tsx`, `web/fileview.ts`, `web/codesearch_ui.test.ts`
 - Delete: `server/views/` (all templ files), `server/searchview.go`
 - Delete: `server/chroma/`, `server/gencss/`, `web/syntax-light.css`, `web/syntax-dark.css`
 - Remove deps: `htmx.org` from package.json, `chroma` and `templ` from go.mod
-- Replace any remaining server-rendered HTML with Go `html/template`
 
-### Polish items (each independent)
-- PWA manifest (`manifest.json`: app name, icons, `display: standalone` for desktop/standalone app). No service worker.
+### Future polish (post-parity)
+- PWA manifest (`manifest.json`: app name, icons, `display: standalone`). No service worker.
 - Code splitting: lazy-load file view, tree-sitter grammars
-- CSS: migrate existing styles into component shadow DOM piecemeal, then clean up. Theme is a light adjustment on current look (softer/less-bright, system7/win2k-ish). No big-bang token system rewrite.
-- Keyboard shortcuts: focus search, navigate results
+- Theme adjustment (softer/less-bright, system7/win2k-ish)
 - Accessibility: ARIA roles on custom components
-- OpenSearch: keep `opensearch.xml`
 
 ---
+
+## Architecture Decisions (made during implementation)
+
+- **Shadow DOM** for all Lit components (Lit best practice). Shared styles via `web/shared-styles.ts`.
+- **Light DOM** only for `createRenderRoot` — removed; not used anymore.
+- **JSONL streaming** (not SSE) — simpler, works with `fetch()` + `ReadableStream`.
+- **Batch signal updates** — results collected during stream, set once on done event. Avoids render thrashing.
+- **Ordered streaming** — per-repo channels drained in sorted order. Deterministic output.
+- **esbuild tree-shaking** — side-effect imports of Lit components get dropped. Must re-export (`export {Class} from '...'`).
+- **Facets use URL params** (`f.ext`, `f.repo`, `f.path`) not query text munging.
 
 ## Risk Areas
 
@@ -310,17 +347,11 @@ Each item is independent — one at a time, each a separate commit. No big batch
 
 2. **Virtual scrolling** — `@lit-labs/virtualizer` with variable-height result groups. Test with 500+ groups.
 
-3. **Query parser parity** — TS parser must handle the same operator syntax as `server/query.go`. Share test cases between Go and TS tests.
+3. **Query parser parity** — TS parser must handle the same operator syntax as `server/query.go`. Test cases ported from Go for parity.
 
 ## Testing
 
-- Keep the existing custom test harness (Playwright + V8 coverage). `@web/test-runner` was tried and rejected.
+- Custom test harness (Playwright + V8 coverage). `@web/test-runner` was tried and rejected.
 - Build and test one component at a time, then integrate.
 - Playwright MCP for visual verification during development.
-
-## Ordering
-
-- Phase 0 (Go API) and Phase 1 (TS infrastructure) can proceed in parallel
-- Phase 2 depends on both Phase 0 and Phase 1
-- Phase 3 depends on Phase 1 (file view uses `/raw/` and router, not the search API)
-- Phase 4 after Phase 2 + Phase 3
+- Every feature needs at least one test case.
