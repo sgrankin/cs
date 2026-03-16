@@ -15,6 +15,13 @@ export async function testDirListingRendersEntries(t: T) {
     `) as DirListing;
     const links = el.renderRoot.querySelectorAll('a');
     eq(links.length, 3, "should render 3 entries");
+    // Sorted: sub/ (dir first), then files alphabetically by localeCompare.
+    eq(links[0].textContent, "sub/", "first entry is dir");
+    eq(links[0].getAttribute('href'), "/view/repo@v/+/dir/sub/", "dir href");
+    eq(links[1].textContent, "main.go", "second entry");
+    eq(links[1].getAttribute('href'), "/view/repo@v/+/dir/main.go", "file href");
+    eq(links[2].textContent, "README.md", "third entry");
+    eq(links[2].getAttribute('href'), "/view/repo@v/+/dir/README.md", "file href 2");
 }
 
 export async function testDirListingSortsDirsFirst(t: T) {
@@ -29,6 +36,8 @@ export async function testDirListingSortsDirsFirst(t: T) {
     eq(links[0].classList.contains('dir'), true, "first is dir");
     eq(links[0].textContent, "a_dir/", "dir sorted alphabetically");
     eq(links[1].classList.contains('file'), true, "second is file");
+    eq(links[1].textContent, "b_file.go", "second is b_file.go");
+    eq(links[2].textContent, "z_file.go", "third is z_file.go");
 }
 
 export async function testDirListingLinksUseBasePath(t: T) {

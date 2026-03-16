@@ -43,9 +43,16 @@ export async function testFacetPanelSortsByCount(t: T) {
         <cs-facet-panel .facets=${sampleFacets}></cs-facet-panel>
     `) as FacetPanel;
     const pills = Array.from(el.renderRoot.querySelectorAll('.section:first-child .pill'));
-    // Should be sorted: .go 12, .py 5, .rs 3
-    eq(pills[0].textContent?.trim().startsWith('.go'), true, "first pill is .go (highest count)");
-    eq(pills[2].textContent?.trim().startsWith('.rs'), true, "last pill is .rs (lowest count)");
+    eq(pills.length, 3, "3 extension pills");
+    // Should be sorted by count descending: .go 12, .py 5, .rs 3.
+    // Each pill has format: "{ext} {count}" with a .count span inside.
+    eq(pills[0].querySelector('.count')!.textContent, "12", "first pill count");
+    eq(pills[1].querySelector('.count')!.textContent, "5", "second pill count");
+    eq(pills[2].querySelector('.count')!.textContent, "3", "third pill count");
+    // Check extension values from the full button text.
+    eq(pills[0].textContent!.trim().startsWith(".go"), true, "first pill is .go");
+    eq(pills[1].textContent!.trim().startsWith(".py"), true, "second pill is .py");
+    eq(pills[2].textContent!.trim().startsWith(".rs"), true, "third pill is .rs");
 }
 
 export async function testFacetPanelShowsActivePill(t: T) {
@@ -55,7 +62,7 @@ export async function testFacetPanelShowsActivePill(t: T) {
     `) as FacetPanel;
     const activePills = el.renderRoot.querySelectorAll('.pill.active');
     eq(activePills.length, 1, "one active pill");
-    eq(activePills[0].textContent?.trim().startsWith('.py'), true, ".py is active");
+    eq(activePills[0].textContent!.trim().startsWith(".py"), true, ".py is active");
 }
 
 export async function testFacetPanelFiresToggle(t: T) {
@@ -71,7 +78,6 @@ export async function testFacetPanelFiresToggle(t: T) {
     const firstPill = el.renderRoot.querySelector('.pill') as HTMLButtonElement;
     firstPill.click();
 
-    eq(detail !== null, true, "facet-toggle event fired");
     eq(detail.key, "f.ext", "key is f.ext");
     eq(detail.value, ".go", "value is .go (first by count)");
 }

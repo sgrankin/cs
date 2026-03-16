@@ -195,5 +195,5 @@ export async function testCodeViewerEmptyContent(t: T) {
 
     // The viewer div should still exist.
     const viewer = el.renderRoot.querySelector('.viewer');
-    eq(viewer !== null, true, "viewer container present");
+    eq(viewer!.tagName, "DIV", "viewer container present");
 }
