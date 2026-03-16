@@ -6,6 +6,7 @@ package server
 import (
 	"context"
 	"expvar"
+	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -60,8 +61,20 @@ func serveLivereload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.WriteHeader(http.StatusOK)
-	http.NewResponseController(w).Flush()
-	<-r.Context().Done()
+	rc := http.NewResponseController(w)
+	rc.Flush()
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-ticker.C:
+			// SSE comment keeps the connection alive.
+			fmt.Fprint(w, ": keepalive\n\n")
+			rc.Flush()
+		}
+	}
 }
 
 var withCompression func(http.Handler) http.Handler
