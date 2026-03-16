@@ -9,6 +9,7 @@ import {currentRoute} from './router.ts';
 import type {SearchOptions} from './query.ts';
 import {searchStream, type ResultEvent, type FileMatchEvent, type FacetsEvent, type DoneEvent} from './api.ts';
 import {SearchController, type SearchEffect} from './search-controller.ts';
+import {SearchExecutor, type SearchUpdate} from './search-executor.ts';
 
 // --- Search state ---
 
@@ -73,51 +74,46 @@ export async function executeSearch(): Promise<void> {
   const route = currentRoute.get();
   const params = new URLSearchParams(route.params);
 
-  searchLoading.set(true);
-  searchError.set(null);
-  searchResults.set([]);
-  fileResults.set([]);
-  facets.set(null);
-  searchDone.set(null);
+  const executor = new SearchExecutor();
+  applySearchUpdate(executor.start());
 
-  // Collect results in local arrays, then set signals once at the end.
-  // Per-event signal updates cause render thrashing with large result sets.
-  const collectedResults: ResultEvent[] = [];
-  const collectedFiles: FileMatchEvent[] = [];
-  let collectedFacets: FacetsEvent | null = null;
+  const flushInterval = setInterval(() => {
+    const update = executor.flush();
+    if (update) applySearchUpdate(update);
+  }, 100);
 
   try {
     await searchStream(params, {
-      onResult(event) {
-        collectedResults.push(event);
-      },
-      onFile(event) {
-        collectedFiles.push(event);
-      },
-      onFacets(event) {
-        collectedFacets = event;
-      },
+      onResult(event) { executor.onResult(event); },
+      onFile(event) { executor.onFile(event); },
+      onFacets(event) { applySearchUpdate(executor.onFacets(event)); },
       onDone(event) {
-        // Flush all collected results to signals at once.
-        searchResults.set(collectedResults);
-        fileResults.set(collectedFiles);
-        facets.set(collectedFacets);
-        searchDone.set(event);
-        searchLoading.set(false);
+        clearInterval(flushInterval);
+        applySearchUpdate(executor.onDone(event));
       },
       onError(error) {
+        clearInterval(flushInterval);
         if (!abort.signal.aborted) {
-          searchError.set(error.message);
-          searchLoading.set(false);
+          applySearchUpdate(executor.onError(error.message));
         }
       },
     }, abort.signal);
   } catch (e) {
+    clearInterval(flushInterval);
     if (!abort.signal.aborted) {
-      searchError.set(e instanceof Error ? e.message : String(e));
-      searchLoading.set(false);
+      applySearchUpdate(executor.onError(e instanceof Error ? e.message : String(e)));
     }
   }
+}
+
+/** Apply a partial search state update to signals. */
+function applySearchUpdate(update: SearchUpdate): void {
+  if ('results' in update) searchResults.set(update.results!);
+  if ('files' in update) fileResults.set(update.files!);
+  if ('facets' in update) facets.set(update.facets!);
+  if ('done' in update) searchDone.set(update.done!);
+  if ('loading' in update) searchLoading.set(update.loading!);
+  if ('error' in update) searchError.set(update.error!);
 }
 
 // --- Search controller and debounce wiring ---

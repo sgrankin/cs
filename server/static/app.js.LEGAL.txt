@@ -1,5 +1,19 @@
 Bundled license information:
 
+@lit-labs/virtualizer/layouts/shared/SizeCache.js:
+@lit-labs/virtualizer/layouts/shared/BaseLayout.js:
+@lit-labs/virtualizer/layouts/flow.js:
+@lit/reactive-element/decorators/query-assigned-elements.js:
+@lit-labs/virtualizer/events.js:
+@lit-labs/virtualizer/ScrollerController.js:
+@lit-labs/virtualizer/Virtualizer.js:
+@lit-labs/virtualizer/virtualize.js:
+  /**
+   * @license
+   * Copyright 2021 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   */
+
 @lit/reactive-element/css-tag.js:
   /**
    * @license
@@ -21,6 +35,7 @@ lit-element/lit-element.js:
 @lit/reactive-element/decorators/query-assigned-nodes.js:
 lit-html/directive.js:
 lit-html/async-directive.js:
+lit-html/directives/repeat.js:
   /**
    * @license
    * Copyright 2017 Google LLC
@@ -31,13 +46,6 @@ lit-html/is-server.js:
   /**
    * @license
    * Copyright 2022 Google LLC
-   * SPDX-License-Identifier: BSD-3-Clause
-   */
-
-@lit/reactive-element/decorators/query-assigned-elements.js:
-  /**
-   * @license
-   * Copyright 2021 Google LLC
    * SPDX-License-Identifier: BSD-3-Clause
    */
 

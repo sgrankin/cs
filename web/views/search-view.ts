@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 import {LitElement, html, css} from 'lit';
+import {virtualize} from '@lit-labs/virtualizer/virtualize.js';
 import {customElement} from 'lit/decorators.js';
 import {SignalWatcher} from '@lit-labs/signals';
 import {currentRoute} from '../router.ts';
@@ -123,9 +124,12 @@ export class SearchView extends SignalWatcher(LitElement) {
                 })}
               </div>
               <div id="code-results">
-                ${results.map(r => html`
-                  <cs-result-group .result=${r} ?no-context=${ctxLines <= 0}></cs-result-group>
-                `)}
+                ${virtualize({
+                  items: results,
+                  renderItem: (r) => html`
+                    <cs-result-group .result=${r} ?no-context=${ctxLines <= 0}></cs-result-group>
+                  `,
+                })}
               </div>
             </div>
           </div>
@@ -243,6 +247,12 @@ export class SearchView extends SignalWatcher(LitElement) {
         margin-top: 10px;
         outline: none;
         /* despite 'tabindex' that lets it receive keystrokes */
+      }
+
+      /* Virtualizer positions children absolutely; they need explicit width. */
+      #code-results > cs-result-group {
+        width: 100%;
+        box-sizing: border-box;
       }
 
       #path-results {
