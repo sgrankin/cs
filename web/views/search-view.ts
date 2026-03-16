@@ -10,6 +10,7 @@ import {
   contextLines,
 } from '../state.ts';
 import type {SearchOptions} from '../query.ts';
+import {splitResultPath} from '../api.ts';
 import {linkStyles, labelStyles} from '../shared-styles.ts';
 
 // Import child components.
@@ -90,7 +91,7 @@ export class SearchView extends SignalWatcher(LitElement) {
             >
               <div id="path-results">
                 ${files.map(f => {
-                  const {repo, version, filePath} = splitFilePath(f.path);
+                  const {repo, version, filePath} = splitResultPath(f.path);
                   return html`
                     <filename-match
                       text=${filePath}
@@ -228,17 +229,3 @@ export class SearchView extends SignalWatcher(LitElement) {
   ];
 }
 
-/** Split a JSONL result path (repo/version/+/filepath) into components. */
-function splitFilePath(path: string): {repo: string; version: string; filePath: string} {
-  const plusIdx = path.indexOf('/+/');
-  if (plusIdx === -1) return {repo: path, version: '', filePath: ''};
-  const before = path.slice(0, plusIdx);
-  const filePath = path.slice(plusIdx + 3);
-  const slashIdx = before.indexOf('/');
-  if (slashIdx === -1) return {repo: before, version: '', filePath};
-  return {
-    repo: before.slice(0, slashIdx),
-    version: before.slice(slashIdx + 1),
-    filePath,
-  };
-}
