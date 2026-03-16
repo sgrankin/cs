@@ -33,18 +33,23 @@ var spaTemplate = template.Must(template.New("spa").Parse(`<!DOCTYPE html>
 {{if .DevMode}}
 <script>
 (function() {
+	var version = null;
 	var reconnectDelay = 100;
 	function connect() {
 		var es = new EventSource("/debug/livereload");
+		es.onmessage = function(e) {
+			if (version === null) {
+				version = e.data;
+				reconnectDelay = 100;
+			} else if (e.data !== version) {
+				location.reload();
+			}
+		};
 		es.onerror = function() {
 			es.close();
 			setTimeout(function() {
-				reconnectDelay = Math.min(reconnectDelay * 2, 2000);
-				fetch("/debug/livereload").then(function() {
-					location.reload();
-				}).catch(function() {
-					connect();
-				});
+				reconnectDelay = Math.min(reconnectDelay * 2, 5000);
+				connect();
 			}, reconnectDelay);
 		};
 	}
