@@ -157,6 +157,16 @@ export function testBuildSearchParams(t: T) {
         eq(params.getAll("f.repo"), ["org/foo"]);
     });
 
+    t.run("with repos", () => {
+        const params = buildSearchParams("hello", {repos: ["org/foo", "org/bar"]});
+        eq(params.getAll("repo"), ["org/foo", "org/bar"]);
+    });
+
+    t.run("empty repos omitted", () => {
+        const params = buildSearchParams("hello", {repos: []});
+        eq(params.getAll("repo"), []);
+    });
+
     t.run("empty query", () => {
         const params = buildSearchParams("");
         eq(params.get("q"), null);

@@ -70,7 +70,7 @@ export class SearchOptionsComponent extends LitElement {
         </div>
         <div class="search-option">
           <span class="label">Repo:</span>
-          <repo-select .groups=${this.repos}></repo-select>
+          <repo-select .groups=${this.repos} @change=${this.onRepoChange}></repo-select>
         </div>
       </div>
     `;
@@ -84,6 +84,13 @@ export class SearchOptionsComponent extends LitElement {
 
   private toggleLiteral() {
     this.options = {...this.options, literal: !this.options.literal};
+    this.fireChange();
+  }
+
+  private onRepoChange() {
+    const repoSelect = this.renderRoot.querySelector('repo-select') as any;
+    const repos: string[] = repoSelect?.selectedRepos ?? [];
+    this.options = {...this.options, repos: repos.length > 0 ? repos : undefined};
     this.fireChange();
   }
 

@@ -124,6 +124,7 @@ function pushOp(ops: Record<string, string[]>, key: string, value: string): void
 export interface SearchOptions {
   caseSensitive?: boolean;
   literal?: boolean;
+  repos?: string[];
 }
 
 /**
@@ -149,6 +150,11 @@ export function buildSearchParams(
   }
   if (options.caseSensitive) {
     params.set('fold_case', 'false');
+  }
+  if (options.repos?.length) {
+    for (const r of options.repos) {
+      params.append('repo', r);
+    }
   }
 
   // Append facet filters.

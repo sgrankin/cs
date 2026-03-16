@@ -51,6 +51,33 @@ export async function testSearchOptionsFiresOptionsChange(t: T) {
     eq(detail.caseSensitive, true, "should be case-sensitive");
 }
 
+export async function testSearchOptionsRepoChangeFiresOptionsChange(t: T) {
+    const repos = [
+        {label: "github.com/org/", repos: ["github.com/org/alpha", "github.com/org/beta"]},
+    ];
+    const el = await render(html`
+        <cs-search-options .repos=${repos}></cs-search-options>
+    `) as SearchOptionsComponent;
+
+    let detail: any = null;
+    el.addEventListener('options-change', ((e: CustomEvent) => {
+        detail = e.detail;
+    }) as EventListener);
+
+    // Open the repo selector and toggle the first option.
+    const repoSelect = el.renderRoot.querySelector('repo-select')!;
+    const trigger = repoSelect.shadowRoot!.querySelector('.trigger') as HTMLElement;
+    trigger.click();
+    await new Promise(r => setTimeout(r, 0));
+    await (repoSelect as any).updateComplete;
+
+    const checkbox = repoSelect.shadowRoot!.querySelector('.option input') as HTMLInputElement;
+    checkbox.click();
+    await (repoSelect as any).updateComplete;
+
+    eq(detail?.repos, ["github.com/org/alpha"]);
+}
+
 export async function testSearchOptionsCaseSensitiveProp(t: T) {
     const el = await render(html`
         <cs-search-options .options=${{caseSensitive: true}}></cs-search-options>
