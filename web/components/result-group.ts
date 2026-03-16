@@ -58,6 +58,7 @@ export class ResultGroup extends LitElement {
                   const end = isMatch && bounds ? bounds[0][1] : undefined;
                   return html`
                     <match-line
+                      class=${isMatch ? 'match-hit' : 'context'}
                       .lineNo=${lno}
                       text=${text}
                       href=${href}
@@ -142,8 +143,8 @@ export class ResultGroup extends LitElement {
         background-color: var(--color-background-subtle);
       }
 
-      /* No-context mode: collapse match groups into compact form. */
-      :host([no-context]) .match .contents > * {
+      /* No-context mode: hide context lines, show only match lines. */
+      :host([no-context]) .match .contents > .context {
         display: none;
       }
 

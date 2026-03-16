@@ -3,27 +3,31 @@
 
 import {LitElement, html, css} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
+import {splitResultPath} from '../api.ts';
 import '../components/breadcrumbs.ts';
 import '../components/dir-listing.ts';
 import '../components/code-viewer.ts';
 import '../components/help-modal.ts';
 
 /**
- * Parse the view path (repo@version/+/filepath) into its components.
- * Returns {repo, version, filePath} or null if the path can't be parsed.
+ * Parse the view path into {repo, version, filePath}.
+ * Handles both formats:
+ *   - repo/version/+/filepath (from search result links)
+ *   - repo@version/+/filepath (from Go viewPath)
  */
-function parsePath(path: string): {repo: string; version: string; filePath: string} | null {
+function parsePath(path: string): {repo: string; version: string; filePath: string} {
+  // Try @ separator first (Go viewPath format).
   const plusIdx = path.indexOf('/+/');
-  if (plusIdx === -1) return null;
-  const before = path.slice(0, plusIdx);
-  const filePath = path.slice(plusIdx + 3);
-  const atIdx = before.lastIndexOf('@');
-  if (atIdx === -1) return null;
-  return {
-    repo: before.slice(0, atIdx),
-    version: before.slice(atIdx + 1),
-    filePath,
-  };
+  if (plusIdx >= 0) {
+    const before = path.slice(0, plusIdx);
+    const filePath = path.slice(plusIdx + 3);
+    const atIdx = before.lastIndexOf('@');
+    if (atIdx >= 0) {
+      return {repo: before.slice(0, atIdx), version: before.slice(atIdx + 1), filePath};
+    }
+  }
+  // Fall back to slash separator (search result format).
+  return splitResultPath(path);
 }
 
 /**
@@ -111,9 +115,9 @@ export class FileView extends LitElement {
 
   render() {
     const parsed = parsePath(this.path);
-    const repo = parsed?.repo ?? '';
-    const version = parsed?.version ?? '';
-    const extUrl = parsed ? externalUrlTemplate(parsed.repo, parsed.version, parsed.filePath) : '';
+    const repo = parsed.repo;
+    const version = parsed.version;
+    const extUrl = externalUrlTemplate(parsed.repo, parsed.version, parsed.filePath);
 
     return html`
       <div class="file-view">

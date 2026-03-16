@@ -78,6 +78,7 @@ export class SearchInput extends LitElement {
     const input = this.renderRoot.querySelector('#searchbox') as HTMLInputElement;
     if (!input) return;
     input.value += text;
+    this.value = input.value;
     this.dispatchEvent(new CustomEvent('search-input', {
       detail: {value: input.value},
       bubbles: true,

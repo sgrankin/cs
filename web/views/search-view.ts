@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 import {LitElement, html, css} from 'lit';
-import {customElement} from 'lit/decorators.js';
+import {customElement, state} from 'lit/decorators.js';
 import {SignalWatcher} from '@lit-labs/signals';
 import {
   queryText, searchResults, limitedFileResults,
@@ -29,7 +29,7 @@ import './search-help.ts';
 @customElement('cs-search-view')
 export class SearchView extends SignalWatcher(LitElement) {
   private currentOptions: SearchOptions = {};
-  private activeFacets: Record<string, Set<string>> = {};
+  @state() private activeFacets: Record<string, Set<string>> = {};
 
   render() {
     const text = queryText.get();
