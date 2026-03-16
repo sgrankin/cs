@@ -117,12 +117,13 @@ func TestExtractQuery(t *testing.T) {
 
 func TestExtractQueryNewParams(t *testing.T) {
 	tests := []struct {
-		name    string
-		url     string
-		wantCtx int
-		wantMax int
-		wantExt []string
-		wantPfx []string
+		name     string
+		url      string
+		wantCtx  int
+		wantMax  int
+		wantExt  []string
+		wantPfx  []string
+		wantRepo []string
 	}{
 		{
 			name:    "context param",
@@ -143,6 +144,11 @@ func TestExtractQueryNewParams(t *testing.T) {
 			name:    "f.path facet",
 			url:     "/api/search?q=hello&f.path=src/&f.path=lib/",
 			wantPfx: []string{"src/", "lib/"},
+		},
+		{
+			name:     "f.repo facet",
+			url:      "/api/search?q=hello&f.repo=org/alpha&f.repo=org/beta",
+			wantRepo: []string{"org/alpha", "org/beta"},
 		},
 		{
 			name: "invalid context ignored",
@@ -171,6 +177,9 @@ func TestExtractQueryNewParams(t *testing.T) {
 			}
 			if !slices.Equal(q.FacetPaths, tc.wantPfx) {
 				t.Errorf("FacetPaths = %v, want %v", q.FacetPaths, tc.wantPfx)
+			}
+			if !slices.Equal(q.FacetRepos, tc.wantRepo) {
+				t.Errorf("FacetRepos = %v, want %v", q.FacetRepos, tc.wantRepo)
 			}
 		})
 	}

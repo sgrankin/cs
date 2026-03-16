@@ -89,6 +89,7 @@ context_lines=3
     "Tags": "",
     "NotTags": "",
     "RepoFilter": null,
+    "FacetRepos": null,
     "FacetExtensions": null,
     "FacetPaths": null,
     "FoldCase": false,

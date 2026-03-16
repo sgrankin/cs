@@ -68,9 +68,7 @@ func extractQuery(r *http.Request) (cs.Query, error) {
 	}
 
 	// Facet filters (for /api/search): exact-match, AND'd with operators.
-	if v, ok := params["f.repo"]; ok {
-		query.RepoFilter = append(query.RepoFilter, v...)
-	}
+	query.FacetRepos = params["f.repo"]
 	query.FacetExtensions = params["f.ext"]
 	query.FacetPaths = params["f.path"]
 

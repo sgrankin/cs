@@ -127,13 +127,11 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 	if err != nil {
 		return nil, err
 	}
-	var fixedRepoFilter *setFilter
-	if q.RepoFilter != nil {
-		fixedRepoFilter = newSetFilter(q.RepoFilter)
-	}
+	selectorFilter := newSetFilter(q.RepoFilter)
+	facetRepoFilter := newSetFilter(q.FacetRepos)
 	var searchers []*indexSearcher
 	for name, t := range si.trees {
-		if fixedRepoFilter.Accept([]byte(name)) && repoFilter.Accept([]byte(name)) {
+		if selectorFilter.Accept([]byte(name)) && facetRepoFilter.Accept([]byte(name)) && repoFilter.Accept([]byte(name)) {
 			searchers = append(searchers, t.indexSearcher)
 		}
 	}

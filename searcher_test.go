@@ -361,10 +361,14 @@ func TestSetFilter(t *testing.T) {
 		}
 	})
 
-	t.Run("empty rejects everything", func(t *testing.T) {
+	t.Run("empty returns nil", func(t *testing.T) {
 		f := newSetFilter(nil)
-		if f.Accept([]byte("anything")) {
-			t.Error("empty setFilter should reject everything")
+		if f != nil {
+			t.Error("newSetFilter(nil) should return nil")
+		}
+		// nil accepts everything (no filter applied).
+		if !f.Accept([]byte("anything")) {
+			t.Error("nil setFilter should accept anything")
 		}
 	})
 }

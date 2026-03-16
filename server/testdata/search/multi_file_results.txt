@@ -132,6 +132,7 @@ q=func
     "Tags": "",
     "NotTags": "",
     "RepoFilter": null,
+    "FacetRepos": null,
     "FacetExtensions": null,
     "FacetPaths": null,
     "FoldCase": false,

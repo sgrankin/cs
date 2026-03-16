@@ -39,10 +39,11 @@ type Query struct {
 	File, NotFile                []string
 	Repo, NotRepo, Tags, NotTags string
 
-	RepoFilter []string // Additional exact-match repository filter
+	RepoFilter []string // Repo selector: exact-match, scopes searchers.
 
 	// Facet filters: exact-match, AND'd with regex filters above.
 	// Multiple values within each facet OR together.
+	FacetRepos      []string // e.g. ["org/repo"] — from facet pill, scopes searchers
 	FacetExtensions []string // e.g. [".go", ".py"] — match file extension
 	FacetPaths      []string // e.g. ["src/", "lib/"] — match path prefix
 

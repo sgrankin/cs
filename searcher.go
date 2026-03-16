@@ -374,6 +374,9 @@ type setFilter struct {
 }
 
 func newSetFilter(options []string) *setFilter {
+	if len(options) == 0 {
+		return nil
+	}
 	accepted := map[string]bool{}
 	for _, v := range options {
 		accepted[v] = true
