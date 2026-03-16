@@ -15,6 +15,7 @@ import './codesearch.css';
 // Import view components.
 import './views/search-view.ts';
 import './views/file-view.ts';
+import './views/about-view.ts';
 
 // Re-export to prevent esbuild tree-shaking (side-effect: registers custom element).
 export {RepoSelect} from './repo-select.ts';
@@ -46,7 +47,7 @@ export class CsApp extends SignalWatcher(LitElement) {
       case 'view':
         return html`<cs-file-view .path=${route.path ?? ''}></cs-file-view>`;
       case 'about':
-        return html`<div class="placeholder">About</div>`;
+        return html`<cs-about-view></cs-about-view>`;
       default:
         return html`<div class="placeholder">Not found</div>`;
     }
