@@ -4,25 +4,21 @@
 /**
  * <repo-select> — a multi-select dropdown for repository filtering.
  *
- * Wraps a light-DOM <select multiple> and renders a searchable, grouped
- * checkbox dropdown in shadow DOM.  Selection changes are synced back to
- * the hidden <select> which dispatches "change" events for HTMX.
+ * Accepts repo data via the `groups` property. Renders a searchable,
+ * grouped checkbox dropdown. Fires "change" with selected repo values.
  *
- * Selection state is owned by this component; external mutations to the
- * <select> after upgrade are not observed.
- *
- * Usage (server-rendered):
- *   <repo-select>
- *     <select name="repo" multiple>
- *       <optgroup label="github.com/org/">
- *         <option value="github.com/org/repo" selected>repo</option>
- *       </optgroup>
- *     </select>
- *   </repo-select>
+ * Usage:
+ *   <repo-select .groups=${[{label: "github.com/org/", repos: ["github.com/org/repo"]}]}></repo-select>
  */
 
 import {LitElement, html, css, nothing} from "lit";
-import {customElement, state} from "lit/decorators.js";
+import {customElement, property, state} from "lit/decorators.js";
+
+/** Input format: matches server-side repoGroup. */
+export interface RepoGroup {
+    label: string;
+    repos: string[];
+}
 
 interface OptionItem {
     value: string;
@@ -31,67 +27,55 @@ interface OptionItem {
     selected: boolean;
 }
 
-interface OptionGroup {
+interface OptionGroupView {
     label: string;
     options: OptionItem[];
 }
 
 @customElement("repo-select")
 export class RepoSelect extends LitElement {
+    @property({type: Array}) groups: RepoGroup[] = [];
     @state() private _open = false;
     @state() private _search = "";
-    @state() private _options: OptionItem[] = [];
+    @state() private _selected = new Set<string>();
 
-    private _select: HTMLSelectElement | null = null;
+    private get _options(): OptionItem[] {
+        return this.groups.flatMap(g =>
+            g.repos.map(repo => ({
+                value: repo,
+                label: repo.split("/").pop() ?? repo,
+                group: g.label,
+                selected: this._selected.has(repo),
+            })),
+        );
+    }
 
     connectedCallback() {
         super.connectedCallback();
-        this._select = this.querySelector("select");
-        if (this._select) {
-            this._readOptions();
-        }
         document.addEventListener("click", this._onOutsideClick);
-        this.addEventListener("focusout", this._onFocusOut);
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
         document.removeEventListener("click", this._onOutsideClick);
-        this.removeEventListener("focusout", this._onFocusOut);
     }
 
-    private _readOptions() {
-        const opts: OptionItem[] = [];
-        for (const child of this._select!.children) {
-            if (child instanceof HTMLOptGroupElement) {
-                for (const opt of child.querySelectorAll("option")) {
-                    opts.push({
-                        value: opt.value,
-                        label: opt.textContent?.trim() || opt.value,
-                        group: child.label,
-                        selected: opt.selected,
-                    });
-                }
-            } else if (child instanceof HTMLOptionElement) {
-                opts.push({
-                    value: child.value,
-                    label: child.textContent?.trim() || child.value,
-                    group: "",
-                    selected: child.selected,
-                });
-            }
-        }
-        this._options = opts;
+    /** The currently selected repo values. */
+    get selectedRepos(): string[] {
+        return [...this._selected];
     }
 
     private get _buttonText(): string {
-        const selected = this._options.filter((o) => o.selected);
-        if (selected.length === 0) return "(all repositories)";
-        if (selected.length <= 4) return selected.map((o) => o.label).join(", ");
-        return `(${selected.length} repositories)`;
+        const count = this._selected.size;
+        if (count === 0) return "(all repositories)";
+        if (count <= 4) {
+            const options = this._options.filter(o => o.selected);
+            return options.map(o => o.label).join(", ");
+        }
+        return `(${count} repositories)`;
     }
 
-    private get _filteredGroups(): OptionGroup[] {
+    private get _filteredGroups(): OptionGroupView[] {
         const search = this._search.toLowerCase();
         const groups = new Map<string, OptionItem[]>();
         for (const opt of this._options) {
@@ -105,7 +89,8 @@ export class RepoSelect extends LitElement {
 
     private _onOutsideClick = (e: Event) => {
         if (!this._open) return;
-        if (!this.contains(e.target as Node)) {
+        // Use composedPath to correctly detect clicks inside nested shadow DOMs.
+        if (!e.composedPath().includes(this)) {
             this._open = false;
         }
     };
@@ -119,42 +104,44 @@ export class RepoSelect extends LitElement {
         }
     }
 
-    private _onFocusOut = (e: FocusEvent) => {
-        // Close dropdown when focus leaves the component entirely.
-        if (this._open && !this.contains(e.relatedTarget as Node)) {
-            this._open = false;
-        }
-    };
-
     private _toggleOption(value: string) {
-        this._options = this._options.map((o) => (o.value === value ? {...o, selected: !o.selected} : o));
-        this._syncToSelect();
+        const updated = new Set(this._selected);
+        if (updated.has(value)) {
+            updated.delete(value);
+        } else {
+            updated.add(value);
+        }
+        this._selected = updated;
+        this._fireChange();
     }
 
     private _selectAll() {
-        this._options = this._options.map((o) => ({...o, selected: true}));
-        this._syncToSelect();
+        this._selected = new Set(this._options.map(o => o.value));
+        this._fireChange();
     }
 
     private _deselectAll() {
-        this._options = this._options.map((o) => ({...o, selected: false}));
-        this._syncToSelect();
+        this._selected = new Set();
+        this._fireChange();
     }
 
     private _toggleGroup(label: string) {
-        const groupOpts = this._options.filter((o) => o.group === label);
-        const allSelected = groupOpts.every((o) => o.selected);
-        this._options = this._options.map((o) => (o.group === label ? {...o, selected: !allSelected} : o));
-        this._syncToSelect();
+        const groupValues = this._options.filter(o => o.group === label).map(o => o.value);
+        const allSelected = groupValues.every(v => this._selected.has(v));
+        const updated = new Set(this._selected);
+        for (const v of groupValues) {
+            if (allSelected) {
+                updated.delete(v);
+            } else {
+                updated.add(v);
+            }
+        }
+        this._selected = updated;
+        this._fireChange();
     }
 
-    private _syncToSelect() {
-        if (!this._select) return;
-        for (const opt of this._select.options) {
-            const item = this._options.find((o) => o.value === opt.value);
-            if (item) opt.selected = item.selected;
-        }
-        this._select.dispatchEvent(new Event("change", {bubbles: true}));
+    private _fireChange() {
+        this.dispatchEvent(new Event("change", {bubbles: true}));
     }
 
     private _onSearchInput(e: Event) {
@@ -178,7 +165,6 @@ export class RepoSelect extends LitElement {
                 <span class="caret">&#x25BE;</span>
             </button>
             ${this._open ? this._renderDropdown() : nothing}
-            <slot></slot>
         `;
     }
 
@@ -205,7 +191,7 @@ export class RepoSelect extends LitElement {
         `;
     }
 
-    private _renderGroup(g: OptionGroup) {
+    private _renderGroup(g: OptionGroupView) {
         if (!g.label) {
             return g.options.map((o) => this._renderOption(o));
         }
@@ -346,10 +332,6 @@ export class RepoSelect extends LitElement {
 
         .option input[type="checkbox"] {
             margin: 0;
-        }
-
-        ::slotted(select) {
-            display: none !important;
         }
     `;
 }

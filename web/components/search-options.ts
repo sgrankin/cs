@@ -70,26 +70,10 @@ export class SearchOptionsComponent extends LitElement {
         </div>
         <div class="search-option">
           <span class="label">Repo:</span>
-          <repo-select>
-            <select name="repo" id="repos" multiple>
-              ${this.renderRepoOptions()}
-            </select>
-          </repo-select>
+          <repo-select .groups=${this.repos}></repo-select>
         </div>
       </div>
     `;
-  }
-
-  private renderRepoOptions() {
-    if (!this.repos.length) return '';
-    return this.repos.map(group => html`
-      <optgroup label=${group.label}>
-        ${group.repos.map(repo => {
-          const base = repo.split('/').pop() ?? repo;
-          return html`<option value=${repo} data-tokens=${repo}>${base}</option>`;
-        })}
-      </optgroup>
-    `);
   }
 
   private setCase(value: string) {

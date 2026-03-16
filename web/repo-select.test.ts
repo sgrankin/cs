@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 import {T, eq, render} from "@testing/harness";
-import {html, TemplateResult} from "lit";
+import {html} from "lit";
 import "./repo-select.ts";
-import type {RepoSelect} from "./repo-select.ts";
+import type {RepoSelect, RepoGroup} from "./repo-select.ts";
 
-function selectEl(el: RepoSelect): HTMLSelectElement {
-    return el.querySelector("select")!;
-}
+const GROUPED: RepoGroup[] = [
+    {label: "github.com/org/", repos: ["github.com/org/alpha", "github.com/org/beta", "github.com/org/gamma"]},
+    {label: "github.com/other/", repos: ["github.com/other/delta"]},
+];
 
 function triggerButton(el: RepoSelect): HTMLButtonElement {
     return el.shadowRoot!.querySelector(".trigger")!;
@@ -30,6 +31,12 @@ function buttonText(el: RepoSelect): string {
     return triggerButton(el).textContent!.trim().replace(/\s+/g, " ");
 }
 
+function checkedValues(el: RepoSelect): string[] {
+    return optionLabels(el)
+        .filter(l => l.querySelector("input")!.checked)
+        .map(l => l.textContent!.trim());
+}
+
 async function click(target: HTMLElement) {
     target.click();
     await new Promise((r) => setTimeout(r, 0));
@@ -44,54 +51,40 @@ async function search(el: RepoSelect, query: string) {
     await (el as any).updateComplete;
 }
 
-// mkGrouped creates a repo-select with two groups (org: alpha/beta/gamma, other: delta).
-async function mkGrouped(opts?: {selected?: string[]}): Promise<RepoSelect> {
-    const selected = new Set(opts?.selected ?? []);
+async function mkGrouped(): Promise<RepoSelect> {
     return (await render(html`
-        <repo-select>
-            <select name="repo" multiple>
-                <optgroup label="github.com/org/">
-                    <option value="github.com/org/alpha" ?selected=${selected.has("alpha")}>alpha</option>
-                    <option value="github.com/org/beta" ?selected=${selected.has("beta")}>beta</option>
-                    <option value="github.com/org/gamma" ?selected=${selected.has("gamma")}>gamma</option>
-                </optgroup>
-                <optgroup label="github.com/other/">
-                    <option value="github.com/other/delta" ?selected=${selected.has("delta")}>delta</option>
-                </optgroup>
-            </select>
-        </repo-select>
+        <repo-select .groups=${GROUPED}></repo-select>
     `)) as RepoSelect;
 }
 
-// mkFlat creates a repo-select with ungrouped options.
-async function mkFlat(n: number, allSelected = false): Promise<RepoSelect> {
-    const options: TemplateResult[] = [];
-    for (let i = 0; i < n; i++) {
-        const name = String.fromCharCode(97 + i); // a, b, c, ...
-        options.push(html`<option value=${name} ?selected=${allSelected}>${name}</option>`);
-    }
+async function mkFlat(n: number): Promise<RepoSelect> {
+    const groups: RepoGroup[] = [{
+        label: "",
+        repos: Array.from({length: n}, (_, i) => String.fromCharCode(97 + i)),
+    }];
     return (await render(html`
-        <repo-select>
-            <select name="repo" multiple>${options}</select>
-        </repo-select>
+        <repo-select .groups=${groups}></repo-select>
     `)) as RepoSelect;
 }
 
 export async function testRepoSelectButtonText(t: T) {
-    const cases = [
-        {name: "none selected", selected: [] as string[], want: "(all repositories) ▾"},
-        {name: "one selected", selected: ["alpha"], want: "alpha ▾"},
-        {name: "two selected", selected: ["alpha", "beta"], want: "alpha, beta ▾"},
-        {name: "four selected", selected: ["alpha", "beta", "gamma", "delta"], want: "alpha, beta, gamma, delta ▾"},
-    ];
-    for (const c of cases) {
-        t.run(c.name, async () => {
-            const el = await mkGrouped({selected: c.selected});
-            eq(buttonText(el), c.want);
-        });
-    }
+    t.run("none selected", async () => {
+        const el = await mkGrouped();
+        eq(buttonText(el), "(all repositories) ▾");
+    });
+    t.run("one selected", async () => {
+        const el = await mkGrouped();
+        await click(triggerButton(el));
+        optionLabels(el)[0].querySelector("input")!.click();
+        await (el as any).updateComplete;
+        eq(buttonText(el), "alpha ▾");
+    });
     t.run("count when > 4", async () => {
-        const el = await mkFlat(5, true);
+        const el = await mkFlat(5);
+        await click(triggerButton(el));
+        // Select all 5
+        const selectAllBtn = el.shadowRoot!.querySelector<HTMLButtonElement>(".actions button")!;
+        await click(selectAllBtn);
         eq(buttonText(el), "(5 repositories) ▾");
     });
 }
@@ -152,42 +145,37 @@ export async function testRepoSelectDropdown(t: T) {
 }
 
 export async function testRepoSelectInteractions(t: T) {
-    t.run("toggle option updates hidden select", async () => {
+    t.run("toggle option updates selectedRepos", async () => {
         const el = await mkGrouped();
         await click(triggerButton(el));
         optionLabels(el)[0].querySelector("input")!.click();
         await (el as any).updateComplete;
-        const sel = selectEl(el);
-        eq([...sel.options].map(o => o.selected), [true, false, false, false], "first toggled on");
+        eq(el.selectedRepos, ["github.com/org/alpha"]);
     });
 
     t.run("select all / deselect all", async () => {
         const el = await mkGrouped();
         await click(triggerButton(el));
         const [selectAll, deselectAll] = el.shadowRoot!.querySelectorAll<HTMLButtonElement>(".actions button");
-        const sel = selectEl(el);
 
         await click(selectAll);
-        const afterSelect = [...sel.options].map((o) => o.selected);
-        eq(afterSelect, [true, true, true, true], "all selected");
+        eq(checkedValues(el), ["alpha", "beta", "gamma", "delta"], "all selected");
 
         await click(deselectAll);
-        const afterDeselect = [...sel.options].map((o) => o.selected);
-        eq(afterDeselect, [false, false, false, false], "all deselected");
+        eq(checkedValues(el), [], "all deselected");
     });
 
     t.run("group header toggles group", async () => {
         const el = await mkGrouped();
         await click(triggerButton(el));
-        const sel = selectEl(el);
 
         // Click first group header — selects org group only.
         await click(groupHeaders(el)[0]);
-        eq([...sel.options].map((o) => o.selected), [true, true, true, false], "org group selected");
+        eq(checkedValues(el), ["alpha", "beta", "gamma"], "org group selected");
 
         // Click again — deselects org group.
         await click(groupHeaders(el)[0]);
-        eq([...sel.options].map((o) => o.selected), [false, false, false, false], "org group deselected");
+        eq(checkedValues(el), [], "org group deselected");
     });
 
     t.run("dispatches change event", async () => {

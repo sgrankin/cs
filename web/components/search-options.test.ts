@@ -31,14 +31,9 @@ export async function testSearchOptionsRendersRepoSelector(t: T) {
     const el = await render(html`
         <cs-search-options .repos=${repos}></cs-search-options>
     `) as SearchOptionsComponent;
-    const repoSelect = el.renderRoot.querySelector('repo-select');
-    eq(repoSelect!.tagName.toLowerCase(), "repo-select", "should have repo-select");
-    const options = el.renderRoot.querySelectorAll('option');
-    const got = Array.from(options).map(o => ({value: o.value, text: o.textContent}));
-    eq(got, [
-        {value: "github.com/org/repo1", text: "repo1"},
-        {value: "github.com/org/repo2", text: "repo2"},
-    ]);
+    const repoSelect = el.renderRoot.querySelector('repo-select') as any;
+    eq(repoSelect!.tagName.toLowerCase(), "repo-select");
+    eq(repoSelect.groups, repos, "groups property passed through");
 }
 
 export async function testSearchOptionsFiresOptionsChange(t: T) {
