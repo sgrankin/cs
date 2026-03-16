@@ -43,7 +43,7 @@ Keep this up to date as gaps are closed.
 ### Page Chrome
 | Feature | Old | New | Status |
 |---------|-----|-----|--------|
-| Page title updates with query | "query · code search" | Static "code search" | Gap (#23) |
+| Page title updates with query | "query · code search" | "query · code search" | Done |
 | Footer (search/about/source links) | footer#header | Shadow DOM footer | Done |
 | Feedback mailto link (configurable) | Templates.Feedback.MailTo | Not implemented | Gap (minor) |
 | Custom header/footer HTML (config) | Templates.HeaderHTML/FooterHTML | Not implemented | Gap (minor) |

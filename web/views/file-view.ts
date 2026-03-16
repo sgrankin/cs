@@ -6,6 +6,7 @@ import {customElement, property, state} from 'lit/decorators.js';
 import '../components/breadcrumbs.ts';
 import '../components/dir-listing.ts';
 import '../components/code-viewer.ts';
+import '../components/help-modal.ts';
 
 /**
  * Parse the view path (repo@version/+/filepath) into its components.
@@ -52,6 +53,7 @@ export class FileView extends LitElement {
   @state() private readmeContent: string | null = null;
   @state() private loading = true;
   @state() private error: string | null = null;
+  @state() private showHelp = false;
 
   willUpdate(changed: Map<string, unknown>) {
     if (changed.has('path')) {
@@ -138,8 +140,11 @@ export class FileView extends LitElement {
             .repo=${repo}
             .version=${version}
             .externalUrl=${extUrl}
+            @toggle-help=${() => { this.showHelp = !this.showHelp; }}
+            @close-help=${() => { this.showHelp = false; }}
           ></cs-code-viewer>
         ` : ''}
+        <cs-help-modal ?open=${this.showHelp} @close-help=${() => { this.showHelp = false; }}></cs-help-modal>
       </div>
     `;
   }

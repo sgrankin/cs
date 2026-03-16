@@ -146,12 +146,19 @@ if (wantCoverage) {
         if (!entry.url.includes("test-bundle.js")) continue;
         const source = entry.source || "";
 
-        // Build a bitmap of which bytes in the bundle were executed.
+        // Build a bitmap of which bytes in the bundle were actually executed.
+        // V8 block coverage uses nested ranges where the innermost range's count
+        // determines whether that byte was executed. Ranges are sorted by
+        // startOffset with nesting — processing in order means inner (more
+        // specific) ranges overwrite outer ones, giving correct coverage.
+        // A range with count=0 means the code was never reached (e.g., a
+        // render() method defined but never called).
         const covered = new Uint8Array(source.length);
         for (const fn of entry.functions) {
             for (const range of fn.ranges) {
+                const val = range.count > 0 ? 1 : 0;
                 for (let i = range.startOffset; i < range.endOffset && i < source.length; i++) {
-                    covered[i] = 1;
+                    covered[i] = val;
                 }
             }
         }
