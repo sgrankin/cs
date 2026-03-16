@@ -257,14 +257,14 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		})
 		searchResults = append(searchResults, repoResults...)
 
-		// Drain file results for this repo.
-		if !limitHit {
-			for r := range repos[i].files {
-				fileResults = append(fileResults, r...)
-			}
-			if q.FilenameOnly {
-				nMatches = len(fileResults)
-				limitHit = nMatches > q.MaxMatches
+		// Drain file results for this repo (always, independent of code match limit).
+		for r := range repos[i].files {
+			fileResults = append(fileResults, r...)
+		}
+		if q.FilenameOnly {
+			nMatches = len(fileResults)
+			if nMatches > q.MaxMatches {
+				limitHit = true
 			}
 		}
 

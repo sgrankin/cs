@@ -6,7 +6,7 @@
 
 import {signal, computed, type Signal} from '@lit-labs/signals';
 import {currentRoute} from './router.ts';
-import {parseQuery, type SearchOptions} from './query.ts';
+import type {SearchOptions} from './query.ts';
 import {searchStream, type ResultEvent, type FileMatchEvent, type FacetsEvent, type DoneEvent} from './api.ts';
 import {SearchController, type SearchEffect} from './search-controller.ts';
 
@@ -36,9 +36,6 @@ export const contextLines: Signal.Computed<number> = computed(() => {
   return 3; // Default context lines, matches server default.
 });
 
-/** Parsed query structure (operators + main term). */
-export const queryParts = computed(() => parseQuery(queryText.get()));
-
 // --- Search results state ---
 
 export const searchResults = signal<ResultEvent[]>([]);
@@ -47,19 +44,6 @@ export const facets = signal<FacetsEvent | null>(null);
 export const searchDone = signal<DoneEvent | null>(null);
 export const searchLoading = signal(false);
 export const searchError = signal<string | null>(null);
-
-// Whether the current search is filename-only (no code query, just path: filters).
-const isFilenameOnly = signal(false);
-
-/**
- * File results limited to 10 for non-filename-only searches,
- * matching the old templ limitedFileResults behavior.
- */
-export const limitedFileResults: Signal.Computed<FileMatchEvent[]> = computed(() => {
-  const files = fileResults.get();
-  if (isFilenameOnly.get()) return files;
-  return files.length <= 10 ? files : files.slice(0, 10);
-});
 
 // --- Search execution ---
 
@@ -82,17 +66,12 @@ export async function executeSearch(): Promise<void> {
     searchDone.set(null);
     searchLoading.set(false);
     searchError.set(null);
-    isFilenameOnly.set(false);
     return;
   }
 
   // Build search params from URL state.
   const route = currentRoute.get();
   const params = new URLSearchParams(route.params);
-
-  // Detect filename-only search: if the main line is empty after parsing.
-  const parsed = parseQuery(text);
-  isFilenameOnly.set(parsed.line === '');
 
   searchLoading.set(true);
   searchError.set(null);
@@ -208,7 +187,6 @@ function applyEffects(effects: SearchEffect[]): void {
         searchDone.set(null);
         searchLoading.set(false);
         searchError.set(null);
-        isFilenameOnly.set(false);
         break;
     }
   }

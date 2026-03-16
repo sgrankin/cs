@@ -6,7 +6,7 @@ import {customElement} from 'lit/decorators.js';
 import {SignalWatcher} from '@lit-labs/signals';
 import {currentRoute} from '../router.ts';
 import {
-  queryText, searchResults, limitedFileResults,
+  queryText, searchResults, fileResults,
   facets, searchDone, searchLoading, searchError, triggerSearch, immediateSearch,
   contextLines,
 } from '../state.ts';
@@ -51,7 +51,7 @@ export class SearchView extends SignalWatcher(LitElement) {
   render() {
     const text = queryText.get();
     const results = searchResults.get();
-    const files = limitedFileResults.get();
+    const files = fileResults.get();
     const done = searchDone.get();
     const loading = searchLoading.get();
     const error = searchError.get();

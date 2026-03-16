@@ -46,8 +46,15 @@ func (s *server) ServeAPISearch(ctx context.Context, w http.ResponseWriter, r *h
 
 	total := 0
 
-	// Emit file results.
-	for _, fr := range searchResult.FileResults {
+	// Emit file results, capped to avoid flooding the client.
+	maxFiles := 500 // filename-only search
+	if len(searchResult.Results) > 0 {
+		maxFiles = 10 // code search: file results are secondary
+	}
+	for i, fr := range searchResult.FileResults {
+		if i >= maxFiles {
+			break
+		}
 		writeJSONLine(w, api.FileMatchEvent{
 			Type:  "file",
 			Path:  resultFilePath(fr.File),
