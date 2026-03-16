@@ -24,8 +24,16 @@ func (s *server) ServeRaw(ctx context.Context, w http.ResponseWriter, r *http.Re
 		http.Error(w, "path must contain /+/ separator", http.StatusBadRequest)
 		return
 	}
-	tree, version, ok := strings.Cut(before, "/")
-	if !ok || tree == "" || version == "" {
+	// Split on last "/" — tree name can contain slashes (e.g. github.com/org/repo),
+	// but the version (git hash) does not.
+	lastSlash := strings.LastIndex(before, "/")
+	if lastSlash <= 0 {
+		http.Error(w, "path must start with {tree}/{version}/+/", http.StatusBadRequest)
+		return
+	}
+	tree := before[:lastSlash]
+	version := before[lastSlash+1:]
+	if tree == "" || version == "" {
 		http.Error(w, "path must start with {tree}/{version}/+/", http.StatusBadRequest)
 		return
 	}

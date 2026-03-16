@@ -107,6 +107,31 @@ func TestServeRawCacheHeaders(t *testing.T) {
 	}
 }
 
+func TestServeRawMultiSlashTree(t *testing.T) {
+	// Tree name with slashes (e.g. github.com/org/repo).
+	idx := newTestIndex(t, testTree{"github.com/org/repo", "abc123", "simple.txtar"})
+	srv := newTestServer(idx)
+
+	tests := []struct {
+		name       string
+		path       string
+		wantStatus int
+	}{
+		{"file content", "/raw/github.com/org/repo/abc123/+/main.go", http.StatusOK},
+		{"root dir listing", "/raw/github.com/org/repo/abc123/+/", http.StatusOK},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tc.path, nil)
+			w := httptest.NewRecorder()
+			srv.ServeHTTP(w, req)
+			if w.Result().StatusCode != tc.wantStatus {
+				t.Errorf("status = %d, want %d; body: %s", w.Result().StatusCode, tc.wantStatus, w.Body.String())
+			}
+		})
+	}
+}
+
 func TestServeRawDirContent(t *testing.T) {
 	idx := simpleIndex(t) // has: main.go, util.go, sub/deep.go, sub/other.go, README.md
 	srv := newTestServer(idx)
