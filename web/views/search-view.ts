@@ -1,7 +1,7 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html, css, nothing} from 'lit';
+import {LitElement, html, css} from 'lit';
 import {customElement} from 'lit/decorators.js';
 import {SignalWatcher} from '@lit-labs/signals';
 import {
@@ -17,6 +17,7 @@ import '../components/search-input.ts';
 import '../components/search-options.ts';
 import '../components/result-group.ts';
 import '../components/result-stats.ts';
+import '../components/facet-panel.ts';
 import '../components.ts';
 import './search-help.ts';
 
@@ -27,7 +28,7 @@ import './search-help.ts';
 @customElement('cs-search-view')
 export class SearchView extends SignalWatcher(LitElement) {
   private currentOptions: SearchOptions = {};
-  private currentFacets: Record<string, string[]> = {};
+  private activeFacets: Record<string, Set<string>> = {};
 
   render() {
     const text = queryText.get();
@@ -69,20 +70,15 @@ export class SearchView extends SignalWatcher(LitElement) {
               .truncated=${done?.truncated ?? false}
               .loading=${loading}
             ></cs-result-stats>
+            <cs-facet-panel
+              .facets=${facetData}
+              .selected=${this.activeFacets}
+              @facet-toggle=${this.onFacetToggle}
+            ></cs-facet-panel>
             <div
               id="results"
               tabindex="-1"
             >
-              <div id="file-extensions">
-                ${facetData?.ext && facetData.ext.length > 0 ? html`
-                  Narrow to:
-                  ${facetData.ext.slice(0, 5).map(b => html`
-                    <button type="button" @click=${() => this.addExtFilter(b.v)}>
-                      ${b.v}
-                    </button>
-                  `)}
-                ` : nothing}
-              </div>
               <div id="path-results">
                 ${files.map(f => {
                   const {repo, version, filePath} = splitFilePath(f.path);
@@ -119,23 +115,44 @@ export class SearchView extends SignalWatcher(LitElement) {
     `;
   }
 
-  private addExtFilter(ext: string) {
-    // Query the search input component within our shadow root.
-    const searchInput = this.renderRoot.querySelector('cs-search-input') as import('../components/search-input.ts').SearchInput | null;
-    if (!searchInput) return;
-    searchInput.appendQuery(`file:${ext} `);
+  private onFacetToggle(e: CustomEvent<{key: string; value: string}>) {
+    const {key, value} = e.detail;
+    const current = this.activeFacets[key] ?? new Set();
+    const updated = new Set(current);
+    if (updated.has(value)) {
+      updated.delete(value);
+    } else {
+      updated.add(value);
+    }
+    this.activeFacets = {...this.activeFacets, [key]: updated};
+    this.reSearch();
   }
 
   private onSearchInput(e: CustomEvent<{value: string}>) {
-    triggerSearch(e.detail.value, this.currentOptions, this.currentFacets);
+    triggerSearch(e.detail.value, this.currentOptions, this.facetParams());
   }
 
   private onOptionsChange(e: CustomEvent<SearchOptions>) {
     this.currentOptions = e.detail;
+    this.reSearch();
+  }
+
+  private reSearch() {
     const text = queryText.get();
     if (text) {
-      triggerSearch(text, this.currentOptions, this.currentFacets);
+      triggerSearch(text, this.currentOptions, this.facetParams());
     }
+  }
+
+  /** Convert active facet Sets to string[] record for triggerSearch. */
+  private facetParams(): Record<string, string[]> {
+    const params: Record<string, string[]> = {};
+    for (const [key, values] of Object.entries(this.activeFacets)) {
+      if (values.size > 0) {
+        params[key] = [...values];
+      }
+    }
+    return params;
   }
 
   static styles = [
@@ -180,13 +197,8 @@ export class SearchView extends SignalWatcher(LitElement) {
         /* despite 'tabindex' that lets it receive keystrokes */
       }
 
-      #file-extensions,
       #path-results {
         margin-bottom: 15px;
-      }
-
-      #file-extensions button {
-        margin-left: 4px;
       }
 
       /* Footer */
