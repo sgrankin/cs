@@ -14,14 +14,13 @@ export async function testDirListingRendersEntries(t: T) {
         ></cs-dir-listing>
     `) as DirListing;
     const links = el.renderRoot.querySelectorAll('a');
-    eq(links.length, 3, "should render 3 entries");
     // Sorted: sub/ (dir first), then files alphabetically by localeCompare.
-    eq(links[0].textContent, "sub/", "first entry is dir");
-    eq(links[0].getAttribute('href'), "/view/repo@v/+/dir/sub/", "dir href");
-    eq(links[1].textContent, "main.go", "second entry");
-    eq(links[1].getAttribute('href'), "/view/repo@v/+/dir/main.go", "file href");
-    eq(links[2].textContent, "README.md", "third entry");
-    eq(links[2].getAttribute('href'), "/view/repo@v/+/dir/README.md", "file href 2");
+    const got = Array.from(links).map(a => ({text: a.textContent, href: a.getAttribute('href')}));
+    eq(got, [
+        {text: "sub/", href: "/view/repo@v/+/dir/sub/"},
+        {text: "main.go", href: "/view/repo@v/+/dir/main.go"},
+        {text: "README.md", href: "/view/repo@v/+/dir/README.md"},
+    ]);
 }
 
 export async function testDirListingSortsDirsFirst(t: T) {
@@ -33,11 +32,16 @@ export async function testDirListingSortsDirsFirst(t: T) {
     `) as DirListing;
     const links = Array.from(el.renderRoot.querySelectorAll('a'));
     // Directories first, then files.
-    eq(links[0].classList.contains('dir'), true, "first is dir");
-    eq(links[0].textContent, "a_dir/", "dir sorted alphabetically");
-    eq(links[1].classList.contains('file'), true, "second is file");
-    eq(links[1].textContent, "b_file.go", "second is b_file.go");
-    eq(links[2].textContent, "z_file.go", "third is z_file.go");
+    const got = links.map(a => ({
+        text: a.textContent,
+        isDir: a.classList.contains('dir'),
+        isFile: a.classList.contains('file'),
+    }));
+    eq(got, [
+        {text: "a_dir/", isDir: true, isFile: false},
+        {text: "b_file.go", isDir: false, isFile: true},
+        {text: "z_file.go", isDir: false, isFile: true},
+    ]);
 }
 
 export async function testDirListingLinksUseBasePath(t: T) {

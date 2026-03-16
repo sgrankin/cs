@@ -92,12 +92,15 @@ bun run test               # V8 coverage → per-file line report
 
 ## Frontend Testing
 
-Tests live in `web/*.test.ts`. No test frameworks — just plain functions:
+See `web/TESTING.md` for the full frontend test style guide.
 
-- **Test harness** (`testing/harness.ts`): runs exported `test*` functions, reports pass/fail per test. `eq(got, want)` for value comparison.
+Tests live in `web/*.test.ts` and `web/components/*.test.ts`. No test frameworks — just plain functions:
+
+- **Test harness** (`testing/harness.ts`): runs exported `test*` functions, reports pass/fail per test. `eq(got, want)` for deep value comparison.
 - **Runner** (`testing/web-runner.mjs`): esbuild bundles tests, Playwright opens in headless Chromium, reads console output. Always runs with coverage.
-- **Components** to test go in `web/components.ts` (pure Lit, no side effects). Components that depend on htmx stay in `web/codesearch_ui.tsx`.
 - Run via `bun run test` (requires sandbox bypass for Chromium).
+
+**Key rule: compare full structures, not individual fields.** Extract rendered data into plain objects/arrays and use a single `eq(got, want)` — same as Go's `reflect.DeepEqual` pattern. Don't write per-field `eq()` calls.
 
 ## Code Review
 

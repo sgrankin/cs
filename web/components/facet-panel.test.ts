@@ -31,11 +31,8 @@ export async function testFacetPanelRendersSections(t: T) {
     const el = await render(html`
         <cs-facet-panel .facets=${sampleFacets}></cs-facet-panel>
     `) as FacetPanel;
-    const sections = el.renderRoot.querySelectorAll('.section');
-    eq(sections.length, 2, "should have Extension and Repository sections");
     const labels = Array.from(el.renderRoot.querySelectorAll('.section-label')).map(l => l.textContent);
-    eq(labels[0], "Extension", "first section label");
-    eq(labels[1], "Repository", "second section label");
+    eq(labels, ["Extension", "Repository"]);
 }
 
 export async function testFacetPanelSortsByCount(t: T) {
@@ -43,16 +40,16 @@ export async function testFacetPanelSortsByCount(t: T) {
         <cs-facet-panel .facets=${sampleFacets}></cs-facet-panel>
     `) as FacetPanel;
     const pills = Array.from(el.renderRoot.querySelectorAll('.section:first-child .pill'));
-    eq(pills.length, 3, "3 extension pills");
     // Should be sorted by count descending: .go 12, .py 5, .rs 3.
-    // Each pill has format: "{ext} {count}" with a .count span inside.
-    eq(pills[0].querySelector('.count')!.textContent, "12", "first pill count");
-    eq(pills[1].querySelector('.count')!.textContent, "5", "second pill count");
-    eq(pills[2].querySelector('.count')!.textContent, "3", "third pill count");
-    // Check extension values from the full button text.
-    eq(pills[0].textContent!.trim().startsWith(".go"), true, "first pill is .go");
-    eq(pills[1].textContent!.trim().startsWith(".py"), true, "second pill is .py");
-    eq(pills[2].textContent!.trim().startsWith(".rs"), true, "third pill is .rs");
+    const got = pills.map(p => ({
+        ext: p.textContent!.trim().split(/\s+/)[0],
+        count: p.querySelector('.count')!.textContent,
+    }));
+    eq(got, [
+        {ext: ".go", count: "12"},
+        {ext: ".py", count: "5"},
+        {ext: ".rs", count: "3"},
+    ]);
 }
 
 export async function testFacetPanelShowsActivePill(t: T) {
@@ -60,9 +57,9 @@ export async function testFacetPanelShowsActivePill(t: T) {
     const el = await render(html`
         <cs-facet-panel .facets=${sampleFacets} .selected=${selected}></cs-facet-panel>
     `) as FacetPanel;
-    const activePills = el.renderRoot.querySelectorAll('.pill.active');
-    eq(activePills.length, 1, "one active pill");
-    eq(activePills[0].textContent!.trim().startsWith(".py"), true, ".py is active");
+    const got = Array.from(el.renderRoot.querySelectorAll('.pill.active'))
+        .map(p => p.textContent!.trim().split(/\s+/)[0]);
+    eq(got, [".py"]);
 }
 
 export async function testFacetPanelFiresToggle(t: T) {
@@ -78,8 +75,7 @@ export async function testFacetPanelFiresToggle(t: T) {
     const firstPill = el.renderRoot.querySelector('.pill') as HTMLButtonElement;
     firstPill.click();
 
-    eq(detail.key, "f.ext", "key is f.ext");
-    eq(detail.value, ".go", "value is .go (first by count)");
+    eq(detail, {key: "f.ext", value: ".go"});
 }
 
 export async function testFacetPanelLimitsTo10(t: T) {

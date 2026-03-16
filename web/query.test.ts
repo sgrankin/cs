@@ -183,5 +183,6 @@ export function testRebuildQueryText(t: T) {
         // Re-parse to verify equivalence (order may differ).
         const reparsed = parseQuery(rebuilt);
         eq(reparsed.line, parts.line, "line preserved");
+        eq(reparsed.operators, parts.operators, "operators preserved");
     });
 }

@@ -9,16 +9,8 @@ import type {CodeViewer} from "./code-viewer.ts";
 export async function testCodeViewerRendersLines(t: T) {
     const el = await render(html`<cs-code-viewer .content=${"line1\nline2\nline3\n"}></cs-code-viewer>`) as CodeViewer;
     const lines = el.renderRoot.querySelectorAll('.line');
-    eq(lines.length, 3, "should render 3 lines");
-
-    const firstCode = lines[0].querySelector('.code');
-    eq(firstCode!.textContent, "line1", "first line content");
-
-    const secondCode = lines[1].querySelector('.code');
-    eq(secondCode!.textContent, "line2", "second line content");
-
-    const thirdCode = lines[2].querySelector('.code');
-    eq(thirdCode!.textContent, "line3", "third line content");
+    const got = Array.from(lines).map(l => l.querySelector('.code')!.textContent);
+    eq(got, ["line1", "line2", "line3"]);
 }
 
 export async function testCodeViewerLineCount(t: T) {
@@ -43,12 +35,9 @@ export async function testCodeViewerHashSelection(t: T) {
     const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
     const lines = el.renderRoot.querySelectorAll('.line');
 
-    // Line 3 (index 2) should have the 'selected' class.
-    eq(lines[2].classList.contains('selected'), true, "line 3 is selected");
-    // Other lines should not be selected.
-    eq(lines[0].classList.contains('selected'), false, "line 1 not selected");
-    eq(lines[1].classList.contains('selected'), false, "line 2 not selected");
-    eq(lines[3].classList.contains('selected'), false, "line 4 not selected");
+    // Only line 3 (index 2) should have the 'selected' class.
+    const got = Array.from(lines).map(l => l.classList.contains('selected'));
+    eq(got, [false, false, true, false, false]);
 
     // Restore hash.
     window.location.hash = origHash;
@@ -57,16 +46,12 @@ export async function testCodeViewerHashSelection(t: T) {
 export async function testCodeViewerLineLinks(t: T) {
     const el = await render(html`<cs-code-viewer .content=${"x\ny\nz\n"}></cs-code-viewer>`) as CodeViewer;
     const links = el.renderRoot.querySelectorAll('.lno') as NodeListOf<HTMLAnchorElement>;
-    eq(links.length, 3, "should have 3 line number links");
-
-    eq(links[0].getAttribute('href'), "#L1", "line 1 href");
-    eq(links[1].getAttribute('href'), "#L2", "line 2 href");
-    eq(links[2].getAttribute('href'), "#L3", "line 3 href");
-
-    // Line numbers are displayed as text.
-    eq(links[0].textContent, "1", "line 1 text");
-    eq(links[1].textContent, "2", "line 2 text");
-    eq(links[2].textContent, "3", "line 3 text");
+    const got = Array.from(links).map(a => ({href: a.getAttribute('href'), text: a.textContent}));
+    eq(got, [
+        {href: "#L1", text: "1"},
+        {href: "#L2", text: "2"},
+        {href: "#L3", text: "3"},
+    ]);
 }
 
 export async function testCodeViewerExternalUrl(t: T) {
@@ -116,8 +101,7 @@ export async function testCodeViewerProcessKeyQuestion(t: T) {
     let toggleHelpFired = false;
     el.addEventListener('toggle-help', () => { toggleHelpFired = true; });
     const handled = (el as any).processKey('?');
-    eq(handled, true, "'?' key is handled");
-    eq(toggleHelpFired, true, "toggle-help event fired");
+    eq({handled, toggleHelpFired}, {handled: true, toggleHelpFired: true});
 }
 
 export async function testCodeViewerProcessKeyEscape(t: T) {
@@ -125,8 +109,7 @@ export async function testCodeViewerProcessKeyEscape(t: T) {
     let closeHelpFired = false;
     el.addEventListener('close-help', () => { closeHelpFired = true; });
     const handled = (el as any).processKey('Escape');
-    eq(handled, true, "Escape key is handled");
-    eq(closeHelpFired, true, "close-help event fired on Escape");
+    eq({handled, closeHelpFired}, {handled: true, closeHelpFired: true});
 }
 
 // Note: testCodeViewerProcessKeyV skipped — 'v' navigates via window.location.href.
@@ -135,8 +118,8 @@ export async function testCodeViewerProcessKeyEscape(t: T) {
 export async function testCodeViewerProcessKeyNP(t: T) {
     const el = await render(html`<cs-code-viewer .content=${"hello\n"}></cs-code-viewer>`) as CodeViewer;
     // 'n' and 'p' are handled (window.find needs text selection, but at least test return value).
-    eq((el as any).processKey('n'), true, "'n' key handled");
-    eq((el as any).processKey('p'), true, "'p' key handled");
+    const got = {n: (el as any).processKey('n'), p: (el as any).processKey('p')};
+    eq(got, {n: true, p: true});
 }
 
 export async function testCodeViewerProcessKeyUnknown(t: T) {
@@ -151,8 +134,7 @@ export async function testCodeViewerLineClick(t: T) {
     links[2].click(); // line 3
     await el.updateComplete;
     // After click, line 3 should be selected.
-    eq((el as any).selectedStart, 3, "selectedStart is 3");
-    eq((el as any).selectedEnd, 3, "selectedEnd is 3");
+    eq({start: (el as any).selectedStart, end: (el as any).selectedEnd}, {start: 3, end: 3});
 }
 
 export async function testCodeViewerLineNumberString(t: T) {
@@ -188,12 +170,25 @@ export async function testCodeViewerSelectionHintHidden(t: T) {
     eq(hint, null, "selection hint should not be present when no text is selected");
 }
 
+export async function testCodeViewerSelectionHintShown(t: T) {
+    const el = await render(html`<cs-code-viewer .content=${"line1\nline2\n"}></cs-code-viewer>`) as CodeViewer;
+    // Set hasSelection directly to exercise the render branch.
+    (el as any).hasSelection = true;
+    await el.updateComplete;
+    const hint = el.renderRoot.querySelector('.selection-hint');
+    const got = {
+        tag: hint!.tagName,
+        mentionsSlash: hint!.textContent!.includes("/"),
+        mentionsEnter: hint!.textContent!.includes("Enter"),
+    };
+    eq(got, {tag: "DIV", mentionsSlash: true, mentionsEnter: true});
+}
+
 export async function testCodeViewerEmptyContent(t: T) {
     const el = await render(html`<cs-code-viewer .content=${""}></cs-code-viewer>`) as CodeViewer;
-    const lines = el.renderRoot.querySelectorAll('.line');
-    eq(lines.length, 0, "empty content produces no lines");
-
-    // The viewer div should still exist.
-    const viewer = el.renderRoot.querySelector('.viewer');
-    eq(viewer!.tagName, "DIV", "viewer container present");
+    const got = {
+        lineCount: el.renderRoot.querySelectorAll('.line').length,
+        viewerTag: el.renderRoot.querySelector('.viewer')!.tagName,
+    };
+    eq(got, {lineCount: 0, viewerTag: "DIV"});
 }

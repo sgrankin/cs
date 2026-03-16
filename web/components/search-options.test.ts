@@ -9,23 +9,19 @@ import type {SearchOptionsComponent} from "./search-options.ts";
 export async function testSearchOptionsRendersCaseRadios(t: T) {
     const el = await render(html`<cs-search-options></cs-search-options>`) as SearchOptionsComponent;
     const radios = el.renderRoot.querySelectorAll('input[name="fold_case"]') as NodeListOf<HTMLInputElement>;
-    eq(radios.length, 3, "should have 3 case radio buttons");
-    // Verify radio values: match, auto, ignore.
-    eq(radios[0].id, "case-match", "first radio id");
-    eq(radios[0].value, "false", "match radio value");
-    eq(radios[1].id, "case-auto", "second radio id");
-    eq(radios[1].value, "auto", "auto radio value");
-    eq(radios[2].id, "case-ignore", "third radio id");
-    eq(radios[2].value, "true", "ignore radio value");
-    // Default: auto is checked
-    eq(radios[1].checked, true, "auto should be default");
+    // Verify radio values: match, auto, ignore. Default: auto is checked.
+    const got = Array.from(radios).map(r => ({id: r.id, value: r.value, checked: r.checked}));
+    eq(got, [
+        {id: "case-match", value: "false", checked: false},
+        {id: "case-auto", value: "auto", checked: true},
+        {id: "case-ignore", value: "true", checked: false},
+    ]);
 }
 
 export async function testSearchOptionsRendersLiteralCheckbox(t: T) {
     const el = await render(html`<cs-search-options></cs-search-options>`) as SearchOptionsComponent;
     const literal = el.renderRoot.querySelector('#literal') as HTMLInputElement;
-    eq(literal.type, "checkbox", "literal is checkbox");
-    eq(literal.checked, false, "literal unchecked by default");
+    eq({type: literal.type, checked: literal.checked}, {type: "checkbox", checked: false});
 }
 
 export async function testSearchOptionsRendersRepoSelector(t: T) {
@@ -38,11 +34,11 @@ export async function testSearchOptionsRendersRepoSelector(t: T) {
     const repoSelect = el.renderRoot.querySelector('repo-select');
     eq(repoSelect!.tagName.toLowerCase(), "repo-select", "should have repo-select");
     const options = el.renderRoot.querySelectorAll('option');
-    eq(options.length, 2, "should have 2 repo options");
-    eq(options[0].value, "github.com/org/repo1", "first option value");
-    eq(options[0].textContent, "repo1", "first option text");
-    eq(options[1].value, "github.com/org/repo2", "second option value");
-    eq(options[1].textContent, "repo2", "second option text");
+    const got = Array.from(options).map(o => ({value: o.value, text: o.textContent}));
+    eq(got, [
+        {value: "github.com/org/repo1", text: "repo1"},
+        {value: "github.com/org/repo2", text: "repo2"},
+    ]);
 }
 
 export async function testSearchOptionsFiresOptionsChange(t: T) {

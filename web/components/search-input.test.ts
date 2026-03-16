@@ -9,8 +9,7 @@ import type {SearchInput} from "./search-input.ts";
 export async function testSearchInputRendersInput(t: T) {
     const el = await render(html`<cs-search-input></cs-search-input>`) as SearchInput;
     const input = el.renderRoot.querySelector('#searchbox') as HTMLInputElement;
-    eq(input.type, "search", "input type");
-    eq(input.autocomplete, "off", "autocomplete off");
+    eq({type: input.type, autocomplete: input.autocomplete}, {type: "search", autocomplete: "off"});
 }
 
 export async function testSearchInputShowsValue(t: T) {
@@ -50,5 +49,5 @@ export async function testSearchInputAppendQuery(t: T) {
     el.appendQuery(" world");
 
     eq(fired, true, "search-input event fired");
-    eq(detail.value, "hello world", "appended value");
+    eq(detail.value, "hello world", "appended value in event detail");
 }

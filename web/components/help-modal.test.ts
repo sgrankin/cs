@@ -14,29 +14,30 @@ export async function testHelpModalClosedByDefault(t: T) {
 
 export async function testHelpModalOpens(t: T) {
     const el = await render(html`<cs-help-modal open></cs-help-modal>`) as HelpModal;
-    const overlay = el.renderRoot.querySelector('.overlay');
-    eq(overlay!.tagName, "DIV", "overlay is a div");
-    const heading = el.renderRoot.querySelector('h3');
-    eq(heading!.textContent, "Keyboard shortcuts", "modal heading");
+    const got = {
+        overlayTag: el.renderRoot.querySelector('.overlay')!.tagName,
+        heading: el.renderRoot.querySelector('h3')!.textContent,
+    };
+    eq(got, {overlayTag: "DIV", heading: "Keyboard shortcuts"});
 }
 
 export async function testHelpModalShowsShortcuts(t: T) {
     const el = await render(html`<cs-help-modal open></cs-help-modal>`) as HelpModal;
     const rows = el.renderRoot.querySelectorAll('tr');
-    eq(rows.length, 7, "7 keyboard shortcuts");
     // Verify each shortcut key and description.
-    const kbds = Array.from(el.renderRoot.querySelectorAll('kbd')).map(k => k.textContent);
-    eq(kbds[0], "/", "first shortcut key");
-    eq(kbds[1], "?", "second shortcut key");
-    eq(kbds[2], "v", "third shortcut key");
-    eq(kbds[3], "n", "fourth shortcut key");
-    eq(kbds[4], "p", "fifth shortcut key");
-    eq(kbds[5], "Enter", "sixth shortcut key");
-    eq(kbds[6], "Esc", "seventh shortcut key");
-    // Verify descriptions.
-    const descs = Array.from(rows).map(r => r.querySelectorAll('td')[1].textContent);
-    eq(descs[0], "New search (or search selected text)", "/ description");
-    eq(descs[6], "Close this help", "Esc description");
+    const got = Array.from(rows).map(r => ({
+        key: r.querySelector('kbd')!.textContent,
+        desc: r.querySelectorAll('td')[1].textContent,
+    }));
+    eq(got, [
+        {key: "/", desc: "New search (or search selected text)"},
+        {key: "?", desc: "Toggle this help"},
+        {key: "v", desc: "View at external source (GitHub)"},
+        {key: "n", desc: "Next match (with text selected)"},
+        {key: "p", desc: "Previous match (with text selected)"},
+        {key: "Enter", desc: "Search selected text in new tab"},
+        {key: "Esc", desc: "Close this help"},
+    ]);
 }
 
 export async function testHelpModalFiresCloseEvent(t: T) {
@@ -46,6 +47,5 @@ export async function testHelpModalFiresCloseEvent(t: T) {
     // Click the overlay to close.
     const overlay = el.renderRoot.querySelector('.overlay') as HTMLElement;
     overlay.click();
-    eq(closed, true, "close-help event fired");
-    eq(el.open, false, "open set to false");
+    eq({closed, open: el.open}, {closed: true, open: false});
 }

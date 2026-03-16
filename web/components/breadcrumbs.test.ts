@@ -11,13 +11,12 @@ export async function testBreadcrumbsRenders(t: T) {
         <cs-breadcrumbs path="myrepo@abc123/+/src/main.go"></cs-breadcrumbs>
     `) as Breadcrumbs;
     const links = el.renderRoot.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
-    eq(links.length, 3, "3 breadcrumb links");
-    eq(links[0].textContent, "myrepo@abc123", "first link is repo");
-    eq(links[0].getAttribute('href'), "/view/myrepo@abc123/+/", "repo link href");
-    eq(links[1].textContent, "src", "second link is dir");
-    eq(links[1].getAttribute('href'), "/view/myrepo@abc123/+/src/", "dir link has trailing slash");
-    eq(links[2].textContent, "main.go", "third link is file");
-    eq(links[2].getAttribute('href'), "/view/myrepo@abc123/+/src/main.go", "file link no trailing slash");
+    const got = Array.from(links).map(a => ({text: a.textContent, href: a.getAttribute('href')}));
+    eq(got, [
+        {text: "myrepo@abc123", href: "/view/myrepo@abc123/+/"},
+        {text: "src", href: "/view/myrepo@abc123/+/src/"},
+        {text: "main.go", href: "/view/myrepo@abc123/+/src/main.go"},
+    ]);
 }
 
 export async function testBreadcrumbsNoSeparator(t: T) {
@@ -25,9 +24,11 @@ export async function testBreadcrumbsNoSeparator(t: T) {
         <cs-breadcrumbs path="repo@v/+/file.go"></cs-breadcrumbs>
     `) as Breadcrumbs;
     const links = el.renderRoot.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
-    eq(links.length, 2, "2 breadcrumb links");
-    eq(links[0].textContent, "repo@v", "first link is repo");
-    eq(links[1].textContent, "file.go", "second link is file");
+    const got = Array.from(links).map(a => ({text: a.textContent, href: a.getAttribute('href')}));
+    eq(got, [
+        {text: "repo@v", href: "/view/repo@v/+/"},
+        {text: "file.go", href: "/view/repo@v/+/file.go"},
+    ]);
 }
 
 export async function testBreadcrumbsNoPlus(t: T) {
