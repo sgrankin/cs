@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 
 	"sgrankin.dev/cs"
@@ -211,6 +212,54 @@ func TestSearchForRequestHasMore(t *testing.T) {
 	}
 	if !reply.Info.HasMore {
 		t.Error("expected HasMore=true when match limit is reached")
+	}
+}
+
+func TestSearchForRequestMaxMatchesEnforced(t *testing.T) {
+	// manymatches.txtar has 25 files each with "match_here".
+	// With MaxMatches=5, we should get at most ~5 matching lines, not all 25.
+	idx := newTestIndex(t, testTree{"myrepo", "v1", "manymatches.txtar"})
+	cfg := cs.ServeConfig{DefaultMaxMatches: 50}
+	srv := New(cfg, idx, StaticFS())
+
+	reply, err := srv.searchForRequest(context.Background(), cs.Query{Line: "match_here", MaxMatches: 5})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply == nil {
+		t.Fatal("expected non-nil reply")
+	}
+	if !reply.Info.HasMore {
+		t.Error("expected HasMore=true when match limit is reached")
+	}
+	totalLines := 0
+	for _, r := range reply.Results {
+		totalLines += len(r.Lines)
+	}
+	// Should have stopped around MaxMatches, not collected all 25.
+	if totalLines > 10 {
+		t.Errorf("expected at most ~10 matching lines (MaxMatches=5 + one repo batch), got %d", totalLines)
+	}
+}
+
+func TestAPISearchMaxMatchesEnforced(t *testing.T) {
+	idx := newTestIndex(t, testTree{"myrepo", "v1", "manymatches.txtar"})
+	srv := newTestServer(idx)
+
+	req := httptest.NewRequest("GET", "/api/search?q=match_here&max=5", nil)
+	w := httptest.NewRecorder()
+	srv.ServeHTTP(w, req)
+
+	lines := nonEmptyLines(w.Body.String())
+	resultCount := 0
+	for _, line := range lines {
+		if strings.HasPrefix(line, `{"type":"result"`) {
+			resultCount++
+		}
+	}
+	// With max=5, should have far fewer than 25 result events.
+	if resultCount > 10 {
+		t.Errorf("expected at most ~10 result events with max=5, got %d", resultCount)
 	}
 }
 

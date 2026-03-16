@@ -238,6 +238,7 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 	}
 
 	nMatches := 0
+	limitHit := false
 	for i := range repos {
 		// Drain code results for this repo, sort by path within repo.
 		var repoResults []SearchResult
@@ -246,6 +247,10 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 			incFacet("repo", r.File.Tree)
 			incFacet("ext", path.Ext(r.File.Path))
 			nMatches += len(r.Lines)
+			if nMatches > q.MaxMatches {
+				limitHit = true
+				break
+			}
 		}
 		// Tree and Version are constant within a repo's results; Path alone determines order.
 		sort.Slice(repoResults, func(a, b int) bool {
@@ -254,17 +259,20 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		searchResults = append(searchResults, repoResults...)
 
 		// Drain file results for this repo.
-		for r := range repos[i].files {
-			fileResults = append(fileResults, r...)
-		}
-		if q.FilenameOnly {
-			nMatches = len(fileResults)
+		if !limitHit {
+			for r := range repos[i].files {
+				fileResults = append(fileResults, r...)
+			}
+			if q.FilenameOnly {
+				nMatches = len(fileResults)
+				limitHit = nMatches > q.MaxMatches
+			}
 		}
 
-		if nMatches > q.MaxMatches {
+		if limitHit {
 			exitReason = ExitReasonMatchLimit
 			cancelSearch()
-			// Drain all remaining channels (including current repo) to unblock goroutines.
+			// Drain all remaining channels to unblock goroutines.
 			for j := i; j < len(repos); j++ {
 				for range repos[j].results {
 				}
