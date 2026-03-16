@@ -163,14 +163,18 @@ export function triggerSearch(
   const params = buildSearchParams(rawText, options, facetParams);
   const isNewQuery = rawText !== lastPushedQuery;
 
+  // Update page title.
+  const title = rawText ? `${rawText} · code search` : 'code search';
+  document.title = title;
+
   // Update URL immediately (replaceState during typing, pushState for new queries).
   const search = params.toString();
   const url = '/search' + (search ? '?' + search : '');
   if (isNewQuery && lastPushedQuery !== '') {
-    history.pushState(null, '', url);
+    history.pushState(null, title, url);
     lastPushedQuery = rawText;
   } else {
-    history.replaceState(null, '', url);
+    history.replaceState(null, title, url);
     if (lastPushedQuery === '') lastPushedQuery = rawText;
   }
 
@@ -188,6 +192,10 @@ export function triggerSearch(
 }
 
 // Auto-execute search on initial load if URL has a query.
-if (queryText.get()) {
-  executeSearch();
+{
+  const q = queryText.get();
+  if (q) {
+    document.title = `${q} · code search`;
+    executeSearch();
+  }
 }
