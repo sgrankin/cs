@@ -246,6 +246,9 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 			repoResults = append(repoResults, r)
 			incFacet("repo", r.File.Tree)
 			incFacet("ext", path.Ext(r.File.Path))
+			if idx := strings.Index(r.File.Path, "/"); idx >= 0 {
+				incFacet("path", r.File.Path[:idx+1])
+			}
 			nMatches += len(r.Lines)
 			if nMatches > q.MaxMatches {
 				limitHit = true

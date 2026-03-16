@@ -150,6 +150,15 @@ q=func
       ]
     },
     {
+      "key": "path",
+      "values": [
+        {
+          "value": "sub/",
+          "count": 2
+        }
+      ]
+    },
+    {
       "key": "repo",
       "values": [
         {
