@@ -116,9 +116,11 @@ func TestServeRawMultiSlashTree(t *testing.T) {
 		name       string
 		path       string
 		wantStatus int
+		wantBody   string
 	}{
-		{"file content", "/raw/github.com/org/repo/abc123/+/main.go", http.StatusOK},
-		{"root dir listing", "/raw/github.com/org/repo/abc123/+/", http.StatusOK},
+		{"file content", "/raw/github.com/org/repo/abc123/+/main.go", http.StatusOK, "func hello()"},
+		{"root dir listing", "/raw/github.com/org/repo/abc123/+/", http.StatusOK, ""},
+		{"missing version (ambiguous)", "/raw/github.com/org/+/main.go", http.StatusNotFound, ""},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -127,6 +129,9 @@ func TestServeRawMultiSlashTree(t *testing.T) {
 			srv.ServeHTTP(w, req)
 			if w.Result().StatusCode != tc.wantStatus {
 				t.Errorf("status = %d, want %d; body: %s", w.Result().StatusCode, tc.wantStatus, w.Body.String())
+			}
+			if tc.wantBody != "" && !strings.Contains(w.Body.String(), tc.wantBody) {
+				t.Errorf("body should contain %q, got: %s", tc.wantBody, w.Body.String())
 			}
 		})
 	}

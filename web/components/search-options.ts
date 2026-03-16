@@ -6,6 +6,9 @@ import {customElement, property} from 'lit/decorators.js';
 import type {SearchOptions} from '../query.ts';
 import {tooltipStyles, labelStyles} from '../shared-styles.ts';
 
+// Re-export to prevent esbuild tree-shaking (registers <repo-select> custom element).
+export {RepoSelect} from '../repo-select.ts';
+
 /**
  * Case sensitivity and literal mode controls.
  *

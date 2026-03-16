@@ -11,8 +11,8 @@ export async function testBreadcrumbsRenders(t: T) {
         <cs-breadcrumbs path="myrepo@abc123/+/src/main.go"></cs-breadcrumbs>
     `) as Breadcrumbs;
     const links = el.renderRoot.querySelectorAll('a');
-    // Should have: repo link + "src" + "main.go"
-    eq(links.length >= 2, true, "has breadcrumb links");
+    // Repo link + "src" + "main.go" = 3 links.
+    eq(links.length, 3, "has 3 breadcrumb links");
 }
 
 export async function testBreadcrumbsNoSeparator(t: T) {
@@ -20,7 +20,8 @@ export async function testBreadcrumbsNoSeparator(t: T) {
         <cs-breadcrumbs path="repo@v/+/file.go"></cs-breadcrumbs>
     `) as Breadcrumbs;
     const links = el.renderRoot.querySelectorAll('a');
-    eq(links.length >= 1, true, "has at least one link");
+    // Repo link + "file.go" = 2 links.
+    eq(links.length, 2, "has 2 breadcrumb links");
     const lastLink = links[links.length - 1];
     eq(lastLink.textContent, "file.go", "last link is filename");
 }

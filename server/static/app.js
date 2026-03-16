@@ -145,7 +145,167 @@ var xr=Object.defineProperty;var yr=Object.getOwnPropertyDescriptor;var a=(r,e,t
         color: var(--color-foreground-error);
         font-size: 14px;
       }
-    `],a([u()],B.prototype,"value",2),a([u({type:Number})],B.prototype,"debounce",2),a([u()],B.prototype,"error",2),B=a([x("cs-search-input")],B);var Y=class extends g{constructor(){super(...arguments);this.options={};this.repos=[]}render(){let t=this.options.caseSensitive?"false":"auto";return c`
+    `],a([u()],B.prototype,"value",2),a([u({type:Number})],B.prototype,"debounce",2),a([u()],B.prototype,"error",2),B=a([x("cs-search-input")],B);var z=class extends g{constructor(){super(...arguments);this._open=!1;this._search="";this._options=[];this._select=null;this._onOutsideClick=t=>{this._open&&(this.contains(t.target)||(this._open=!1))};this._onFocusOut=t=>{this._open&&!this.contains(t.relatedTarget)&&(this._open=!1)}}connectedCallback(){super.connectedCallback(),this._select=this.querySelector("select"),this._select&&this._readOptions(),document.addEventListener("click",this._onOutsideClick),this.addEventListener("focusout",this._onFocusOut)}disconnectedCallback(){super.disconnectedCallback(),document.removeEventListener("click",this._onOutsideClick),this.removeEventListener("focusout",this._onFocusOut)}_readOptions(){let t=[];for(let o of this._select.children)if(o instanceof HTMLOptGroupElement)for(let s of o.querySelectorAll("option"))t.push({value:s.value,label:s.textContent?.trim()||s.value,group:o.label,selected:s.selected});else o instanceof HTMLOptionElement&&t.push({value:o.value,label:o.textContent?.trim()||o.value,group:"",selected:o.selected});this._options=t}get _buttonText(){let t=this._options.filter(o=>o.selected);return t.length===0?"(all repositories)":t.length<=4?t.map(o=>o.label).join(", "):`(${t.length} repositories)`}get _filteredGroups(){let t=this._search.toLowerCase(),o=new Map;for(let s of this._options)t&&!s.value.toLowerCase().includes(t)&&!s.label.toLowerCase().includes(t)||(o.has(s.group)||o.set(s.group,[]),o.get(s.group).push(s));return[...o.entries()].map(([s,i])=>({label:s,options:i}))}_toggleOpen(){this._open=!this._open,this._open&&this.updateComplete.then(()=>{this.shadowRoot?.querySelector(".search-input")?.focus()})}_toggleOption(t){this._options=this._options.map(o=>o.value===t?{...o,selected:!o.selected}:o),this._syncToSelect()}_selectAll(){this._options=this._options.map(t=>({...t,selected:!0})),this._syncToSelect()}_deselectAll(){this._options=this._options.map(t=>({...t,selected:!1})),this._syncToSelect()}_toggleGroup(t){let s=this._options.filter(i=>i.group===t).every(i=>i.selected);this._options=this._options.map(i=>i.group===t?{...i,selected:!s}:i),this._syncToSelect()}_syncToSelect(){if(this._select){for(let t of this._select.options){let o=this._options.find(s=>s.value===t.value);o&&(t.selected=o.selected)}this._select.dispatchEvent(new Event("change",{bubbles:!0}))}}_onSearchInput(t){this._search=t.target.value}_onSearchKeydown(t){t.key==="Enter"&&(t.preventDefault(),this._search=""),t.key==="Escape"&&(this._open=!1)}render(){return c`
+            <button type="button" class="trigger" @click=${this._toggleOpen}>
+                <span class="text">${this._buttonText}</span>
+                <span class="caret">&#x25BE;</span>
+            </button>
+            ${this._open?this._renderDropdown():S}
+            <slot></slot>
+        `}_renderDropdown(){let t=this._filteredGroups;return c`
+            <div class="dropdown">
+                <div class="search-box">
+                    <input
+                        type="search"
+                        class="search-input"
+                        placeholder="Search..."
+                        .value=${this._search}
+                        @input=${this._onSearchInput}
+                        @keydown=${this._onSearchKeydown}
+                    />
+                </div>
+                <div class="actions">
+                    <button type="button" @click=${this._selectAll}>Select All</button>
+                    <button type="button" @click=${this._deselectAll}>Deselect All</button>
+                </div>
+                <div class="options">${t.map(o=>this._renderGroup(o))}</div>
+            </div>
+        `}_renderGroup(t){return t.label?c`
+            <div class="group">
+                <div class="group-header" @click=${()=>this._toggleGroup(t.label)}>${t.label}</div>
+                ${t.options.map(o=>this._renderOption(o))}
+            </div>
+        `:t.options.map(o=>this._renderOption(o))}_renderOption(t){return c`
+            <label class="option ${t.selected?"selected":""}">
+                <input type="checkbox" .checked=${t.selected} @change=${()=>this._toggleOption(t.value)} />
+                ${t.label}
+            </label>
+        `}};z.styles=f`
+        :host {
+            display: inline-block;
+            position: relative;
+            font-size: 12px;
+        }
+
+        .trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--color-background-subtle);
+            border: 1px solid var(--color-border-default);
+            color: var(--color-foreground-muted);
+            cursor: pointer;
+            font-size: inherit;
+            white-space: nowrap;
+        }
+
+        .trigger:hover {
+            background: var(--color-background-hover);
+            color: var(--color-foreground);
+        }
+
+        .caret {
+            font-size: 10px;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 1000;
+            min-width: 240px;
+            max-height: 420px;
+            background: var(--color-background-subtle);
+            border: 1px solid var(--color-border-default);
+            box-shadow: 0 2px 8px var(--color-shadow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-box {
+            padding: 4px;
+        }
+
+        .search-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 4px 6px;
+            border: 1px solid var(--color-border-default);
+            background: var(--color-background);
+            color: var(--color-foreground);
+            font-size: inherit;
+        }
+
+        .search-input:focus {
+            outline: 1px solid var(--color-foreground-accent);
+        }
+
+        .actions {
+            display: flex;
+            gap: 4px;
+            padding: 2px 4px;
+            border-bottom: 1px solid var(--color-border-default);
+        }
+
+        .actions button {
+            flex: 1;
+            padding: 2px 4px;
+            background: var(--color-background);
+            border: 1px solid var(--color-border-default);
+            color: var(--color-foreground-muted);
+            cursor: pointer;
+            font-size: inherit;
+        }
+
+        .actions button:hover {
+            background: var(--color-background-hover);
+            color: var(--color-foreground);
+        }
+
+        .options {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .group-header {
+            padding: 4px 8px;
+            font-weight: bold;
+            color: var(--color-foreground-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .group-header:hover {
+            background: var(--color-background-hover);
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px 2px 16px;
+            cursor: pointer;
+            user-select: none;
+            color: var(--color-foreground);
+        }
+
+        .option:hover {
+            background: var(--color-background-hover);
+        }
+
+        .option.selected {
+            background: var(--color-background-hover);
+        }
+
+        .option input[type="checkbox"] {
+            margin: 0;
+        }
+
+        ::slotted(select) {
+            display: none !important;
+        }
+    `,a([A()],z.prototype,"_open",2),a([A()],z.prototype,"_search",2),a([A()],z.prototype,"_options",2),z=a([x("repo-select")],z);var Y=class extends g{constructor(){super(...arguments);this.options={};this.repos=[]}render(){let t=this.options.caseSensitive?"false":"auto";return c`
       <div class="search-options">
         <div class="search-option">
           <span class="label">Case:</span>
@@ -394,7 +554,7 @@ var xr=Object.defineProperty;var yr=Object.getOwnPropertyDescriptor;var a=(r,e,t
       :host([no-context]) .match:last-of-type .contents {
         padding-bottom: 10px;
       }
-    `],a([u({type:Object})],V.prototype,"result",2),a([u({type:Boolean,reflect:!0,attribute:"no-context"})],V.prototype,"noContext",2),V=a([x("cs-result-group")],V);var z=class extends g{constructor(){super(...arguments);this.total=0;this.timeMs=0;this.truncated=!1;this.loading=!1}render(){if(this.loading)return c`<div id="countarea">Searching...</div>`;let t=this.truncated?`${this.total}+`:`${this.total}`;return c`
+    `],a([u({type:Object})],V.prototype,"result",2),a([u({type:Boolean,reflect:!0,attribute:"no-context"})],V.prototype,"noContext",2),V=a([x("cs-result-group")],V);var H=class extends g{constructor(){super(...arguments);this.total=0;this.timeMs=0;this.truncated=!1;this.loading=!1}render(){if(this.loading)return c`<div id="countarea">Searching...</div>`;let t=this.truncated?`${this.total}+`:`${this.total}`;return c`
       <div id="countarea">
         <span id="numresults">${t}</span> matches
         <span id="searchtimebox">
@@ -402,7 +562,7 @@ var xr=Object.defineProperty;var yr=Object.getOwnPropertyDescriptor;var a=(r,e,t
           <span id="searchtime">${this.timeMs}ms</span>
         </span>
       </div>
-    `}};z.styles=[ae,f`
+    `}};H.styles=[ae,f`
       :host {
         display: block;
       }
@@ -410,7 +570,7 @@ var xr=Object.defineProperty;var yr=Object.getOwnPropertyDescriptor;var a=(r,e,t
       #countarea {
         text-align: right;
       }
-    `],a([u({type:Number})],z.prototype,"total",2),a([u({type:Number})],z.prototype,"timeMs",2),a([u({type:Boolean})],z.prototype,"truncated",2),a([u({type:Boolean})],z.prototype,"loading",2),z=a([x("cs-result-stats")],z);var ee=class extends g{constructor(){super(...arguments);this.facets=null;this.selected={}}render(){if(!this.facets)return S;let t=[{label:"Extension",key:"f.ext",buckets:this.facets.ext},{label:"Repository",key:"f.repo",buckets:this.facets.repo},{label:"Path",key:"f.path",buckets:this.facets.path}].filter(o=>o.buckets&&o.buckets.length>0);return t.length===0?S:c`
+    `],a([u({type:Number})],H.prototype,"total",2),a([u({type:Number})],H.prototype,"timeMs",2),a([u({type:Boolean})],H.prototype,"truncated",2),a([u({type:Boolean})],H.prototype,"loading",2),H=a([x("cs-result-stats")],H);var ee=class extends g{constructor(){super(...arguments);this.facets=null;this.selected={}}render(){if(!this.facets)return S;let t=[{label:"Extension",key:"f.ext",buckets:this.facets.ext},{label:"Repository",key:"f.repo",buckets:this.facets.repo},{label:"Path",key:"f.path",buckets:this.facets.path}].filter(o=>o.buckets&&o.buckets.length>0);return t.length===0?S:c`
       <div class="panel">
         ${t.map(o=>this.renderSection(o.label,o.key,o.buckets))}
       </div>
@@ -894,167 +1054,7 @@ var xr=Object.defineProperty;var yr=Object.getOwnPropertyDescriptor;var a=(r,e,t
         margin: 2em auto;
         line-height: 1.6;
       }
-    `],Oe=a([x("cs-about-view")],Oe);var H=class extends g{constructor(){super(...arguments);this._open=!1;this._search="";this._options=[];this._select=null;this._onOutsideClick=t=>{this._open&&(this.contains(t.target)||(this._open=!1))};this._onFocusOut=t=>{this._open&&!this.contains(t.relatedTarget)&&(this._open=!1)}}connectedCallback(){super.connectedCallback(),this._select=this.querySelector("select"),this._select&&this._readOptions(),document.addEventListener("click",this._onOutsideClick),this.addEventListener("focusout",this._onFocusOut)}disconnectedCallback(){super.disconnectedCallback(),document.removeEventListener("click",this._onOutsideClick),this.removeEventListener("focusout",this._onFocusOut)}_readOptions(){let t=[];for(let o of this._select.children)if(o instanceof HTMLOptGroupElement)for(let s of o.querySelectorAll("option"))t.push({value:s.value,label:s.textContent?.trim()||s.value,group:o.label,selected:s.selected});else o instanceof HTMLOptionElement&&t.push({value:o.value,label:o.textContent?.trim()||o.value,group:"",selected:o.selected});this._options=t}get _buttonText(){let t=this._options.filter(o=>o.selected);return t.length===0?"(all repositories)":t.length<=4?t.map(o=>o.label).join(", "):`(${t.length} repositories)`}get _filteredGroups(){let t=this._search.toLowerCase(),o=new Map;for(let s of this._options)t&&!s.value.toLowerCase().includes(t)&&!s.label.toLowerCase().includes(t)||(o.has(s.group)||o.set(s.group,[]),o.get(s.group).push(s));return[...o.entries()].map(([s,i])=>({label:s,options:i}))}_toggleOpen(){this._open=!this._open,this._open&&this.updateComplete.then(()=>{this.shadowRoot?.querySelector(".search-input")?.focus()})}_toggleOption(t){this._options=this._options.map(o=>o.value===t?{...o,selected:!o.selected}:o),this._syncToSelect()}_selectAll(){this._options=this._options.map(t=>({...t,selected:!0})),this._syncToSelect()}_deselectAll(){this._options=this._options.map(t=>({...t,selected:!1})),this._syncToSelect()}_toggleGroup(t){let s=this._options.filter(i=>i.group===t).every(i=>i.selected);this._options=this._options.map(i=>i.group===t?{...i,selected:!s}:i),this._syncToSelect()}_syncToSelect(){if(this._select){for(let t of this._select.options){let o=this._options.find(s=>s.value===t.value);o&&(t.selected=o.selected)}this._select.dispatchEvent(new Event("change",{bubbles:!0}))}}_onSearchInput(t){this._search=t.target.value}_onSearchKeydown(t){t.key==="Enter"&&(t.preventDefault(),this._search=""),t.key==="Escape"&&(this._open=!1)}render(){return c`
-            <button type="button" class="trigger" @click=${this._toggleOpen}>
-                <span class="text">${this._buttonText}</span>
-                <span class="caret">&#x25BE;</span>
-            </button>
-            ${this._open?this._renderDropdown():S}
-            <slot></slot>
-        `}_renderDropdown(){let t=this._filteredGroups;return c`
-            <div class="dropdown">
-                <div class="search-box">
-                    <input
-                        type="search"
-                        class="search-input"
-                        placeholder="Search..."
-                        .value=${this._search}
-                        @input=${this._onSearchInput}
-                        @keydown=${this._onSearchKeydown}
-                    />
-                </div>
-                <div class="actions">
-                    <button type="button" @click=${this._selectAll}>Select All</button>
-                    <button type="button" @click=${this._deselectAll}>Deselect All</button>
-                </div>
-                <div class="options">${t.map(o=>this._renderGroup(o))}</div>
-            </div>
-        `}_renderGroup(t){return t.label?c`
-            <div class="group">
-                <div class="group-header" @click=${()=>this._toggleGroup(t.label)}>${t.label}</div>
-                ${t.options.map(o=>this._renderOption(o))}
-            </div>
-        `:t.options.map(o=>this._renderOption(o))}_renderOption(t){return c`
-            <label class="option ${t.selected?"selected":""}">
-                <input type="checkbox" .checked=${t.selected} @change=${()=>this._toggleOption(t.value)} />
-                ${t.label}
-            </label>
-        `}};H.styles=f`
-        :host {
-            display: inline-block;
-            position: relative;
-            font-size: 12px;
-        }
-
-        .trigger {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            background: var(--color-background-subtle);
-            border: 1px solid var(--color-border-default);
-            color: var(--color-foreground-muted);
-            cursor: pointer;
-            font-size: inherit;
-            white-space: nowrap;
-        }
-
-        .trigger:hover {
-            background: var(--color-background-hover);
-            color: var(--color-foreground);
-        }
-
-        .caret {
-            font-size: 10px;
-        }
-
-        .dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            z-index: 1000;
-            min-width: 240px;
-            max-height: 420px;
-            background: var(--color-background-subtle);
-            border: 1px solid var(--color-border-default);
-            box-shadow: 0 2px 8px var(--color-shadow);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .search-box {
-            padding: 4px;
-        }
-
-        .search-input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 4px 6px;
-            border: 1px solid var(--color-border-default);
-            background: var(--color-background);
-            color: var(--color-foreground);
-            font-size: inherit;
-        }
-
-        .search-input:focus {
-            outline: 1px solid var(--color-foreground-accent);
-        }
-
-        .actions {
-            display: flex;
-            gap: 4px;
-            padding: 2px 4px;
-            border-bottom: 1px solid var(--color-border-default);
-        }
-
-        .actions button {
-            flex: 1;
-            padding: 2px 4px;
-            background: var(--color-background);
-            border: 1px solid var(--color-border-default);
-            color: var(--color-foreground-muted);
-            cursor: pointer;
-            font-size: inherit;
-        }
-
-        .actions button:hover {
-            background: var(--color-background-hover);
-            color: var(--color-foreground);
-        }
-
-        .options {
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .group-header {
-            padding: 4px 8px;
-            font-weight: bold;
-            color: var(--color-foreground-muted);
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .group-header:hover {
-            background: var(--color-background-hover);
-        }
-
-        .option {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px 2px 16px;
-            cursor: pointer;
-            user-select: none;
-            color: var(--color-foreground);
-        }
-
-        .option:hover {
-            background: var(--color-background-hover);
-        }
-
-        .option.selected {
-            background: var(--color-background-hover);
-        }
-
-        .option input[type="checkbox"] {
-            margin: 0;
-        }
-
-        ::slotted(select) {
-            display: none !important;
-        }
-    `,a([A()],H.prototype,"_open",2),a([A()],H.prototype,"_search",2),a([A()],H.prototype,"_options",2),H=a([x("repo-select")],H);var Re=class extends we(g){render(){let e=q.get();return c`
+    `],Oe=a([x("cs-about-view")],Oe);var Re=class extends we(g){render(){let e=q.get();return c`
       <main>${this.renderView(e)}</main>
       <footer>
         <ul>
@@ -1094,6 +1094,6 @@ var xr=Object.defineProperty;var yr=Object.getOwnPropertyDescriptor;var a=(r,e,t
       footer li:first-child::before {
         content: "";
       }
-    `],Re=a([x("cs-app")],Re);export{Re as CsApp,H as RepoSelect};
+    `],Re=a([x("cs-app")],Re);export{Re as CsApp};
 /*! For license information please see app.js.LEGAL.txt */
 //# sourceMappingURL=app.js.map

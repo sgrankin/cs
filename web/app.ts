@@ -17,8 +17,6 @@ import './views/search-view.ts';
 import './views/file-view.ts';
 import './views/about-view.ts';
 
-// Re-export to prevent esbuild tree-shaking (side-effect: registers custom element).
-export {RepoSelect} from './repo-select.ts';
 
 /**
  * Top-level application shell.

@@ -20,7 +20,7 @@ Keep this up to date as gaps are closed.
 | Case: match/auto/ignore radios | fold_case param | fold_case param | Done |
 | Literal checkbox | literal param | literal param | Done |
 | Repository multi-select dropdown | repo-select wrapping select | repo-select from __CS_INIT | Done |
-| Query syntax hint (path:, -path:, ...) | .query-hint div | Inside cs-search-input | Done |
+| Query syntax hint (path:, -path:, ...) | .query-hint div | search-view.ts | Done |
 
 ### Results Display
 | Feature | Old | New | Status |
@@ -31,7 +31,7 @@ Keep this up to date as gaps are closed.
 | Extension filter buttons | filter-button (top 5) | cs-facet-panel pills | Done |
 | Extension filter uses facet params | Munged query text | f.ext URL param | Done |
 | Repository facet pills | Not in old UI | cs-facet-panel | New feature |
-| Path/directory facet pills | Not in old UI | Planned | Gap (#21) |
+| Path/directory facet pills | Not in old UI | cs-facet-panel | Done (new feature) |
 | Filename results (limited to 10) | limitedFileResults | limitedFileResults signal | Done |
 | File group headers (repo:ver:dir/file) | .file-group .header | cs-result-group | Done |
 | Match highlighting (yellow bg) | match-str component | match-str component | Done |
@@ -55,7 +55,7 @@ Keep this up to date as gaps are closed.
 |---------|-----|-----|--------|
 | URL is source of truth | HTMX hx-push-url | Router signals + pushState | Done |
 | Back/forward navigation | HTMX + SSE history hack | popstate handler | Done |
-| History entries show query | SSE first-message history | pushState (no title) | Gap (#23) |
+| History entries show query | SSE first-message history | title passed to pushState | Done |
 | Safari bfcache workaround | pageshow + reload | Not implemented | Gap (minor) |
 | Browser HTTP cache (backspace) | Cache-Control: max-age=30 | Cache-Control: max-age=30 | Done |
 
@@ -82,19 +82,19 @@ Keep this up to date as gaps are closed.
 | Line selection via hash (#L5) | fileview.ts hash parsing | cs-code-viewer hash parsing | Done |
 | Line range selection (#L5-L10) | fileview.ts | cs-code-viewer | Done |
 | Shift+click range expansion | fileview.ts | cs-code-viewer | Done |
-| Scroll to selected line (1/3 viewport) | fileview.ts scrollBehavior | Not implemented | Gap |
-| External source link (GitHub) | data-href-template + v key | Not implemented | Gap (#25) |
+| Scroll to selected line (1/3 viewport) | fileview.ts scrollBehavior | cs-code-viewer scrollToSelection | Done |
+| External source link (GitHub) | data-href-template + v key | cs-code-viewer | Done |
 
 ### Keyboard Shortcuts
 | Feature | Old | New | Status |
 |---------|-----|-----|--------|
-| `/` — new search | fileview.ts | Not implemented | Gap (#24) |
-| `?` — help modal | fileview.ts | Not implemented | Gap (#24, #26) |
-| `v` — view at external source | fileview.ts | Not implemented | Gap (#24, #25) |
-| `n` — next match (window.find) | fileview.ts | Not implemented | Gap (#24) |
-| `p` — previous match | fileview.ts | Not implemented | Gap (#24) |
-| `Enter` — search selected in new tab | fileview.ts | Not implemented | Gap (#24) |
-| `Escape` — close help | fileview.ts | Not implemented | Gap (#24, #26) |
+| `/` — new search | fileview.ts | code-viewer.ts | Done |
+| `?` — help modal | fileview.ts | code-viewer.ts | Done |
+| `v` — view at external source | fileview.ts | code-viewer.ts | Done |
+| `n` — next match (window.find) | fileview.ts | code-viewer.ts | Done |
+| `p` — previous match | fileview.ts | code-viewer.ts | Done |
+| `Enter` — search selected in new tab | fileview.ts | code-viewer.ts | Done |
+| `Escape` — close help | fileview.ts | code-viewer.ts | Done |
 
 ### Text Selection
 | Feature | Old | New | Status |
@@ -108,20 +108,20 @@ Keep this up to date as gaps are closed.
 |---------|-----|-----|--------|
 | Sorted entries (dirs first) | DirListingSort | cs-dir-listing sort | Done |
 | Directory entries with trailing / | viewURL + "/" | Entry names from /raw/ | Done |
-| README detection + rendering | supportedReadmeRegex | Not implemented | Gap (#28) |
+| README detection + rendering | supportedReadmeRegex | file-view.ts | Done |
 | Symlink display | Not fully implemented | Not implemented | N/A |
 
 ### Help Modal
 | Feature | Old | New | Status |
 |---------|-----|-----|--------|
-| Modal overlay | u-modal-overlay classes | Not implemented | Gap (#26) |
-| Keyboard shortcut list | helpModal template | Not implemented | Gap (#26) |
-| Dismiss on outside click | fileview.ts | Not implemented | Gap (#26) |
+| Modal overlay | u-modal-overlay classes | code-viewer.ts | Done |
+| Keyboard shortcut list | helpModal template | code-viewer.ts | Done |
+| Dismiss on outside click | fileview.ts | code-viewer.ts | Done |
 
 ## About Page
 | Feature | Old | New | Status |
 |---------|-----|-----|--------|
-| Content about livegrep/codesearch | about.templ | Placeholder text | Gap (#30) |
+| Content about livegrep/codesearch | about.templ | about-view.ts | Done |
 
 ## Performance
 | Feature | Old | New | Status |
