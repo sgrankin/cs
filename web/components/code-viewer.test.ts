@@ -9,39 +9,24 @@ import type {CodeViewer} from "./code-viewer.ts";
 // --- Pure function tests (no DOM needed) ---
 
 export function testKeyAction(t: T) {
-    t.run("/ navigates to search", () => {
-        eq(keyAction("/", "", ""), {type: "navigate", url: "/search"});
-    });
-    t.run("/ with selected text includes query", () => {
-        eq(keyAction("/", "foo bar", ""), {type: "navigate", url: "/search?q=foo%20bar"});
-    });
-    t.run("? toggles help", () => {
-        eq(keyAction("?", "", ""), {type: "toggle-help"});
-    });
-    t.run("Escape closes help", () => {
-        eq(keyAction("Escape", "", ""), {type: "close-help"});
-    });
-    t.run("Enter with text opens tab", () => {
-        eq(keyAction("Enter", "hello", ""), {type: "open-tab", url: "/search?q=hello"});
-    });
-    t.run("Enter without text is close-help", () => {
-        eq(keyAction("Enter", "", ""), {type: "close-help"});
-    });
-    t.run("v navigates to external URL", () => {
-        eq(keyAction("v", "", "https://github.com/foo"), {type: "navigate", url: "https://github.com/foo"});
-    });
-    t.run("v without URL is close-help", () => {
-        eq(keyAction("v", "", ""), {type: "close-help"});
-    });
-    t.run("n finds next", () => {
-        eq(keyAction("n", "hello", ""), {type: "find", text: "hello", backwards: false});
-    });
-    t.run("p finds previous", () => {
-        eq(keyAction("p", "hello", ""), {type: "find", text: "hello", backwards: true});
-    });
-    t.run("unknown key returns null", () => {
-        eq(keyAction("x", "", ""), null);
-    });
+    const cases = [
+        {name: "/ navigates to search", key: "/", text: "", extUrl: "", want: {type: "navigate", url: "/search"} as any},
+        {name: "/ with selected text includes query", key: "/", text: "foo bar", extUrl: "", want: {type: "navigate", url: "/search?q=foo%20bar"}},
+        {name: "? toggles help", key: "?", text: "", extUrl: "", want: {type: "toggle-help"}},
+        {name: "Escape closes help", key: "Escape", text: "", extUrl: "", want: {type: "close-help"}},
+        {name: "Enter with text opens tab", key: "Enter", text: "hello", extUrl: "", want: {type: "open-tab", url: "/search?q=hello"}},
+        {name: "Enter without text is close-help", key: "Enter", text: "", extUrl: "", want: {type: "close-help"}},
+        {name: "v navigates to external URL", key: "v", text: "", extUrl: "https://github.com/foo", want: {type: "navigate", url: "https://github.com/foo"}},
+        {name: "v without URL is close-help", key: "v", text: "", extUrl: "", want: {type: "close-help"}},
+        {name: "n finds next", key: "n", text: "hello", extUrl: "", want: {type: "find", text: "hello", backwards: false}},
+        {name: "p finds previous", key: "p", text: "hello", extUrl: "", want: {type: "find", text: "hello", backwards: true}},
+        {name: "unknown key returns null", key: "x", text: "", extUrl: "", want: null},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            eq(keyAction(c.key, c.text, c.extUrl), c.want);
+        });
+    }
 }
 
 export function testEffectsNavigate(t: T) {
@@ -53,44 +38,61 @@ export function testEffectsNavigate(t: T) {
 }
 
 export function testComputeScrollOffset(t: T) {
-    t.run("single line: 1/3 from top", () => {
-        eq(computeScrollOffset(900, false, 0, 20), 300);
-    });
-    t.run("range fits: centered", () => {
+    const cases = [
+        {name: "single line: 1/3 from top", viewport: 900, isRange: false, rangeH: 0, lineH: 20, want: 300},
         // viewport 900, range 200 → offset (900-200)/2 = 350
-        eq(computeScrollOffset(900, true, 200, 20), 350);
-    });
-    t.run("range taller than viewport: half line height", () => {
-        eq(computeScrollOffset(900, true, 1200, 20), 10);
-    });
-    t.run("range with zero height: default", () => {
-        eq(computeScrollOffset(900, true, 0, 20), 300);
-    });
+        {name: "range fits: centered", viewport: 900, isRange: true, rangeH: 200, lineH: 20, want: 350},
+        {name: "range taller than viewport: half line height", viewport: 900, isRange: true, rangeH: 1200, lineH: 20, want: 10},
+        {name: "range with zero height: default", viewport: 900, isRange: true, rangeH: 0, lineH: 20, want: 300},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            eq(computeScrollOffset(c.viewport, c.isRange, c.rangeH, c.lineH), c.want);
+        });
+    }
 }
 
 export function testFormatLineNumber(t: T) {
-    eq(formatLineNumber(-1, -1), "1", "no selection");
-    eq(formatLineNumber(5, 5), "5", "single line");
-    eq(formatLineNumber(5, 10), "5-L10", "range");
+    const cases = [
+        {name: "no selection", start: -1, end: -1, want: "1"},
+        {name: "single line", start: 5, end: 5, want: "5"},
+        {name: "range", start: 5, end: 10, want: "5-L10"},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            eq(formatLineNumber(c.start, c.end), c.want);
+        });
+    }
 }
 
 export function testResolveExternalUrl(t: T) {
-    eq(resolveExternalUrl("", 5, 5), "", "empty template");
-    eq(resolveExternalUrl("https://github.com/x/y/blob/main/f.go#L{lno}", 5, 5),
-       "https://github.com/x/y/blob/main/f.go#L5", "single line");
-    eq(resolveExternalUrl("https://github.com/x/y/blob/main/f.go#L{lno}", 5, 10),
-       "https://github.com/x/y/blob/main/f.go#L5-L10", "range");
-    eq(resolveExternalUrl("https://github.com/x/y/blob/main/f.go#L{lno}", -1, -1),
-       "https://github.com/x/y/blob/main/f.go#L1", "no selection defaults to 1");
+    const cases = [
+        {name: "empty template", tmpl: "", start: 5, end: 5, want: ""},
+        {name: "single line", tmpl: "https://github.com/x/y/blob/main/f.go#L{lno}", start: 5, end: 5, want: "https://github.com/x/y/blob/main/f.go#L5"},
+        {name: "range", tmpl: "https://github.com/x/y/blob/main/f.go#L{lno}", start: 5, end: 10, want: "https://github.com/x/y/blob/main/f.go#L5-L10"},
+        {name: "no selection defaults to 1", tmpl: "https://github.com/x/y/blob/main/f.go#L{lno}", start: -1, end: -1, want: "https://github.com/x/y/blob/main/f.go#L1"},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            eq(resolveExternalUrl(c.tmpl, c.start, c.end), c.want);
+        });
+    }
 }
 
 export function testParseLineHash(t: T) {
-    eq(parseLineHash("#L5"), [5, 5], "single line");
-    eq(parseLineHash("#L5-L10"), [5, 10], "range with L prefix");
-    eq(parseLineHash("#L5-10"), [5, 10], "range without L prefix");
-    eq(parseLineHash(""), [-1, -1], "empty");
-    eq(parseLineHash("#foo"), [-1, -1], "invalid");
-    eq(parseLineHash("#L0"), [0, 0], "line zero");
+    const cases = [
+        {name: "single line", hash: "#L5", want: [5, 5]},
+        {name: "range with L prefix", hash: "#L5-L10", want: [5, 10]},
+        {name: "range without L prefix", hash: "#L5-10", want: [5, 10]},
+        {name: "empty", hash: "", want: [-1, -1]},
+        {name: "invalid", hash: "#foo", want: [-1, -1]},
+        {name: "line zero", hash: "#L0", want: [0, 0]},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            eq(parseLineHash(c.hash), c.want);
+        });
+    }
 }
 
 // --- Component rendering tests ---
@@ -103,13 +105,17 @@ export async function testCodeViewerRendersLines(t: T) {
 }
 
 export async function testCodeViewerLineCount(t: T) {
-    const count = async (content: string) => {
-        const el = await render(html`<cs-code-viewer .content=${content}></cs-code-viewer>`) as CodeViewer;
-        return el.renderRoot.querySelectorAll('.line').length;
-    };
-    eq(await count("a\nb\nc\n"), 3, "trailing newline: 3 lines");
-    eq(await count("a\nb\nc"), 3, "no trailing newline: 3 lines");
-    eq(await count("hello\n"), 1, "single line");
+    const cases = [
+        {name: "trailing newline: 3 lines", content: "a\nb\nc\n", want: 3},
+        {name: "no trailing newline: 3 lines", content: "a\nb\nc", want: 3},
+        {name: "single line", content: "hello\n", want: 1},
+    ];
+    for (const c of cases) {
+        t.run(c.name, async () => {
+            const el = await render(html`<cs-code-viewer .content=${c.content}></cs-code-viewer>`) as CodeViewer;
+            eq(el.renderRoot.querySelectorAll('.line').length, c.want);
+        });
+    }
 }
 
 export async function testCodeViewerHashSelection(t: T) {

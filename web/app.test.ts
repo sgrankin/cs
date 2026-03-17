@@ -31,29 +31,26 @@ export async function testAppHasFooter(t: T) {
     ]);
 }
 
-export async function testAppRendersAboutView(t: T) {
-    currentRoute.set({name: 'about', params: new URLSearchParams()});
-    const el = await render(html`<cs-app></cs-app>`) as CsApp;
-    const aboutView = el.renderRoot.querySelector('cs-about-view');
-    eq(aboutView !== null, true, "about view rendered");
-    // Reset route.
-    currentRoute.set({name: 'search', params: new URLSearchParams()});
-}
-
-export async function testAppRendersNotFound(t: T) {
-    currentRoute.set({name: 'not-found', params: new URLSearchParams()});
-    const el = await render(html`<cs-app></cs-app>`) as CsApp;
-    const placeholder = el.renderRoot.querySelector('.placeholder');
-    eq(placeholder!.textContent, "Not found");
-    // Reset route.
-    currentRoute.set({name: 'search', params: new URLSearchParams()});
-}
-
-export async function testAppRendersFileView(t: T) {
-    currentRoute.set({name: 'view', path: 'repo/file.go', params: new URLSearchParams()});
-    const el = await render(html`<cs-app></cs-app>`) as CsApp;
-    const fileView = el.renderRoot.querySelector('cs-file-view');
-    eq(fileView !== null, true, "file view rendered");
-    // Reset route.
-    currentRoute.set({name: 'search', params: new URLSearchParams()});
+export async function testAppRendersRoutes(t: T) {
+    const cases = [
+        {name: "about view", route: {name: 'about', params: new URLSearchParams()} as any,
+            selector: 'cs-about-view', wantExists: true},
+        {name: "not found", route: {name: 'not-found', params: new URLSearchParams()},
+            selector: '.placeholder', wantExists: true, wantText: "Not found"},
+        {name: "file view", route: {name: 'view', path: 'repo/file.go', params: new URLSearchParams()},
+            selector: 'cs-file-view', wantExists: true},
+    ];
+    for (const c of cases) {
+        t.run(c.name, async () => {
+            currentRoute.set(c.route);
+            try {
+                const el = await render(html`<cs-app></cs-app>`) as CsApp;
+                const found = el.renderRoot.querySelector(c.selector);
+                eq(found !== null, c.wantExists);
+                if (c.wantText) eq(found!.textContent, c.wantText);
+            } finally {
+                currentRoute.set({name: 'search', params: new URLSearchParams()});
+            }
+        });
+    }
 }

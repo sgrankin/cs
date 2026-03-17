@@ -23,115 +23,94 @@ function titleOf(effects: SearchEffect[]): string | undefined {
 }
 
 export function testSearchControllerCommit(t: T) {
-    t.run("first search from empty uses replaceUrl", () => {
-        const c = new SearchController();
-        const effects = c.commit("hello");
-        eq(effectTypes(effects), ["replaceUrl", "search"]);
-        eq(urlOf(effects), "/search?q=hello");
-        eq(titleOf(effects), "hello · code search");
-    });
-
-    t.run("new query after previous search uses pushUrl", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        const effects = c.commit("world");
-        eq(effectTypes(effects), ["pushUrl", "search"]);
-        eq(urlOf(effects), "/search?q=world");
-    });
-
-    t.run("same query repeated uses replaceUrl", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        const effects = c.commit("hello");
-        eq(effectTypes(effects), ["replaceUrl", "search"]);
-    });
-
-    t.run("empty query clears results", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        const effects = c.commit("");
-        eq(effectTypes(effects), ["replaceUrl", "clearResults"]);
-        eq(urlOf(effects), "/search");
-    });
-
-    t.run("empty query clears facets from URL", () => {
-        const c = new SearchController();
-        c.commit("hello", {}, {"f.ext": [".go"]});
-        const effects = c.commit("", {}, {"f.ext": [".go"]});
-        eq(urlOf(effects), "/search");
-    });
-
-    t.run("empty query resets state", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        c.commit("");
-        // Next search should replaceUrl (no previous to go back to).
-        const effects = c.commit("world");
-        eq(effectTypes(effects), ["replaceUrl", "search"]);
-    });
-
-    t.run("title for empty query", () => {
-        const c = new SearchController();
-        const effects = c.commit("");
-        eq(titleOf(effects), "code search");
-    });
-
-    t.run("options and facets are included in URL", () => {
-        const c = new SearchController();
-        const effects = c.commit("hello", {caseSensitive: true}, {"f.ext": [".go"]});
-        eq(urlOf(effects), "/search?q=hello&fold_case=false&f.ext=.go");
-    });
-
-    t.run("changing options with same query pushes", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        const effects = c.commit("hello", {caseSensitive: true});
-        eq(effectTypes(effects), ["pushUrl", "search"]);
-        eq(urlOf(effects), "/search?q=hello&fold_case=false");
-    });
-
-    t.run("changing facets with same query pushes", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        const effects = c.commit("hello", {}, {"f.ext": [".go"]});
-        eq(effectTypes(effects), ["pushUrl", "search"]);
-    });
-
-    t.run("same query and options repeated uses replaceUrl", () => {
-        const c = new SearchController();
-        c.commit("hello", {caseSensitive: true});
-        const effects = c.commit("hello", {caseSensitive: true});
-        eq(effectTypes(effects), ["replaceUrl", "search"]);
-    });
+    const cases: {name: string; setup: (c: SearchController) => void; query: string; opts: Record<string, any>; facets: Record<string, string[]>; wantTypes?: string[]; wantUrl?: string; wantTitle?: string}[] = [
+        {name: "first search from empty uses replaceUrl",
+            setup: (_c: SearchController) => {},
+            query: "hello", opts: {}, facets: {},
+            wantTypes: ["replaceUrl", "search"], wantUrl: "/search?q=hello", wantTitle: "hello · code search"},
+        {name: "new query after previous search uses pushUrl",
+            setup: (c: SearchController) => { c.commit("hello"); },
+            query: "world", opts: {}, facets: {},
+            wantTypes: ["pushUrl", "search"], wantUrl: "/search?q=world"},
+        {name: "same query repeated uses replaceUrl",
+            setup: (c: SearchController) => { c.commit("hello"); },
+            query: "hello", opts: {}, facets: {},
+            wantTypes: ["replaceUrl", "search"]},
+        {name: "empty query clears results",
+            setup: (c: SearchController) => { c.commit("hello"); },
+            query: "", opts: {}, facets: {},
+            wantTypes: ["replaceUrl", "clearResults"], wantUrl: "/search"},
+        {name: "empty query clears facets from URL",
+            setup: (c: SearchController) => { c.commit("hello", {}, {"f.ext": [".go"]}); },
+            query: "", opts: {}, facets: {"f.ext": [".go"]},
+            wantUrl: "/search"},
+        {name: "empty query resets state",
+            setup: (c: SearchController) => { c.commit("hello"); c.commit(""); },
+            // Next search should replaceUrl (no previous to go back to).
+            query: "world", opts: {}, facets: {},
+            wantTypes: ["replaceUrl", "search"]},
+        {name: "title for empty query",
+            setup: (_c: SearchController) => {},
+            query: "", opts: {}, facets: {},
+            wantTitle: "code search"},
+        {name: "options and facets are included in URL",
+            setup: (_c: SearchController) => {},
+            query: "hello", opts: {caseSensitive: true}, facets: {"f.ext": [".go"]},
+            wantUrl: "/search?q=hello&fold_case=false&f.ext=.go"},
+        {name: "changing options with same query pushes",
+            setup: (c: SearchController) => { c.commit("hello"); },
+            query: "hello", opts: {caseSensitive: true}, facets: {},
+            wantTypes: ["pushUrl", "search"], wantUrl: "/search?q=hello&fold_case=false"},
+        {name: "changing facets with same query pushes",
+            setup: (c: SearchController) => { c.commit("hello"); },
+            query: "hello", opts: {}, facets: {"f.ext": [".go"]},
+            wantTypes: ["pushUrl", "search"]},
+        {name: "same query and options repeated uses replaceUrl",
+            setup: (c: SearchController) => { c.commit("hello", {caseSensitive: true}); },
+            query: "hello", opts: {caseSensitive: true}, facets: {},
+            wantTypes: ["replaceUrl", "search"]},
+    ];
+    for (const tc of cases) {
+        t.run(tc.name, () => {
+            const c = new SearchController();
+            tc.setup(c);
+            const effects = c.commit(tc.query, tc.opts, tc.facets);
+            if (tc.wantTypes) eq(effectTypes(effects), tc.wantTypes);
+            if (tc.wantUrl) eq(urlOf(effects), tc.wantUrl);
+            if (tc.wantTitle) eq(titleOf(effects), tc.wantTitle);
+        });
+    }
 }
 
 export function testSearchControllerPopstate(t: T) {
-    t.run("syncs state so next commit pushes", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        c.popstate("world", new URLSearchParams("q=world"));
-        // Now if user types something new, it should push (not replace).
-        const effects = c.commit("new");
-        eq(effectTypes(effects), ["pushUrl", "search"]);
-    });
-
-    t.run("popstate with query triggers search", () => {
-        const c = new SearchController();
-        const effects = c.popstate("hello", new URLSearchParams("q=hello"));
-        eq(effectTypes(effects), ["replaceUrl", "search"]);
-    });
-
-    t.run("popstate with empty query clears results", () => {
-        const c = new SearchController();
-        c.commit("hello");
-        const effects = c.popstate("", new URLSearchParams());
-        eq(effectTypes(effects), ["replaceUrl", "clearResults"]);
-    });
-
-    t.run("popstate then same query uses replaceUrl", () => {
-        const c = new SearchController();
-        c.popstate("hello", new URLSearchParams("q=hello"));
-        const effects = c.commit("hello");
-        eq(effectTypes(effects), ["replaceUrl", "search"]);
-    });
+    const cases = [
+        {name: "syncs state so next commit pushes",
+            setup: (c: SearchController) => {
+                c.commit("hello");
+                c.popstate("world", new URLSearchParams("q=world"));
+            },
+            // Now if user types something new, it should push (not replace).
+            action: (c: SearchController) => c.commit("new"),
+            wantTypes: ["pushUrl", "search"]},
+        {name: "popstate with query triggers search",
+            setup: (_c: SearchController) => {},
+            action: (c: SearchController) => c.popstate("hello", new URLSearchParams("q=hello")),
+            wantTypes: ["replaceUrl", "search"]},
+        {name: "popstate with empty query clears results",
+            setup: (c: SearchController) => { c.commit("hello"); },
+            action: (c: SearchController) => c.popstate("", new URLSearchParams()),
+            wantTypes: ["replaceUrl", "clearResults"]},
+        {name: "popstate then same query uses replaceUrl",
+            setup: (c: SearchController) => { c.popstate("hello", new URLSearchParams("q=hello")); },
+            action: (c: SearchController) => c.commit("hello"),
+            wantTypes: ["replaceUrl", "search"]},
+    ];
+    for (const tc of cases) {
+        t.run(tc.name, () => {
+            const c = new SearchController();
+            tc.setup(c);
+            const effects = tc.action(c);
+            eq(effectTypes(effects), tc.wantTypes);
+        });
+    }
 }

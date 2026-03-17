@@ -10,99 +10,62 @@ import {
 } from "./state.ts";
 
 export function testSearchOptions(t: T) {
-    t.run("literal and case sensitive", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=foo&literal=true&fold_case=false")});
-            eq(searchOptions.get(), {literal: true, caseSensitive: true});
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
-
-    t.run("defaults", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=foo")});
-            eq(searchOptions.get(), {literal: false, caseSensitive: false});
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
+    const cases = [
+        {name: "literal and case sensitive", params: "q=foo&literal=true&fold_case=false",
+            want: {literal: true, caseSensitive: true}},
+        {name: "defaults", params: "q=foo",
+            want: {literal: false, caseSensitive: false}},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            const prev = currentRoute.get();
+            try {
+                currentRoute.set({name: 'search', params: new URLSearchParams(c.params)});
+                eq(searchOptions.get(), c.want);
+            } finally {
+                currentRoute.set(prev);
+            }
+        });
+    }
 }
 
 export function testContextLines(t: T) {
-    t.run("explicit value", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=foo&context=5")});
-            eq(contextLines.get(), 5);
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
-
-    t.run("default when absent", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=foo")});
-            eq(contextLines.get(), 3);
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
-
-    t.run("invalid value falls back to default", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=foo&context=abc")});
-            eq(contextLines.get(), 3);
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
-
-    t.run("zero is valid", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=foo&context=0")});
-            eq(contextLines.get(), 0);
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
-
-    t.run("negative value falls back to default", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=foo&context=-1")});
-            eq(contextLines.get(), 3);
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
+    const cases = [
+        {name: "explicit value", params: "q=foo&context=5", want: 5},
+        {name: "default when absent", params: "q=foo", want: 3},
+        {name: "invalid value falls back to default", params: "q=foo&context=abc", want: 3},
+        {name: "zero is valid", params: "q=foo&context=0", want: 0},
+        {name: "negative value falls back to default", params: "q=foo&context=-1", want: 3},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            const prev = currentRoute.get();
+            try {
+                currentRoute.set({name: 'search', params: new URLSearchParams(c.params)});
+                eq(contextLines.get(), c.want);
+            } finally {
+                currentRoute.set(prev);
+            }
+        });
+    }
 }
 
 export function testQueryText(t: T) {
-    t.run("reads q param", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams("q=hello+world")});
-            eq(queryText.get(), "hello world");
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
-
-    t.run("empty when no q param", () => {
-        const prev = currentRoute.get();
-        try {
-            currentRoute.set({name: 'search', params: new URLSearchParams()});
-            eq(queryText.get(), "");
-        } finally {
-            currentRoute.set(prev);
-        }
-    });
+    const cases = [
+        {name: "reads q param", params: "q=hello+world", want: "hello world"},
+        {name: "empty when no q param", params: "", want: ""},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            const prev = currentRoute.get();
+            try {
+                currentRoute.set({name: 'search', params: new URLSearchParams(c.params)});
+                eq(queryText.get(), c.want);
+            } finally {
+                currentRoute.set(prev);
+            }
+        });
+    }
 }
 
 export async function testExecuteSearchEmpty(t: T) {

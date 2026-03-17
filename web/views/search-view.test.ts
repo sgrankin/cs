@@ -14,65 +14,78 @@ import {
 import type {ResultEvent, DoneEvent, FacetsEvent} from "../api.ts";
 
 export function testToggleFacet(t: T) {
-    t.run("add extension", () => {
-        const result = toggleFacet({}, "f.ext", ".go");
-        eq([...result["f.ext"]], [".go"]);
-    });
-    t.run("remove extension", () => {
-        const active = {"f.ext": new Set([".go", ".py"])};
-        const result = toggleFacet(active, "f.ext", ".go");
-        eq([...result["f.ext"]], [".py"]);
-    });
-    t.run("path replaces", () => {
-        const active = {"f.path": new Set(["src/"])};
-        const result = toggleFacet(active, "f.path", "src/clj/");
-        eq([...result["f.path"]], ["src/clj/"]);
-    });
-    t.run("path toggle off", () => {
-        const active = {"f.path": new Set(["src/"])};
-        const result = toggleFacet(active, "f.path", "src/");
-        eq([...result["f.path"]], []);
-    });
-    t.run("preserves other keys", () => {
-        const active = {"f.ext": new Set([".go"]), "f.repo": new Set(["org/foo"])};
-        const result = toggleFacet(active, "f.ext", ".py");
-        eq([...result["f.ext"]].sort(), [".go", ".py"]);
-        eq([...result["f.repo"]], ["org/foo"]);
-    });
+    const cases: {name: string; active: Record<string, Set<string>>; key: string; value: string; want: Record<string, string[]>}[] = [
+        {name: "add extension", active: {}, key: "f.ext", value: ".go",
+            want: {"f.ext": [".go"]}},
+        {name: "remove extension", active: {"f.ext": new Set([".go", ".py"])}, key: "f.ext", value: ".go",
+            want: {"f.ext": [".py"]}},
+        {name: "path replaces", active: {"f.path": new Set(["src/"])}, key: "f.path", value: "src/clj/",
+            want: {"f.path": ["src/clj/"]}},
+        {name: "path toggle off", active: {"f.path": new Set(["src/"])}, key: "f.path", value: "src/",
+            want: {"f.path": []}},
+        {name: "preserves other keys", active: {"f.ext": new Set([".go"]), "f.repo": new Set(["org/foo"])}, key: "f.ext", value: ".py",
+            want: {"f.ext": [".go", ".py"], "f.repo": ["org/foo"]}},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            const result = toggleFacet(c.active, c.key, c.value);
+            for (const [key, wantArr] of Object.entries(c.want)) {
+                eq([...result[key]].sort(), wantArr.sort());
+            }
+        });
+    }
 }
 
 export function testParseFacetParams(t: T) {
-    t.run("parses all facet keys", () => {
-        const params = new URLSearchParams("f.ext=.go&f.ext=.py&f.repo=org/foo&f.path=src/");
-        const result = parseFacetParams(params);
-        eq([...result["f.ext"]!].sort(), [".go", ".py"]);
-        eq([...result["f.repo"]!], ["org/foo"]);
-        eq([...result["f.path"]!], ["src/"]);
-    });
-    t.run("empty params", () => {
-        const result = parseFacetParams(new URLSearchParams());
-        eq(result, {});
-    });
-    t.run("ignores non-facet params", () => {
-        const result = parseFacetParams(new URLSearchParams("q=hello&context=3"));
-        eq(result, {});
-    });
+    const cases = [
+        {name: "parses all facet keys", input: "f.ext=.go&f.ext=.py&f.repo=org/foo&f.path=src/",
+            want: {"f.ext": [".go", ".py"], "f.repo": ["org/foo"], "f.path": ["src/"]}},
+        {name: "empty params", input: "", want: {}},
+        {name: "ignores non-facet params", input: "q=hello&context=3", want: {}},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            const result = parseFacetParams(new URLSearchParams(c.input));
+            const got: Record<string, string[]> = {};
+            for (const [key, set] of Object.entries(result)) {
+                got[key] = [...set!].sort();
+            }
+            const want: Record<string, string[]> = {};
+            for (const [key, arr] of Object.entries(c.want)) {
+                want[key] = [...arr].sort();
+            }
+            eq(got, want);
+        });
+    }
 }
 
 export function testFacetSetsToParams(t: T) {
-    t.run("converts sets to arrays", () => {
-        const result = facetSetsToParams({"f.ext": new Set([".go", ".py"]), "f.repo": new Set(["org/foo"])});
-        eq(result["f.ext"]!.sort(), [".go", ".py"]);
-        eq(result["f.repo"], ["org/foo"]);
-    });
-    t.run("skips empty sets", () => {
-        const result = facetSetsToParams({"f.ext": new Set(), "f.repo": new Set(["org/foo"])});
-        eq("f.ext" in result, false);
-        eq(result["f.repo"], ["org/foo"]);
-    });
-    t.run("empty input", () => {
-        eq(facetSetsToParams({}), {});
-    });
+    const cases = [
+        {name: "converts sets to arrays",
+            input: {"f.ext": new Set([".go", ".py"]), "f.repo": new Set(["org/foo"])},
+            want: {"f.ext": [".go", ".py"], "f.repo": ["org/foo"]}},
+        {name: "skips empty sets",
+            input: {"f.ext": new Set<string>(), "f.repo": new Set(["org/foo"])},
+            want: {"f.repo": ["org/foo"]}},
+        {name: "empty input",
+            input: {} as Record<string, Set<string>>,
+            want: {} as Record<string, string[]>},
+    ];
+    for (const c of cases) {
+        t.run(c.name, () => {
+            const result = facetSetsToParams(c.input);
+            // Sort arrays for comparison stability.
+            const got: Record<string, string[]> = {};
+            for (const [k, v] of Object.entries(result)) {
+                got[k] = [...v].sort();
+            }
+            const want: Record<string, string[]> = {};
+            for (const [k, v] of Object.entries(c.want)) {
+                want[k] = [...v].sort();
+            }
+            eq(got, want);
+        });
+    }
 }
 
 // Helper to wait for Lit render cycles.

@@ -6,29 +6,28 @@ import {html} from "lit";
 import "./breadcrumbs.ts";
 import type {Breadcrumbs} from "./breadcrumbs.ts";
 
-export async function testBreadcrumbsRenders(t: T) {
-    const el = await render(html`
-        <cs-breadcrumbs path="myrepo@abc123/+/src/main.go"></cs-breadcrumbs>
-    `) as Breadcrumbs;
-    const links = el.renderRoot.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
-    const got = Array.from(links).map(a => ({text: a.textContent, href: a.getAttribute('href')}));
-    eq(got, [
-        {text: "myrepo@abc123", href: "/view/myrepo@abc123/+/"},
-        {text: "src", href: "/view/myrepo@abc123/+/src/"},
-        {text: "main.go", href: "/view/myrepo@abc123/+/src/main.go"},
-    ]);
-}
-
-export async function testBreadcrumbsNoSeparator(t: T) {
-    const el = await render(html`
-        <cs-breadcrumbs path="repo@v/+/file.go"></cs-breadcrumbs>
-    `) as Breadcrumbs;
-    const links = el.renderRoot.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
-    const got = Array.from(links).map(a => ({text: a.textContent, href: a.getAttribute('href')}));
-    eq(got, [
-        {text: "repo@v", href: "/view/repo@v/+/"},
-        {text: "file.go", href: "/view/repo@v/+/file.go"},
-    ]);
+export async function testBreadcrumbsLinks(t: T) {
+    const cases = [
+        {name: "multi-segment path", path: "myrepo@abc123/+/src/main.go", want: [
+            {text: "myrepo@abc123", href: "/view/myrepo@abc123/+/"},
+            {text: "src", href: "/view/myrepo@abc123/+/src/"},
+            {text: "main.go", href: "/view/myrepo@abc123/+/src/main.go"},
+        ]},
+        {name: "single file", path: "repo@v/+/file.go", want: [
+            {text: "repo@v", href: "/view/repo@v/+/"},
+            {text: "file.go", href: "/view/repo@v/+/file.go"},
+        ]},
+    ];
+    for (const c of cases) {
+        t.run(c.name, async () => {
+            const el = await render(html`
+                <cs-breadcrumbs path=${c.path}></cs-breadcrumbs>
+            `) as Breadcrumbs;
+            const links = el.renderRoot.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
+            const got = Array.from(links).map(a => ({text: a.textContent, href: a.getAttribute('href')}));
+            eq(got, c.want);
+        });
+    }
 }
 
 export async function testBreadcrumbsNoPlus(t: T) {
