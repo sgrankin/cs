@@ -91,12 +91,6 @@ export async function executeSearch(): Promise<void> {
         clearInterval(flushInterval);
         applySearchUpdate(executor.onDone(event));
       },
-      onError(error) {
-        clearInterval(flushInterval);
-        if (!abort.signal.aborted) {
-          applySearchUpdate(executor.onError(error.message));
-        }
-      },
     }, abort.signal);
   } catch (e) {
     clearInterval(flushInterval);
@@ -144,14 +138,14 @@ export function immediateSearch(
   applyEffects(controller.commit(rawText, options, facetParams));
 }
 
-// Execute search on initial load if URL has a query.
-{
-  const route = currentRoute.get();
-  const q = route.params.get('q') ?? '';
+/** Execute search if the current URL has a query. Called on initial load. */
+export function initFromUrl(): void {
+  const q = queryText.get();
   if (q) {
     applyEffects(controller.commit(q));
   }
 }
+initFromUrl();
 
 // Re-execute search on back/forward navigation.
 window.addEventListener('popstate', () => {

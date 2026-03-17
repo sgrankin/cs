@@ -51,7 +51,6 @@ export interface SearchCallbacks {
   onFile?: (event: FileMatchEvent) => void;
   onFacets?: (event: FacetsEvent) => void;
   onDone?: (event: DoneEvent) => void;
-  onError?: (error: Error) => void;
 }
 
 /**

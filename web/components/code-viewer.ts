@@ -13,6 +13,11 @@ import {customElement, property, state} from 'lit/decorators.js';
 
 // --- Pure functions (functional core, testable without DOM) ---
 
+/** Navigate to a URL. Extracted for test stubbing (window.location.href is not stubbable). */
+export const effects = {
+  navigate(url: string) { window.location.href = url; },
+};
+
 /** Action returned by keyAction — pure description of what to do. */
 export type ViewerAction =
   | {type: 'navigate'; url: string}
@@ -196,7 +201,7 @@ export class CodeViewer extends LitElement {
     if (!action) return false;
     switch (action.type) {
       case 'navigate':
-        window.location.href = action.url;
+        effects.navigate(action.url);
         break;
       case 'open-tab':
         window.open(action.url);

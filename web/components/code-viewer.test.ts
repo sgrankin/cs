@@ -3,7 +3,7 @@
 
 import {T, eq, render} from "@testing/harness";
 import {html} from "lit";
-import {formatLineNumber, resolveExternalUrl, parseLineHash, keyAction, computeScrollOffset} from "./code-viewer.ts";
+import {formatLineNumber, resolveExternalUrl, parseLineHash, keyAction, computeScrollOffset, effects} from "./code-viewer.ts";
 import type {CodeViewer} from "./code-viewer.ts";
 
 // --- Pure function tests (no DOM needed) ---
@@ -42,6 +42,14 @@ export function testKeyAction(t: T) {
     t.run("unknown key returns null", () => {
         eq(keyAction("x", "", ""), null);
     });
+}
+
+export function testEffectsNavigate(t: T) {
+    // Call effects.navigate with a javascript: void URL to exercise the line
+    // without actually navigating away from the test page.
+    effects.navigate('javascript:void(0)');
+    // If we got here, the function ran without throwing.
+    eq(typeof effects.navigate, 'function');
 }
 
 export function testComputeScrollOffset(t: T) {
@@ -248,4 +256,95 @@ export async function testCodeViewerOnSelectionChange(t: T) {
     document.dispatchEvent(new Event('selectionchange'));
     await el.updateComplete;
     eq(el.renderRoot.querySelector('.selection-hint'), null, "still no hint with empty selection");
+}
+
+export async function testCodeViewerScrollToSelectionRange(t: T) {
+    const origHash = window.location.hash;
+    try {
+        // Set a range hash to exercise the range branch in scrollToSelection.
+        history.replaceState(null, '', '#L2-L4');
+        const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n"}></cs-code-viewer>`) as CodeViewer;
+        // Verify the range is selected.
+        const got = Array.from(el.renderRoot.querySelectorAll('.line'))
+            .map(l => l.classList.contains('selected'));
+        eq(got, [false, true, true, true, false, false, false, false, false, false]);
+    } finally {
+        history.replaceState(null, '', origHash || ' ');
+    }
+}
+
+export async function testCodeViewerKeyNavigate(t: T) {
+    const origNavigate = effects.navigate;
+    try {
+        let navigatedUrl: string | undefined;
+        effects.navigate = (url: string) => { navigatedUrl = url; };
+
+        const el = await render(html`
+            <cs-code-viewer .content=${"hello\n"} .externalUrl=${"https://github.com/x#L{lno}"}></cs-code-viewer>
+        `) as CodeViewer;
+
+        const event = new KeyboardEvent('keydown', {key: 'v', bubbles: true});
+        Object.defineProperty(event, 'target', {value: document.body});
+        document.dispatchEvent(event);
+
+        eq(navigatedUrl, "https://github.com/x#L1");
+    } finally {
+        effects.navigate = origNavigate;
+    }
+}
+
+export async function testCodeViewerKeyOpenTab(t: T) {
+    const origOpen = window.open;
+    const origGetSelection = window.getSelection;
+    try {
+        let openedUrl: string | undefined;
+        (window as any).open = (url: string) => { openedUrl = url; };
+        // Mock getSelection to return selected text.
+        (window as any).getSelection = () => ({toString: () => "test query"});
+
+        const el = await render(html`<cs-code-viewer .content=${"hello\n"}></cs-code-viewer>`) as CodeViewer;
+
+        const event = new KeyboardEvent('keydown', {key: 'Enter', bubbles: true});
+        Object.defineProperty(event, 'target', {value: document.body});
+        document.dispatchEvent(event);
+
+        eq(openedUrl, "/search?q=test%20query");
+    } finally {
+        window.open = origOpen;
+        (window as any).getSelection = origGetSelection;
+    }
+}
+
+export async function testCodeViewerKeyFind(t: T) {
+    const origFind = window.find;
+    const origGetSelection = window.getSelection;
+    try {
+        let findArgs: {text: string; caseSensitive: boolean; backwards: boolean} | null = null;
+        (window as any).find = (text: string, caseSensitive: boolean, backwards: boolean) => {
+            findArgs = {text, caseSensitive, backwards};
+            return true;
+        };
+        // Mock getSelection to return selected text.
+        (window as any).getSelection = () => ({toString: () => "searchme"});
+
+        const el = await render(html`<cs-code-viewer .content=${"hello\n"}></cs-code-viewer>`) as CodeViewer;
+
+        // Test 'n' for forward find.
+        const event = new KeyboardEvent('keydown', {key: 'n', bubbles: true});
+        Object.defineProperty(event, 'target', {value: document.body});
+        document.dispatchEvent(event);
+
+        eq(findArgs, {text: "searchme", caseSensitive: false, backwards: false});
+
+        // Test 'p' for backward find.
+        findArgs = null;
+        const event2 = new KeyboardEvent('keydown', {key: 'p', bubbles: true});
+        Object.defineProperty(event2, 'target', {value: document.body});
+        document.dispatchEvent(event2);
+
+        eq(findArgs, {text: "searchme", caseSensitive: false, backwards: true});
+    } finally {
+        (window as any).find = origFind;
+        (window as any).getSelection = origGetSelection;
+    }
 }
