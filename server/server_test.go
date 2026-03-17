@@ -114,14 +114,3 @@ func TestServeSPA(t *testing.T) {
 	}
 }
 
-func TestServeAbout(t *testing.T) {
-	srv := newTestServer(simpleIndex(t))
-	req := httptest.NewRequest("GET", "/about", nil)
-	w := httptest.NewRecorder()
-	srv.ServeHTTP(w, req)
-
-	resp := w.Result()
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("GET /about status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-}

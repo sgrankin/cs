@@ -270,12 +270,37 @@ Keep file view and search snippet components separate — different contexts (fu
 - Shift+click range expansion
 - Keyboard shortcuts: `/` search, `?` help, `v` external link, `n/p` find next/prev
 
-### Tree-sitter strategy (separate step)
+### Syntax highlighting strategy (separate step)
 - Render plain text immediately; highlight async as grammar loads
 - Load grammars on demand by file extension (~50-200KB WASM each)
-- CSS variables for token colors, matching existing `--color-syntax-*`
-- Prototype early to derisk — can arborium highlight a Go file in <200ms? Do WASM grammars work in shadow DOM?
+- CSS variables for token colors in the code-viewer component
+- Options: tree-sitter WASM (client-side), server-side chroma via `/raw/?highlight=true`, or a hybrid
 - Fallback: keep server-side chroma behind `/raw/` with a query param
+
+### Previous chroma color scheme (reference for syntax highlighting)
+The old server-side chroma used the "Visual Studio" (light) and Xcode-dark themes.
+Key token colors to preserve or improve upon:
+
+**Light mode** (VS theme):
+- Keywords: `#0000ff` (blue)
+- Strings: `#a31515` (dark red)
+- Comments: `#008000` (green)
+- Types/classes: `#2b91af` (teal)
+- Preprocessor: `#0000ff` (blue)
+- Line numbers: `#7f7f7f` (gray)
+- Highlight background: `#e5e5e5`
+
+**Dark mode** (Xcode-dark):
+- Keywords: `#fc5fa3` (pink)
+- Strings: `#fc6a5d` (coral)
+- Comments: `#6c7986` (gray)
+- Types/classes: `#5dd8ff` (cyan)
+- Functions: `#41a1c0` (teal)
+- Numbers: `#d0bf69` (gold)
+- Builtins: `#d0a8ff` (lavender)
+- Line numbers: `#7f7f7f` (gray)
+- Highlight background: `#353539`
+- Background: `#1f1f24`
 
 ### Verify
 - `bun run test` — component tests

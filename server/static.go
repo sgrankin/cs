@@ -9,9 +9,6 @@ import (
 )
 
 //go:generate bun install
-//go:generate go run github.com/a-h/templ/cmd/templ generate
-//go:generate go run ./gencss -style=vs -out=../web/syntax-light.css
-//go:generate go run ./gencss -style=xcode-dark -out=../web/syntax-dark.css
 //go:generate bun run ../web/build.mjs
 //go:embed static
 var staticFS embed.FS

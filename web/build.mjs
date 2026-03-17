@@ -15,8 +15,6 @@ const analyze = args.has("--analyze");
 
 const opts = {
     entryPoints: [
-        join(dir, "codesearch_ui.tsx"),
-        join(dir, "fileview.ts"),
         join(dir, "app.ts"),
     ],
     outdir: join(dir, "../server/static"),

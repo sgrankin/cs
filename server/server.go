@@ -6,7 +6,6 @@ package server
 
 import (
 	"context"
-	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -15,7 +14,6 @@ import (
 	"github.com/gorilla/handlers"
 
 	"sgrankin.dev/cs"
-	"sgrankin.dev/cs/server/views"
 )
 
 type server struct {
@@ -25,8 +23,6 @@ type server struct {
 	bk       cs.SearchIndex
 	staticFS fs.FS
 	devMode  bool
-
-	Templates map[string]*template.Template
 }
 
 // Option configures a server.
@@ -68,23 +64,8 @@ func StaticFS() fs.FS {
 	return sub
 }
 
-func (s *server) page(title string) views.Page {
-	return views.Page{
-		Title:   title,
-		DevMode: s.devMode,
-		Config:  s.config,
-	}
-}
-
 func (s *server) ServeRoot(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/search", http.StatusSeeOther)
-}
-
-func (s *server) ServeAbout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	p := s.page("about")
-	p.IncludeHeader = true
-	p.CSSPath = "static/codesearch_ui.css"
-	views.About(p).Render(r.Context(), w)
 }
 
 func (s *server) ServeHealthcheck(w http.ResponseWriter, r *http.Request) {
