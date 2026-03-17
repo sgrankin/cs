@@ -12,8 +12,7 @@ import {LitElement, html, css, unsafeCSS} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
 import {unsafeHTML} from 'lit/directives/unsafe-html.js';
 import {highlightLines} from '../highlight.ts';
-// Arborium theme CSS (base + github-light + github-dark), loaded as text for shadow DOM.
-import arbThemeCSS from '../arborium-theme-all.css.txt';
+import hljsThemeCSS from '../hljs-theme.css.txt';
 
 // --- Pure functions (functional core, testable without DOM) ---
 
@@ -283,7 +282,7 @@ export class CodeViewer extends LitElement {
     }
   }
 
-  static styles = [unsafeCSS(arbThemeCSS), css`
+  static styles = [unsafeCSS(hljsThemeCSS), css`
     .selection-hint {
       font-size: 11px;
       color: var(--color-foreground-subtle);
