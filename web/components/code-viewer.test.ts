@@ -3,10 +3,62 @@
 
 import {T, eq, render} from "@testing/harness";
 import {html} from "lit";
-import {formatLineNumber, resolveExternalUrl, parseLineHash} from "./code-viewer.ts";
+import {formatLineNumber, resolveExternalUrl, parseLineHash, keyAction, computeScrollOffset} from "./code-viewer.ts";
 import type {CodeViewer} from "./code-viewer.ts";
 
 // --- Pure function tests (no DOM needed) ---
+
+export function testKeyAction(t: T) {
+    t.run("/ navigates to search", () => {
+        eq(keyAction("/", "", ""), {type: "navigate", url: "/search"});
+    });
+    t.run("/ with selected text includes query", () => {
+        eq(keyAction("/", "foo bar", ""), {type: "navigate", url: "/search?q=foo%20bar"});
+    });
+    t.run("? toggles help", () => {
+        eq(keyAction("?", "", ""), {type: "toggle-help"});
+    });
+    t.run("Escape closes help", () => {
+        eq(keyAction("Escape", "", ""), {type: "close-help"});
+    });
+    t.run("Enter with text opens tab", () => {
+        eq(keyAction("Enter", "hello", ""), {type: "open-tab", url: "/search?q=hello"});
+    });
+    t.run("Enter without text is close-help", () => {
+        eq(keyAction("Enter", "", ""), {type: "close-help"});
+    });
+    t.run("v navigates to external URL", () => {
+        eq(keyAction("v", "", "https://github.com/foo"), {type: "navigate", url: "https://github.com/foo"});
+    });
+    t.run("v without URL is close-help", () => {
+        eq(keyAction("v", "", ""), {type: "close-help"});
+    });
+    t.run("n finds next", () => {
+        eq(keyAction("n", "hello", ""), {type: "find", text: "hello", backwards: false});
+    });
+    t.run("p finds previous", () => {
+        eq(keyAction("p", "hello", ""), {type: "find", text: "hello", backwards: true});
+    });
+    t.run("unknown key returns null", () => {
+        eq(keyAction("x", "", ""), null);
+    });
+}
+
+export function testComputeScrollOffset(t: T) {
+    t.run("single line: 1/3 from top", () => {
+        eq(computeScrollOffset(900, false, 0, 20), 300);
+    });
+    t.run("range fits: centered", () => {
+        // viewport 900, range 200 → offset (900-200)/2 = 350
+        eq(computeScrollOffset(900, true, 200, 20), 350);
+    });
+    t.run("range taller than viewport: half line height", () => {
+        eq(computeScrollOffset(900, true, 1200, 20), 10);
+    });
+    t.run("range with zero height: default", () => {
+        eq(computeScrollOffset(900, true, 0, 20), 300);
+    });
+}
 
 export function testFormatLineNumber(t: T) {
     eq(formatLineNumber(-1, -1), "1", "no selection");
@@ -54,12 +106,16 @@ export async function testCodeViewerLineCount(t: T) {
 
 export async function testCodeViewerHashSelection(t: T) {
     const origHash = window.location.hash;
-    window.location.hash = "#L3";
-    const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
-    const got = Array.from(el.renderRoot.querySelectorAll('.line'))
-        .map(l => l.classList.contains('selected'));
-    eq(got, [false, false, true, false, false]);
-    window.location.hash = origHash;
+    try {
+        // Use replaceState to set hash synchronously before element connects.
+        history.replaceState(null, '', '#L3');
+        const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
+        const got = Array.from(el.renderRoot.querySelectorAll('.line'))
+            .map(l => l.classList.contains('selected'));
+        eq(got, [false, false, true, false, false]);
+    } finally {
+        history.replaceState(null, '', origHash || ' ');
+    }
 }
 
 export async function testCodeViewerLineLinks(t: T) {
@@ -75,15 +131,19 @@ export async function testCodeViewerLineLinks(t: T) {
 
 export async function testCodeViewerExternalUrlMethod(t: T) {
     const origHash = window.location.hash;
-    window.location.hash = "#L5";
-    const el = await render(html`
-        <cs-code-viewer
-            .content=${"1\n2\n3\n4\n5\n6\n"}
-            .externalUrl=${"https://github.com/user/repo/blob/main/file.go#L{lno}"}
-        ></cs-code-viewer>
-    `) as CodeViewer;
-    eq(el.resolvedExternalUrl(), "https://github.com/user/repo/blob/main/file.go#L5");
-    window.location.hash = origHash;
+    try {
+        // Use replaceState to set hash synchronously before element connects.
+        history.replaceState(null, '', '#L5');
+        const el = await render(html`
+            <cs-code-viewer
+                .content=${"1\n2\n3\n4\n5\n6\n"}
+                .externalUrl=${"https://github.com/user/repo/blob/main/file.go#L{lno}"}
+            ></cs-code-viewer>
+        `) as CodeViewer;
+        eq(el.resolvedExternalUrl(), "https://github.com/user/repo/blob/main/file.go#L5");
+    } finally {
+        history.replaceState(null, '', origHash || ' ');
+    }
 }
 
 // --- Keyboard shortcut tests (behavioral: dispatch event, check side effect) ---
@@ -158,4 +218,34 @@ export async function testCodeViewerEmptyContent(t: T) {
     const el = await render(html`<cs-code-viewer .content=${""}></cs-code-viewer>`) as CodeViewer;
     eq(el.renderRoot.querySelectorAll('.line').length, 0, "no lines");
     eq(el.renderRoot.querySelector('.viewer')!.tagName, "DIV", "viewer container exists");
+}
+
+export async function testCodeViewerShiftClickRange(t: T) {
+    const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
+    const links = el.renderRoot.querySelectorAll('.lno') as NodeListOf<HTMLAnchorElement>;
+
+    // Click line 1 to select it.
+    links[0].click();
+    await el.updateComplete;
+
+    // Shift+click line 3 to extend the range.
+    links[2].dispatchEvent(new MouseEvent('click', {shiftKey: true, bubbles: true}));
+    await el.updateComplete;
+
+    const got = Array.from(el.renderRoot.querySelectorAll('.line'))
+        .map(l => l.classList.contains('selected'));
+    eq(got, [true, true, true, false, false]);
+}
+
+export async function testCodeViewerOnSelectionChange(t: T) {
+    const el = await render(html`<cs-code-viewer .content=${"hello world\n"}></cs-code-viewer>`) as CodeViewer;
+    // Initially no selection hint.
+    eq(el.renderRoot.querySelector('.selection-hint'), null, "no hint initially");
+
+    // Fire selectionchange to trigger onSelectionChange. Since we can't create a real
+    // text selection easily, we verify the event handler path by dispatching the event.
+    // The handler checks window.getSelection() which returns empty, so hasSelection stays false.
+    document.dispatchEvent(new Event('selectionchange'));
+    await el.updateComplete;
+    eq(el.renderRoot.querySelector('.selection-hint'), null, "still no hint with empty selection");
 }

@@ -91,7 +91,7 @@ export async function testReadJSONLines(t: T) {
 export function testSplitResultPath(t: T) {
     const cases: {path: string; repo: string; version: string; filePath: string}[] = [
         {path: "myrepo/abc123/+/src/main.go", repo: "myrepo", version: "abc123", filePath: "src/main.go"},
-        {path: "org/foo/abc123/+/file.go", repo: "org", version: "foo/abc123", filePath: "file.go"},
+        {path: "org/foo/abc123/+/file.go", repo: "org/foo", version: "abc123", filePath: "file.go"},
         {path: "repo/v/+/", repo: "repo", version: "v", filePath: ""},
         {path: "noslash", repo: "noslash", version: "", filePath: ""},
     ];

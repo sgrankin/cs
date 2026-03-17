@@ -28,8 +28,46 @@ import './search-help.ts';
  * Search view: orchestrates search input, options, results, facets.
  * Reads state from signals and dispatches search via triggerSearch().
  */
+/**
+ * Toggle a facet value. Path facets replace (drill-down); others toggle additively.
+ * Returns a new facets record.
+ */
+export function toggleFacet(
+  active: Record<string, Set<string>>,
+  key: string,
+  value: string,
+): Record<string, Set<string>> {
+  const current = active[key] ?? new Set<string>();
+  let updated: Set<string>;
+
+  if (key === 'f.path') {
+    // Path facets replace: clicking a child replaces the parent.
+    updated = current.has(value) ? new Set() : new Set([value]);
+  } else {
+    // Other facets toggle additively.
+    updated = new Set(current);
+    if (updated.has(value)) {
+      updated.delete(value);
+    } else {
+      updated.add(value);
+    }
+  }
+  return {...active, [key]: updated};
+}
+
+/** Convert facet Sets to string[] record for search params. */
+export function facetSetsToParams(facets: Record<string, Set<string>>): Record<string, string[]> {
+  const params: Record<string, string[]> = {};
+  for (const [key, values] of Object.entries(facets)) {
+    if (values.size > 0) {
+      params[key] = [...values];
+    }
+  }
+  return params;
+}
+
 /** Parse facet params (f.ext, f.repo, f.path) from URLSearchParams into Sets. */
-function parseFacetParams(params: URLSearchParams): Record<string, Set<string>> {
+export function parseFacetParams(params: URLSearchParams): Record<string, Set<string>> {
   const result: Record<string, Set<string>> = {};
   for (const key of ['f.ext', 'f.repo', 'f.path']) {
     const values = params.getAll(key);
@@ -141,30 +179,7 @@ export class SearchView extends SignalWatcher(LitElement) {
   }
 
   private onFacetToggle(e: CustomEvent<{key: string; value: string}>) {
-    const {key, value} = e.detail;
-    const active = this.activeFacets;
-    const current = active[key] ?? new Set();
-    let updated: Set<string>;
-
-    if (key === 'f.path') {
-      // Path facets replace: clicking a child replaces the parent.
-      // Clicking the active path clears it.
-      if (current.has(value)) {
-        updated = new Set();
-      } else {
-        updated = new Set([value]);
-      }
-    } else {
-      // Other facets toggle additively.
-      updated = new Set(current);
-      if (updated.has(value)) {
-        updated.delete(value);
-      } else {
-        updated.add(value);
-      }
-    }
-
-    const newFacets = {...active, [key]: updated};
+    const newFacets = toggleFacet(this.activeFacets, e.detail.key, e.detail.value);
     const text = queryText.get();
     if (text) {
       immediateSearch(text, this.currentOptions, this.facetParamsFrom(newFacets));
@@ -196,15 +211,8 @@ export class SearchView extends SignalWatcher(LitElement) {
     return (window as any).__CS_INIT?.repos ?? [];
   }
 
-  /** Convert facet Sets to string[] record for triggerSearch/immediateSearch. */
-  private facetParamsFrom(facets: Record<string, Set<string>>): Record<string, string[]> {
-    const params: Record<string, string[]> = {};
-    for (const [key, values] of Object.entries(facets)) {
-      if (values.size > 0) {
-        params[key] = [...values];
-      }
-    }
-    return params;
+  private facetParamsFrom(f: Record<string, Set<string>>): Record<string, string[]> {
+    return facetSetsToParams(f);
   }
 
   static styles = [

@@ -187,4 +187,43 @@ export async function testRepoSelectInteractions(t: T) {
         await (el as any).updateComplete;
         eq(changeCount, 1);
     });
+
+    t.run("deselect option", async () => {
+        const el = await mkGrouped();
+        await click(triggerButton(el));
+        // Select first option.
+        optionLabels(el)[0].querySelector("input")!.click();
+        await (el as any).updateComplete;
+        eq(el.selectedRepos, ["github.com/org/alpha"], "after select");
+        // Deselect it by clicking again.
+        optionLabels(el)[0].querySelector("input")!.click();
+        await (el as any).updateComplete;
+        eq(el.selectedRepos, [], "after deselect");
+    });
+}
+
+export async function testRepoSelectKeyboard(t: T) {
+    t.run("Enter clears search", async () => {
+        const el = await mkGrouped();
+        await click(triggerButton(el));
+        await search(el, "alpha");
+        // Verify search is filtering.
+        eq(optionLabels(el).map(l => l.textContent!.trim()), ["alpha"]);
+        // Press Enter on the search input to clear.
+        const searchInput = el.shadowRoot!.querySelector<HTMLInputElement>(".search-input")!;
+        searchInput.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+        await (el as any).updateComplete;
+        // Search should be cleared, showing all options again.
+        eq(optionLabels(el).map(l => l.textContent!.trim()), ["alpha", "beta", "gamma", "delta"]);
+    });
+
+    t.run("Escape closes dropdown", async () => {
+        const el = await mkGrouped();
+        await click(triggerButton(el));
+        eq(dropdownEl(el) !== null, true, "dropdown open");
+        const searchInput = el.shadowRoot!.querySelector<HTMLInputElement>(".search-input")!;
+        searchInput.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", bubbles: true}));
+        await (el as any).updateComplete;
+        eq(dropdownEl(el), null, "dropdown closed after Escape");
+    });
 }

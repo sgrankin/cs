@@ -133,7 +133,7 @@ export function splitResultPath(path: string): { repo: string; version: string; 
   }
   const before = path.slice(0, plusIdx);
   const filePath = path.slice(plusIdx + 3);
-  const slashIdx = before.indexOf('/');
+  const slashIdx = before.lastIndexOf('/');
   if (slashIdx === -1) {
     return { repo: before, version: '', filePath };
   }

@@ -13,6 +13,51 @@ import {customElement, property, state} from 'lit/decorators.js';
 
 // --- Pure functions (functional core, testable without DOM) ---
 
+/** Action returned by keyAction — pure description of what to do. */
+export type ViewerAction =
+  | {type: 'navigate'; url: string}
+  | {type: 'open-tab'; url: string}
+  | {type: 'find'; text: string; backwards: boolean}
+  | {type: 'toggle-help'}
+  | {type: 'close-help'};
+
+/** Pure keyboard handler: returns an action for a key, or null if unhandled. */
+export function keyAction(key: string, selectedText: string, externalUrl: string): ViewerAction | null {
+  switch (key) {
+    case 'Enter':
+      if (selectedText) return {type: 'open-tab', url: `/search?q=${encodeURIComponent(selectedText)}`};
+      return {type: 'close-help'};  // Enter with no selection is a no-op, but we consume it.
+    case '/':
+      return {type: 'navigate', url: `/search${selectedText ? '?q=' + encodeURIComponent(selectedText) : ''}`};
+    case '?':
+      return {type: 'toggle-help'};
+    case 'Escape':
+      return {type: 'close-help'};
+    case 'v':
+      if (externalUrl) return {type: 'navigate', url: externalUrl};
+      return {type: 'close-help'};  // Consume key even without URL.
+    case 'n':
+      if (selectedText) return {type: 'find', text: selectedText, backwards: false};
+      return {type: 'close-help'};
+    case 'p':
+      if (selectedText) return {type: 'find', text: selectedText, backwards: true};
+      return {type: 'close-help'};
+  }
+  return null;
+}
+
+/**
+ * Compute the scroll offset for bringing selected lines into view.
+ * For a single line: place it 1/3 from the top.
+ * For a range that fits: center it. For a range taller than viewport: show top.
+ */
+export function computeScrollOffset(viewportHeight: number, isRange: boolean, rangeHeight: number, lineHeight: number): number {
+  if (!isRange) return Math.floor(viewportHeight / 3.0);
+  if (rangeHeight <= 0) return Math.floor(viewportHeight / 3.0);
+  if (rangeHeight <= viewportHeight) return 0.5 * (viewportHeight - rangeHeight);
+  return lineHeight / 2;
+}
+
 /** Format a line selection as a string for URL substitution. */
 export function formatLineNumber(start: number, end: number): string {
   if (start < 0) return '1';
@@ -100,30 +145,22 @@ export class CodeViewer extends LitElement {
   /** Scroll the selected line(s) into view after render. */
   private scrollToSelection() {
     if (this.selectedStart < 0) return;
-    // Wait for Lit to render, then scroll.
     this.updateComplete.then(() => {
       const firstLine = this.renderRoot.querySelector(`#L${this.selectedStart}`) as HTMLElement | null;
       if (!firstLine) return;
 
-      const viewportHeight = window.innerHeight;
-      let scrollOffset = Math.floor(viewportHeight / 3.0);
-
-      if (this.selectedStart !== this.selectedEnd) {
+      const isRange = this.selectedStart !== this.selectedEnd;
+      let rangeHeight = 0;
+      if (isRange) {
         const lastLine = this.renderRoot.querySelector(`#L${this.selectedEnd}`) as HTMLElement | null;
         if (lastLine) {
           const firstRect = firstLine.getBoundingClientRect();
           const lastRect = lastLine.getBoundingClientRect();
-          const rangeHeight = lastRect.top + lastRect.height - firstRect.top;
-          if (rangeHeight <= viewportHeight) {
-            // Center the range in the viewport.
-            scrollOffset = 0.5 * (viewportHeight - rangeHeight);
-          } else {
-            // Range is taller than viewport; put first line near top.
-            scrollOffset = firstLine.offsetHeight / 2;
-          }
+          rangeHeight = lastRect.top + lastRect.height - firstRect.top;
         }
       }
 
+      const scrollOffset = computeScrollOffset(window.innerHeight, isRange, rangeHeight, firstLine.offsetHeight);
       const firstRect = firstLine.getBoundingClientRect();
       window.scrollTo(0, firstRect.top + window.scrollY - scrollOffset);
     });
@@ -155,45 +192,26 @@ export class CodeViewer extends LitElement {
   };
 
   private processKey(key: string): boolean {
-    switch (key) {
-      case 'Enter': {
-        const text = this.getSelectedText();
-        if (text) {
-          window.open(`/search?q=${encodeURIComponent(text)}`);
-        }
-        return true;
-      }
-      case '/': {
-        this.dispatchEvent(new CustomEvent('close-help', {bubbles: true, composed: true}));
-        const text = this.getSelectedText();
-        window.location.href = `/search${text ? '?q=' + encodeURIComponent(text) : ''}`;
-        return true;
-      }
-      case '?': {
+    const action = keyAction(key, this.getSelectedText(), this.resolvedExternalUrl());
+    if (!action) return false;
+    switch (action.type) {
+      case 'navigate':
+        window.location.href = action.url;
+        break;
+      case 'open-tab':
+        window.open(action.url);
+        break;
+      case 'find':
+        window.find(action.text, false, action.backwards);
+        break;
+      case 'toggle-help':
         this.dispatchEvent(new CustomEvent('toggle-help', {bubbles: true, composed: true}));
-        return true;
-      }
-      case 'Escape': {
+        break;
+      case 'close-help':
         this.dispatchEvent(new CustomEvent('close-help', {bubbles: true, composed: true}));
-        return true;
-      }
-      case 'v': {
-        const url = this.resolvedExternalUrl();
-        if (url) {
-          window.location.href = url;
-        }
-        return true;
-      }
-      case 'n':
-      case 'p': {
-        const text = this.getSelectedText();
-        if (text) {
-          window.find(text, /*caseSensitive=*/ false, /*backwards=*/ key === 'p');
-        }
-        return true;
-      }
+        break;
     }
-    return false;
+    return true;
   }
 
   render() {

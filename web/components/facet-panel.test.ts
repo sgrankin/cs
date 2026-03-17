@@ -89,3 +89,19 @@ export async function testFacetPanelLimitsTo10(t: T) {
     const pills = el.renderRoot.querySelectorAll('.pill');
     eq(pills.length, 10, "limited to 10 pills per section");
 }
+
+export async function testFacetPanelShowsStalePill(t: T) {
+    // Select .rs but provide facets that don't include .rs — it should render as stale.
+    const facets: FacetsEvent = {
+        type: 'facets',
+        ext: [{v: '.go', c: 10}, {v: '.py', c: 5}],
+    };
+    const selected = {'f.ext': new Set(['.rs'])};
+    const el = await render(html`
+        <cs-facet-panel .facets=${facets} .selected=${selected}></cs-facet-panel>
+    `) as FacetPanel;
+
+    const stalePills = Array.from(el.renderRoot.querySelectorAll('.pill.stale'));
+    const got = stalePills.map(p => ({text: p.textContent!.trim(), classes: [...p.classList].sort()}));
+    eq(got, [{text: ".rs", classes: ["pill", "stale"]}]);
+}

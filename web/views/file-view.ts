@@ -15,7 +15,7 @@ import '../components/help-modal.ts';
  *   - repo/version/+/filepath (from search result links)
  *   - repo@version/+/filepath (from Go viewPath)
  */
-function parsePath(path: string): {repo: string; version: string; filePath: string} {
+export function parsePath(path: string): {repo: string; version: string; filePath: string} {
   // Try @ separator first (Go viewPath format).
   const plusIdx = path.indexOf('/+/');
   if (plusIdx >= 0) {
@@ -35,7 +35,17 @@ function parsePath(path: string): {repo: string; version: string; filePath: stri
  * Currently supports GitHub repos (repo starts with "github.com/").
  * Returns empty string for unsupported hosts.
  */
-function externalUrlTemplate(repo: string, version: string, filePath: string): string {
+/** Whether a view path refers to a directory (trailing /, or no file after /+/). */
+export function isDirectoryPath(path: string): boolean {
+  return path.endsWith('/') || path.endsWith('/+/') || !path.includes('/+/');
+}
+
+/** Build the /raw/ URL for fetching content. */
+export function rawUrl(path: string, isDir: boolean): string {
+  return `/raw/${path}${isDir && !path.endsWith('/') ? '/' : ''}`;
+}
+
+export function externalUrlTemplate(repo: string, version: string, filePath: string): string {
   const ghPrefix = 'github.com/';
   if (repo.startsWith(ghPrefix)) {
     const ghPath = repo.slice(ghPrefix.length);
@@ -72,8 +82,8 @@ export class FileView extends LitElement {
     this.dirEntries = null;
     this.readmeContent = null;
 
-    const isDir = this.path.endsWith('/') || this.path.endsWith('/+/') || !this.path.includes('/+/');
-    const rawPath = `/raw/${this.path}${isDir && !this.path.endsWith('/') ? '/' : ''}`;
+    const isDir = isDirectoryPath(this.path);
+    const rawPath = rawUrl(this.path, isDir);
 
     try {
       const resp = await fetch(rawPath);
