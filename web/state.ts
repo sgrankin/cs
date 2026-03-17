@@ -142,7 +142,15 @@ export function immediateSearch(
 export function initFromUrl(): void {
   const q = queryText.get();
   if (q) {
-    applyEffects(controller.commit(q));
+    const opts = searchOptions.get();
+    const route = currentRoute.get();
+    // Extract facet params from URL.
+    const facetParams: Record<string, string[]> = {};
+    for (const key of ['f.ext', 'f.repo', 'f.path']) {
+      const values = route.params.getAll(key);
+      if (values.length > 0) facetParams[key] = values;
+    }
+    applyEffects(controller.commit(q, opts, facetParams));
   }
 }
 initFromUrl();

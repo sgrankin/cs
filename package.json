@@ -19,6 +19,7 @@
     "ts-lit-plugin": "2.0.2"
   },
   "dependencies": {
-    "@arborium/arborium": "2.16.0"
+    "@arborium/arborium": "2.16.0",
+    "highlight.js": "11.11.1"
   }
 }

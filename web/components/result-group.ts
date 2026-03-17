@@ -3,8 +3,10 @@
 
 import {LitElement, html, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
+import {unsafeHTML} from 'lit/directives/unsafe-html.js';
 import {splitResultPath, type ResultEvent, type ResultLine} from '../api.ts';
 import {resultPathStyles, linkStyles} from '../shared-styles.ts';
+import {highlightSnippet} from '../snippet-highlight.ts';
 import '../components.ts';
 
 // path helpers matching Go's path.Dir and path.Base.
@@ -35,6 +37,17 @@ export class ResultGroup extends LitElement {
     const dir = pathDir(filePath);
     const base = pathBase(filePath);
 
+    // Highlight all lines as a single block (gives hljs cross-line context).
+    const allLines = this.result.lines.filter((l): l is ResultLine => l !== null);
+    const text = allLines.map(l => l[1]).join('\n');
+    const hlLines = highlightSnippet(filePath, text);
+    const hlMap = new Map<number, string>();
+    if (hlLines) {
+      for (let i = 0; i < allLines.length && i < hlLines.length; i++) {
+        hlMap.set(allLines[i][0], hlLines[i]);
+      }
+    }
+
     return html`
       <div class="file-group">
         <div class="header">
@@ -54,6 +67,18 @@ export class ResultGroup extends LitElement {
                   const bounds = line.length > 2 ? line[2] : undefined;
                   const isMatch = bounds !== undefined && bounds.length > 0;
                   const href = `${viewHref}#L${lno}`;
+                  const hl = hlMap.get(lno);
+                  if (!isMatch && hl) {
+                    return html`
+                      <match-line
+                        class="context"
+                        .lineNo=${lno}
+                        href=${href}
+                        text=${text}
+                        .highlightedHTML=${hl}
+                      ></match-line>
+                    `;
+                  }
                   const start = isMatch && bounds ? bounds[0][0] : undefined;
                   const end = isMatch && bounds ? bounds[0][1] : undefined;
                   return html`
