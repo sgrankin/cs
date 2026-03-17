@@ -8,8 +8,12 @@ declare global {
   }
 }
 
-import {LitElement, html, css} from 'lit';
+import {LitElement, html, css, unsafeCSS} from 'lit';
 import {customElement, property, state} from 'lit/decorators.js';
+import {unsafeHTML} from 'lit/directives/unsafe-html.js';
+import {highlightLines} from '../highlight.ts';
+// Arborium theme CSS (base + github-light + github-dark), loaded as text for shadow DOM.
+import arbThemeCSS from '../arborium-theme-all.css.txt';
 
 // --- Pure functions (functional core, testable without DOM) ---
 
@@ -104,6 +108,8 @@ export function parseLineHash(hash: string): [number, number] {
 export class CodeViewer extends LitElement {
   @property() content = '';
   @property() basePath = '';
+  /** File path for language detection (e.g. "src/main.go"). */
+  @property() filePath = '';
   /** Repository name, e.g. "github.com/user/repo". */
   @property() repo = '';
   /** Commit or version string. */
@@ -116,6 +122,20 @@ export class CodeViewer extends LitElement {
   @state() private selectedStart = -1;
   @state() private selectedEnd = -1;
   @state() private hasSelection = false;
+  @state() private highlightedLines: string[] | null = null;
+
+  willUpdate(changed: Map<string, unknown>) {
+    if (changed.has('content') || changed.has('filePath')) {
+      this.highlightedLines = null;
+      if (this.content && this.filePath) {
+        highlightLines(this.filePath, this.content).then(lines => {
+          if (lines) {
+            this.highlightedLines = lines;
+          }
+        });
+      }
+    }
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -226,6 +246,8 @@ export class CodeViewer extends LitElement {
       lines.pop();
     }
 
+    const hl = this.highlightedLines;
+
     return html`
       ${this.hasSelection ? html`
         <div class="selection-hint">
@@ -239,7 +261,7 @@ export class CodeViewer extends LitElement {
           return html`
             <div class="line ${selected ? 'selected' : ''}" id="L${lno}">
               <a class="lno" href="#L${lno}" @click=${(e: MouseEvent) => this.onLineClick(e, lno)}>${lno}</a>
-              <span class="code">${text}</span>
+              <span class="code">${hl && hl[i] ? unsafeHTML(hl[i]) : text}</span>
             </div>
           `;
         })}
@@ -261,7 +283,7 @@ export class CodeViewer extends LitElement {
     }
   }
 
-  static styles = css`
+  static styles = [unsafeCSS(arbThemeCSS), css`
     .selection-hint {
       font-size: 11px;
       color: var(--color-foreground-subtle);
@@ -300,5 +322,5 @@ export class CodeViewer extends LitElement {
     .lno:hover {
       text-decoration: underline;
     }
-  `;
+  `];
 }

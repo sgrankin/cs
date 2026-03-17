@@ -17,5 +17,8 @@
     "esbuild": "0.27.4",
     "lit": "3.3.2",
     "ts-lit-plugin": "2.0.2"
+  },
+  "dependencies": {
+    "@arborium/arborium": "2.16.0"
   }
 }

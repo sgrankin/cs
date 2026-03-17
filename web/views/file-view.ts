@@ -151,6 +151,7 @@ export class FileView extends LitElement {
         ${this.content !== null ? html`
           <cs-code-viewer
             .content=${this.content}
+            .filePath=${parsed.filePath}
             .repo=${repo}
             .version=${version}
             .externalUrl=${extUrl}
