@@ -1,14 +1,11 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-import {LitElement, html, css, unsafeCSS} from 'lit';
-import {customElement, property, state} from 'lit/decorators.js';
-import {unsafeHTML} from 'lit/directives/unsafe-html.js';
+import {LitElement, html, css} from 'lit';
+import {customElement, property} from 'lit/decorators.js';
 import {splitResultPath, type ResultEvent, type ResultLine} from '../api.ts';
 import {resultPathStyles, linkStyles} from '../shared-styles.ts';
-import {highlightLines} from '../highlight.ts';
 import '../components.ts';
-import arbThemeCSS from '../arborium-theme-all.css.txt';
 
 // path helpers matching Go's path.Dir and path.Base.
 function pathDir(p: string): string {
@@ -29,33 +26,6 @@ function pathBase(p: string): string {
 export class ResultGroup extends LitElement {
   @property({type: Object}) result!: ResultEvent;
   @property({type: Boolean, reflect: true, attribute: 'no-context'}) noContext = false;
-  // Map from line number to highlighted HTML. Populated async.
-  @state() private highlightedMap = new Map<number, string>();
-
-  willUpdate(changed: Map<string, unknown>) {
-    if (changed.has('result') && this.result) {
-      this.highlightedMap = new Map();
-      // Collect all lines with their line numbers.
-      const lines: {lno: number; text: string}[] = [];
-      for (const line of this.result.lines) {
-        if (line !== null) {
-          lines.push({lno: line[0], text: line[1]});
-        }
-      }
-      if (lines.length === 0) return;
-      // Build a single string to highlight (preserves cross-line token context).
-      const text = lines.map(l => l.text).join('\n');
-      const {filePath} = splitResultPath(this.result.path);
-      highlightLines(filePath, text).then(hl => {
-        if (!hl) return;
-        const map = new Map<number, string>();
-        for (let i = 0; i < lines.length && i < hl.length; i++) {
-          map.set(lines[i].lno, hl[i]);
-        }
-        this.highlightedMap = map;
-      });
-    }
-  }
 
   render() {
     const {repo, version, filePath} = splitResultPath(this.result.path);
@@ -84,20 +54,6 @@ export class ResultGroup extends LitElement {
                   const bounds = line.length > 2 ? line[2] : undefined;
                   const isMatch = bounds !== undefined && bounds.length > 0;
                   const href = `${viewHref}#L${lno}`;
-                  const hl = this.highlightedMap.get(lno);
-                  // Context lines: use highlighted HTML if available.
-                  // Match lines: keep match-str bounds highlighting.
-                  if (!isMatch && hl) {
-                    return html`
-                      <match-line
-                        class="context"
-                        .lineNo=${lno}
-                        text=${text}
-                        href=${href}
-                        .highlightedHTML=${hl}
-                      ></match-line>
-                    `;
-                  }
                   const start = isMatch && bounds ? bounds[0][0] : undefined;
                   const end = isMatch && bounds ? bounds[0][1] : undefined;
                   return html`

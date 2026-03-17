@@ -6,11 +6,9 @@
  * No side effects — safe to import in tests.
  */
 
-import {LitElement, html, css, unsafeCSS} from "lit";
+import {LitElement, html, css} from "lit";
 import {classMap} from "lit/directives/class-map.js";
-import {unsafeHTML} from "lit/directives/unsafe-html.js";
 import {customElement, property} from "lit/decorators.js";
-import arbThemeCSS from './arborium-theme-all.css.txt';
 
 @customElement("match-str")
 export class MatchStr extends LitElement {
@@ -88,8 +86,6 @@ export class MatchLine extends LitElement {
     @property() href: string;
     @property({type: Number}) start?: number;
     @property({type: Number}) end?: number;
-    /** Pre-highlighted HTML for this line (from arborium). */
-    @property() highlightedHTML?: string;
 
     render() {
         let isMatch = this.start != undefined && this.end != undefined;
@@ -103,12 +99,10 @@ export class MatchLine extends LitElement {
                           start=${this.start}
                           end=${this.end}
                       ></match-str>`
-                    : this.highlightedHTML
-                      ? unsafeHTML(this.highlightedHTML)
-                      : this.text}</span
+                    : this.text}</span
             >`;
     }
-    static styles = [unsafeCSS(arbThemeCSS), css`
+    static styles = css`
         :host {
             display: grid;
             grid-template-columns: 4em auto;
@@ -134,5 +128,5 @@ export class MatchLine extends LitElement {
             color: var(--color-foreground-matchstr);
             font-weight: bold;
         }
-    `];
+    `;
 }
