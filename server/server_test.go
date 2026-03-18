@@ -113,4 +113,3 @@ func TestServeSPA(t *testing.T) {
 		})
 	}
 }
-

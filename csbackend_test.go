@@ -7,11 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"sort"
+	"sync"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -160,6 +162,52 @@ func TestSearchIndexData(t *testing.T) {
 				t.Errorf("Data(%q) = %q, want %q", tt.path, got, tt.want)
 			}
 		})
+	}
+}
+
+// TestSearchOrderingManyRepos creates many repos with many matching files and
+// verifies that results are deterministically ordered: sorted by repo name,
+// then by file path within each repo. This exercises the priority work queue
+// under concurrent load — the old channel+semaphore approach would deadlock here.
+func TestSearchOrderingManyRepos(t *testing.T) {
+	// Build 10 repos, each with 20 files containing "target".
+	trees := map[string]map[string]string{}
+	repoNames := []string{"zulu", "alpha", "november", "echo", "hotel", "bravo", "mike", "delta", "golf", "foxtrot"}
+	for _, repo := range repoNames {
+		files := map[string]string{}
+		for j := range 20 {
+			name := fmt.Sprintf("file%03d.txt", j)
+			files[name] = fmt.Sprintf("line with target %s-%d\n", repo, j)
+		}
+		trees[repo] = files
+	}
+	si := newTestSearchIndex(t, "ordering", trees)
+
+	result, err := si.Search(context.Background(), Query{
+		Line:       "target",
+		MaxMatches: 1000,
+	})
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+
+	// Extract (tree, path) pairs and compare against expected ordering.
+	type tp struct{ Tree, Path string }
+	var got []tp
+	for _, r := range result.Results {
+		got = append(got, tp{r.File.Tree, r.File.Path})
+	}
+
+	sort.Strings(repoNames)
+	var want []tp
+	for _, repo := range repoNames {
+		for j := range 20 {
+			want = append(want, tp{repo, fmt.Sprintf("file%03d.txt", j)})
+		}
+	}
+
+	if !slices.Equal(got, want) {
+		t.Errorf("result ordering mismatch:\ngot  (len %d): %v\nwant (len %d): %v", len(got), got[:min(5, len(got))], len(want), want[:5])
 	}
 }
 
@@ -381,6 +429,63 @@ func TestIndexSearcherSearchFilesEarlyBreak(t *testing.T) {
 	}
 	if count < 1 {
 		t.Error("expected at least 1 result before break")
+	}
+}
+
+func TestSearchQueuePriority(t *testing.T) {
+	q := newSearchQueue()
+	var order []string
+	var mu sync.Mutex
+	record := func(s string) { mu.Lock(); order = append(order, s); mu.Unlock() }
+
+	// Push low, then high — high should execute first.
+	q.pushLow(func() { record("low1") })
+	q.pushLow(func() { record("low2") })
+	q.pushHigh(func() { record("high1") })
+	q.pushHigh(func() { record("high2") })
+
+	// Drain all 4 tasks on a single goroutine (deterministic).
+	for range 4 {
+		fn, ok := q.pop()
+		if !ok {
+			t.Fatal("unexpected closed queue")
+		}
+		fn()
+	}
+
+	want := []string{"high1", "high2", "low1", "low2"}
+	if !slices.Equal(order, want) {
+		t.Errorf("execution order = %v, want %v", order, want)
+	}
+
+	// Close and verify pop returns false.
+	q.close()
+	_, ok := q.pop()
+	if ok {
+		t.Error("pop after close should return false")
+	}
+}
+
+func TestSearchQueueCloseUnblocks(t *testing.T) {
+	q := newSearchQueue()
+
+	// Start a worker blocked on empty queue; close should unblock it.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			_, ok := q.pop()
+			if !ok {
+				return
+			}
+		}
+	}()
+
+	q.close()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Error("worker did not unblock after close")
 	}
 }
 

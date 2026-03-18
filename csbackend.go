@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
+	"iter"
 	"log"
 	"maps"
 	"os"
@@ -19,6 +20,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -119,9 +121,11 @@ func (si *searchIndex) Data(tree string, version string, path string) string {
 // Search implements SearchIndex.
 func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, error) {
 	// Use the query repo filters to scope down to the searchers that should handle the query.
-	// Then fan out the query to all searchers,
-	// - limiting parallelism
-	// - canceling the search once we have sufficient results.
+	// Then fan out the query to all searchers via a priority work queue:
+	// - "search file" tasks are high priority (actual regex work)
+	// - "expand repo" tasks are low priority (advance iterator to find next candidate file)
+	// This avoids deadlocks from the old channel+semaphore approach while keeping
+	// results deterministically ordered by repo name then file path.
 
 	repoFilter, err := newRegexpFilter(q.Repo, q.NotRepo)
 	if err != nil {
@@ -162,65 +166,132 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		return searchers[i].repo < searchers[j].repo
 	})
 
-	// Per-repo result channels: all repos search concurrently, results drained in sorted order.
-	const chanBuffer = 64
-	type repoSearch struct {
-		searcher *indexSearcher
-		results  chan SearchResult
-		files    chan []FileResult
-	}
-	repos := make([]repoSearch, len(searchers))
 	ctxSearch, cancelSearch := context.WithCancel(ctx)
+	defer cancelSearch()
 
-	sem := make(chan struct{}, runtime.GOMAXPROCS(0)) // shared parallelism limiter
-
+	// Per-repo state: results collected into mutex-protected slices.
+	type repoWork struct {
+		searcher    *indexSearcher
+		mu          sync.Mutex
+		results     []SearchResult
+		fileResults []FileResult
+	}
+	repos := make([]repoWork, len(searchers))
 	for i, s := range searchers {
-		repos[i] = repoSearch{
-			searcher: s,
-			results:  make(chan SearchResult, chanBuffer),
-			files:    make(chan []FileResult, 1),
-		}
-		rs := &repos[i]
-
-		// Launch file name search.
-		go func() {
-			defer close(rs.files)
-			r := rs.searcher.SearchFileNames(ctxSearch, re.Clone(), fileFilter.Clone(), q.MaxMatches)
-			if len(r) > 0 {
-				select {
-				case rs.files <- r:
-				case <-ctxSearch.Done():
-				}
-			}
-		}()
-
-		// Launch content search with per-file parallelism via shared semaphore.
-		if !q.FilenameOnly {
-			go func() {
-				defer close(rs.results)
-				var wg sync.WaitGroup
-				for f := range rs.searcher.SearchFiles(ctxSearch, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches) {
-					sem <- struct{}{} // acquire
-					wg.Add(1)
-					go func() {
-						defer func() { <-sem; wg.Done() }()
-						result := f()
-						if result != nil {
-							select {
-							case rs.results <- *result:
-							case <-ctxSearch.Done():
-							}
-						}
-					}()
-				}
-				wg.Wait()
-			}()
-		} else {
-			close(rs.results)
-		}
+		repos[i].searcher = s
 	}
 
-	// Drain results in repo-sorted order for deterministic output.
+	// File name searches run as simple goroutines (lightweight, no priority needed).
+	var namesWg sync.WaitGroup
+	for i := range repos {
+		rs := &repos[i]
+		namesWg.Add(1)
+		go func() {
+			defer namesWg.Done()
+			r := rs.searcher.SearchFileNames(ctxSearch, re.Clone(), fileFilter.Clone(), q.MaxMatches)
+			rs.mu.Lock()
+			rs.fileResults = r
+			rs.mu.Unlock()
+		}()
+	}
+
+	// Content search uses a two-level priority work queue.
+	// High priority: file content search (CPU-bound DFA regex).
+	// Low priority: expand repo iterator (find next candidate file).
+	// Workers prefer search over expand, so CPU stays productive.
+	// Results go into per-repo slices (no channels, no blocking, no deadlock).
+
+	// stops holds iter.Pull stop functions; called after all workers have finished
+	// (via taskWg/workerWg.Wait) so no next() calls are in flight.
+	var stops []func()
+	defer func() {
+		for _, stop := range stops {
+			stop()
+		}
+	}()
+
+	if !q.FilenameOnly {
+		wq := newSearchQueue()
+		var taskWg sync.WaitGroup
+
+		// matchCount is an approximate global match counter used to cancel the
+		// search context early when we've found enough results. It races with the
+		// concurrent workers so the count is imprecise — the drain loop (below)
+		// re-checks the exact limit when assembling the final result in repo order.
+		var matchCount atomic.Int64
+
+		for i := range repos {
+			rs := &repos[i]
+			next, stop := iter.Pull(rs.searcher.SearchFiles(
+				ctxSearch, re.Clone(), fileFilter.Clone(), q.ContextLines, q.MaxMatches))
+			stops = append(stops, stop)
+
+			// expandRepo pulls one candidate file from the iterator, enqueues a
+			// high-priority search task for it, then re-enqueues itself at low priority.
+			// Each repo has at most one expand task in flight, so next() is never
+			// called concurrently.
+			var expandRepo func()
+			expandRepo = func() {
+				defer taskWg.Done()
+				if ctxSearch.Err() != nil {
+					return
+				}
+				f, ok := next()
+				if !ok {
+					return // iterator exhausted
+				}
+				// Enqueue the file content search (high priority).
+				taskWg.Add(1)
+				wq.pushHigh(func() {
+					defer taskWg.Done()
+					if ctxSearch.Err() != nil {
+						return
+					}
+					result := f()
+					if result != nil {
+						rs.mu.Lock()
+						rs.results = append(rs.results, *result)
+						rs.mu.Unlock()
+						if matchCount.Add(int64(len(result.Lines))) > int64(q.MaxMatches) {
+							cancelSearch()
+						}
+					}
+				})
+				// Re-enqueue self to expand the next candidate (low priority).
+				// taskWg.Add must precede pushLow to prevent taskWg.Wait from
+				// completing before the re-enqueued task runs.
+				taskWg.Add(1)
+				wq.pushLow(expandRepo)
+			}
+			taskWg.Add(1)
+			wq.pushLow(expandRepo)
+		}
+
+		// Start workers (same count as GOMAXPROCS to match CPU parallelism).
+		numWorkers := runtime.GOMAXPROCS(0)
+		var workerWg sync.WaitGroup
+		for range numWorkers {
+			workerWg.Add(1)
+			go func() {
+				defer workerWg.Done()
+				for {
+					task, ok := wq.pop()
+					if !ok {
+						return
+					}
+					task()
+				}
+			}()
+		}
+
+		taskWg.Wait()
+		wq.close()
+		workerWg.Wait()
+	}
+
+	namesWg.Wait()
+
+	// Assemble results in sorted repo order.
 	exitReason := ExitReasonNone
 	searchResults := []SearchResult{}
 	fileResults := []FileResult{}
@@ -232,35 +303,31 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		if facets[key] == nil {
 			facets[key] = map[string]int{}
 		}
-		facets[key][val] += 1
+		facets[key][val]++
 	}
 
 	nMatches := 0
 	limitHit := false
 	for i := range repos {
-		// Drain code results for this repo, sort by path within repo.
-		var repoResults []SearchResult
-		for r := range repos[i].results {
-			repoResults = append(repoResults, r)
+		rs := &repos[i]
+		// Sort results within repo by path.
+		sort.Slice(rs.results, func(a, b int) bool {
+			return rs.results[a].File.Path < rs.results[b].File.Path
+		})
+
+		for _, r := range rs.results {
 			incFacet("repo", r.File.Tree)
 			incFacet("ext", path.Ext(r.File.Path))
 			incFacet("path", pathFacetValue(r.File.Path, q.FacetPaths))
 			nMatches += len(r.Lines)
+			searchResults = append(searchResults, r)
 			if nMatches > q.MaxMatches {
 				limitHit = true
 				break
 			}
 		}
-		// Tree and Version are constant within a repo's results; Path alone determines order.
-		sort.Slice(repoResults, func(a, b int) bool {
-			return repoResults[a].File.Path < repoResults[b].File.Path
-		})
-		searchResults = append(searchResults, repoResults...)
 
-		// Drain file results for this repo (always, independent of code match limit).
-		for r := range repos[i].files {
-			fileResults = append(fileResults, r...)
-		}
+		fileResults = append(fileResults, rs.fileResults...)
 		if q.FilenameOnly {
 			nMatches = len(fileResults)
 			if nMatches > q.MaxMatches {
@@ -270,18 +337,9 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 
 		if limitHit {
 			exitReason = ExitReasonMatchLimit
-			cancelSearch()
-			// Drain all remaining channels to unblock goroutines.
-			for j := i; j < len(repos); j++ {
-				for range repos[j].results {
-				}
-				for range repos[j].files {
-				}
-			}
 			break
 		}
 	}
-	cancelSearch()
 
 	facetResults := []Facet{}
 	for key, values := range facets {
@@ -303,6 +361,66 @@ func (si *searchIndex) Search(ctx context.Context, q Query) (*CodeSearchResult, 
 		FileResults: fileResults,
 		Facets:      facetResults,
 	}, nil
+}
+
+// searchQueue is a two-level priority work queue. High-priority tasks (file
+// content searches) are always dequeued before low-priority tasks (repo
+// iterator expansion). Workers block in pop() until work is available or
+// the queue is closed.
+type searchQueue struct {
+	mu     sync.Mutex
+	cond   *sync.Cond
+	high   []func()
+	low    []func()
+	closed bool
+}
+
+func newSearchQueue() *searchQueue {
+	q := &searchQueue{}
+	q.cond = sync.NewCond(&q.mu)
+	return q
+}
+
+func (q *searchQueue) pushHigh(fn func()) {
+	q.mu.Lock()
+	q.high = append(q.high, fn)
+	q.mu.Unlock()
+	q.cond.Signal()
+}
+
+func (q *searchQueue) pushLow(fn func()) {
+	q.mu.Lock()
+	q.low = append(q.low, fn)
+	q.mu.Unlock()
+	q.cond.Signal()
+}
+
+// pop returns the next task, preferring high-priority. Blocks if both queues are
+// empty. Returns (nil, false) only when both queues are empty and the queue is closed.
+func (q *searchQueue) pop() (func(), bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	for len(q.high) == 0 && len(q.low) == 0 && !q.closed {
+		q.cond.Wait()
+	}
+	if len(q.high) > 0 {
+		fn := q.high[0]
+		q.high = q.high[1:]
+		return fn, true
+	}
+	if len(q.low) > 0 {
+		fn := q.low[0]
+		q.low = q.low[1:]
+		return fn, true
+	}
+	return nil, false
+}
+
+func (q *searchQueue) close() {
+	q.mu.Lock()
+	q.closed = true
+	q.mu.Unlock()
+	q.cond.Broadcast()
 }
 
 // pathFacetValue returns the directory prefix to use as a path facet for the

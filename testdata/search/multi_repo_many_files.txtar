@@ -1,0 +1,380 @@
+# Many repos with many matching files — tests ordering under concurrent load.
+# Previously this pattern could deadlock with channel+semaphore fan-out.
+# Results must be sorted by repo name, then by path within each repo.
+q=target
+tree=zulu,alpha,echo,mid,bravo
+
+{
+  "Stats": {
+    "TotalTime": 0,
+    "ExitReason": "NONE"
+  },
+  "Results": [
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "aaa.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "func target() {}",
+          "Bounds": {
+            "Left": 5,
+            "Right": 11
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "bbb.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "var target = 1",
+          "Bounds": {
+            "Left": 4,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "alpha",
+        "Version": "v-alpha",
+        "Path": "ccc.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "// target here",
+          "Bounds": {
+            "Left": 3,
+            "Right": 9
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "bravo",
+        "Version": "v-bravo",
+        "Path": "lib.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "// target here",
+          "Bounds": {
+            "Left": 3,
+            "Right": 9
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "bravo",
+        "Version": "v-bravo",
+        "Path": "main.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "func target() {}",
+          "Bounds": {
+            "Left": 5,
+            "Right": 11
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "bravo",
+        "Version": "v-bravo",
+        "Path": "util.go"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "var target = 1",
+          "Bounds": {
+            "Left": 4,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "echo",
+        "Version": "v-echo",
+        "Path": "one.py"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "target = True",
+          "Bounds": {
+            "Left": 0,
+            "Right": 6
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "echo",
+        "Version": "v-echo",
+        "Path": "three.py"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "print(target)",
+          "Bounds": {
+            "Left": 6,
+            "Right": 12
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "echo",
+        "Version": "v-echo",
+        "Path": "two.py"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "target = False",
+          "Bounds": {
+            "Left": 0,
+            "Right": 6
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "mid",
+        "Version": "v-mid",
+        "Path": "app.js"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "const target = 1",
+          "Bounds": {
+            "Left": 6,
+            "Right": 12
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "mid",
+        "Version": "v-mid",
+        "Path": "lib.js"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "let target = 2",
+          "Bounds": {
+            "Left": 4,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "mid",
+        "Version": "v-mid",
+        "Path": "test.js"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "assert(target)",
+          "Bounds": {
+            "Left": 7,
+            "Right": 13
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "zulu",
+        "Version": "v-zulu",
+        "Path": "a.rs"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "let target = 1;",
+          "Bounds": {
+            "Left": 4,
+            "Right": 10
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "zulu",
+        "Version": "v-zulu",
+        "Path": "b.rs"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "fn target() {}",
+          "Bounds": {
+            "Left": 3,
+            "Right": 9
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    },
+    {
+      "File": {
+        "Tree": "zulu",
+        "Version": "v-zulu",
+        "Path": "c.rs"
+      },
+      "Lines": [
+        {
+          "LineNumber": 1,
+          "Line": "// target",
+          "Bounds": {
+            "Left": 3,
+            "Right": 9
+          },
+          "ContextBefore": null,
+          "ContextAfter": null
+        }
+      ]
+    }
+  ],
+  "FileResults": [],
+  "Facets": [
+    {
+      "Key": "ext",
+      "Values": [
+        {
+          "Value": ".go",
+          "Count": 6
+        },
+        {
+          "Value": ".js",
+          "Count": 3
+        },
+        {
+          "Value": ".py",
+          "Count": 3
+        },
+        {
+          "Value": ".rs",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "Key": "repo",
+      "Values": [
+        {
+          "Value": "alpha",
+          "Count": 3
+        },
+        {
+          "Value": "bravo",
+          "Count": 3
+        },
+        {
+          "Value": "echo",
+          "Count": 3
+        },
+        {
+          "Value": "mid",
+          "Count": 3
+        },
+        {
+          "Value": "zulu",
+          "Count": 3
+        }
+      ]
+    }
+  ],
+  "IndexName": "",
+  "IndexTime": 0
+}
+-- alpha/aaa.go --
+func target() {}
+-- alpha/bbb.go --
+var target = 1
+-- alpha/ccc.go --
+// target here
+-- bravo/main.go --
+func target() {}
+-- bravo/util.go --
+var target = 1
+-- bravo/lib.go --
+// target here
+-- echo/one.py --
+target = True
+-- echo/two.py --
+target = False
+-- echo/three.py --
+print(target)
+-- mid/app.js --
+const target = 1
+-- mid/lib.js --
+let target = 2
+-- mid/test.js --
+assert(target)
+-- zulu/a.rs --
+let target = 1;
+-- zulu/b.rs --
+fn target() {}
+-- zulu/c.rs --
+// target
