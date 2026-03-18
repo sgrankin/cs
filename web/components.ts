@@ -10,6 +10,7 @@ import {LitElement, html, css, unsafeCSS} from "lit";
 import {classMap} from "lit/directives/class-map.js";
 import {unsafeHTML} from "lit/directives/unsafe-html.js";
 import {customElement, property} from "lit/decorators.js";
+import {linkStyles, resultPathStyles, labelStyles} from './shared-styles.ts';
 import hljsThemeCSS from './hljs-theme.css.txt';
 
 @customElement("match-str")
@@ -53,34 +54,7 @@ export class FilenameMatch extends LitElement {
             </a>
         </div>`;
     }
-    static styles = css`
-        .label {
-            font-weight: bold;
-        }
-        .result-path .repo,
-        .result-path .version {
-            color: var(--color-foreground-muted);
-        }
-        .result-path {
-            color: var(--color-foreground-muted);
-            font-family: "Menlo", "Consolas", "Monaco", monospace;
-            font-size: 12px;
-            font-weight: normal;
-        }
-
-        .result-path .filename {
-            font-weight: bold;
-        }
-        a {
-            text-decoration: none;
-            color: var(--color-foreground-accent);
-        }
-
-        a:hover {
-            text-decoration: underline;
-            color: var(--color-foreground-accent);
-        }
-    `;
+    static styles = [linkStyles, resultPathStyles, labelStyles];
 }
 
 @customElement("match-line")

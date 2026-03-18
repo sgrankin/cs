@@ -39,7 +39,7 @@ export class DirListing extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 2px;
-      font-family: 'Menlo', 'Consolas', monospace;
+      font-family: var(--font-mono);
       font-size: 13px;
     }
     a {

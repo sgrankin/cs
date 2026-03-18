@@ -60,7 +60,7 @@ export class SearchHelp extends LitElement {
       #helparea {
         width: 60em;
         margin: auto;
-        color: #999;
+        color: var(--color-foreground-muted);
         padding-bottom: 100px;
       }
 

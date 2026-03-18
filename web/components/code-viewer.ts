@@ -291,18 +291,18 @@ export class CodeViewer extends LitElement {
       font-size: 11px;
       color: var(--color-foreground-subtle);
       padding: 4px 8px;
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border-default);
     }
     .selection-hint kbd {
       font-family: inherit;
       font-size: 10px;
       padding: 1px 4px;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--color-border-default);
       border-radius: 3px;
-      background: var(--color-background-secondary, rgba(128, 128, 128, 0.1));
+      background: var(--color-background-subtle);
     }
     .viewer {
-      font-family: 'Menlo', 'Consolas', monospace;
+      font-family: var(--font-mono);
       font-size: 12px;
       line-height: 1.5;
       overflow-x: auto;

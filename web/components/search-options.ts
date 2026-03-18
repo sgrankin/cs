@@ -118,7 +118,7 @@ export class SearchOptionsComponent extends LitElement {
         flex-wrap: wrap;
         justify-content: end;
         align-items: center;
-        gap: 10pt;
+        gap: 12px;
       }
 
       .search-option {

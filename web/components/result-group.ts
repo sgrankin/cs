@@ -157,7 +157,7 @@ export class ResultGroup extends LitElement {
         display: grid;
         grid-template-columns: subgrid;
         white-space: pre-wrap;
-        font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+        font-family: var(--font-mono);
         font-size: 12px;
         padding: 10px 5px;
         color: var(--color-foreground);

@@ -43,13 +43,9 @@ function getStoredTheme(): Theme {
 function applyTheme(theme: Theme) {
   localStorage.setItem('theme', theme);
   const root = document.documentElement;
-  if (theme === 'auto') {
-    root.removeAttribute('data-theme');
-    root.style.colorScheme = '';
-  } else {
-    root.setAttribute('data-theme', theme);
-    root.style.colorScheme = theme;
-  }
+  // light-dark() CSS function uses color-scheme to pick values.
+  // 'light dark' = auto (follows OS), 'light' or 'dark' = forced.
+  root.style.colorScheme = theme === 'auto' ? 'light dark' : theme;
 }
 
 // Apply stored theme on load.

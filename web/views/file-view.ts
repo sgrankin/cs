@@ -189,7 +189,7 @@ export class FileView extends LitElement {
     }
     .readme pre {
       white-space: pre-wrap;
-      font-family: 'Menlo', 'Consolas', monospace;
+      font-family: var(--font-mono);
       font-size: 12px;
       line-height: 1.5;
       margin: 0;

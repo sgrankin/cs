@@ -70,7 +70,7 @@ export class HelpModal extends LitElement {
       padding-right: 16px;
     }
     kbd {
-      font-family: 'Menlo', 'Consolas', monospace;
+      font-family: var(--font-mono);
       font-size: 12px;
       padding: 2px 6px;
       border: 1px solid var(--color-border-default);

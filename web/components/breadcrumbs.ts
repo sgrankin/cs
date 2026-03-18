@@ -32,7 +32,7 @@ export class Breadcrumbs extends LitElement {
 
   static styles = css`
     .breadcrumbs {
-      font-family: 'Menlo', 'Consolas', monospace;
+      font-family: var(--font-mono);
       font-size: 13px;
     }
     a {

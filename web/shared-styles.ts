@@ -11,15 +11,6 @@
 
 import {css} from 'lit';
 
-/** Match highlight styles — used by match-str and any component showing match bounds. */
-export const matchHighlightStyles = css`
-  .matchstr {
-    background: var(--color-background-matchstr);
-    color: var(--color-foreground-matchstr);
-    font-weight: bold;
-  }
-`;
-
 /** Link styles matching global codesearch.css conventions. */
 export const linkStyles = css`
   a {
@@ -28,15 +19,6 @@ export const linkStyles = css`
   }
   a:hover {
     text-decoration: underline;
-    color: var(--color-foreground-accent);
-  }
-`;
-
-/** Monospace code font stack. */
-export const codeFont = css`
-  :host {
-    font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
-    font-size: 12px;
   }
 `;
 
@@ -44,7 +26,7 @@ export const codeFont = css`
 export const resultPathStyles = css`
   .result-path {
     color: var(--color-foreground-muted);
-    font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     font-weight: normal;
   }
@@ -129,12 +111,5 @@ export const prefixedInputStyles = css`
   }
   .prefixed-input input[type="search"]:valid:focus {
     border-color: var(--color-prefixed-input-border-valid-focus);
-  }
-`;
-
-/** Utility classes. */
-export const utilityStyles = css`
-  .hidden {
-    display: none !important;
   }
 `;
