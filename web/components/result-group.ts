@@ -7,6 +7,7 @@ import {unsafeHTML} from 'lit/directives/unsafe-html.js';
 import {splitResultPath, type ResultEvent, type ResultLine} from '../api.ts';
 import {resultPathStyles, linkStyles} from '../shared-styles.ts';
 import {highlightLines} from '../highlight.ts';
+import {markInHTML} from '../mark-html.ts';
 import '../components.ts';
 
 // path helpers matching Go's path.Dir and path.Base.
@@ -74,28 +75,20 @@ export class ResultGroup extends LitElement {
                   const bounds = line.length > 2 ? line[2] : undefined;
                   const isMatch = bounds !== undefined && bounds.length > 0;
                   const href = `${viewHref}#L${lno}`;
-                  const hl = this.hlMap.get(lno);
-                  if (!isMatch && hl) {
-                    return html`
-                      <match-line
-                        class="context"
-                        .lineNo=${lno}
-                        href=${href}
-                        text=${text}
-                        .highlightedHTML=${hl}
-                      ></match-line>
-                    `;
+                  let hl = this.hlMap.get(lno);
+                  // For match lines with highlighting: insert mark at match bounds.
+                  if (isMatch && hl && bounds) {
+                    hl = markInHTML(hl, bounds[0][0], bounds[0][1]);
                   }
-                  const start = isMatch && bounds ? bounds[0][0] : undefined;
-                  const end = isMatch && bounds ? bounds[0][1] : undefined;
                   return html`
                     <match-line
                       class=${isMatch ? 'match-hit' : 'context'}
                       .lineNo=${lno}
                       text=${text}
                       href=${href}
-                      .start=${start}
-                      .end=${end}
+                      .highlightedHTML=${hl}
+                      .start=${!hl && isMatch && bounds ? bounds[0][0] : undefined}
+                      .end=${!hl && isMatch && bounds ? bounds[0][1] : undefined}
                     ></match-line>
                   `;
                 })}

@@ -28,8 +28,10 @@ export class MatchStr extends LitElement {
     }
     static styles = css`
         .matchstr {
-            background: var(--color-background-matchstr);
-            color: var(--color-foreground-matchstr);
+            background: var(--color-background-mark);
+            color: inherit;
+            box-shadow: 0 0 0 1px var(--color-border-mark);
+            border-radius: 2px;
             font-weight: bold;
         }
     `;
@@ -131,6 +133,13 @@ export class MatchLine extends LitElement {
         .matchstr {
             background: var(--color-background-matchstr);
             color: var(--color-foreground-matchstr);
+            font-weight: bold;
+        }
+        mark.matchstr {
+            background: var(--color-background-mark);
+            color: inherit;
+            box-shadow: 0 0 0 1px var(--color-border-mark);
+            border-radius: 2px;
             font-weight: bold;
         }
     `];
