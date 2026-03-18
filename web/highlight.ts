@@ -1,19 +1,32 @@
 // Copyright Sergey Grankin
 // SPDX-License-Identifier: BSD-2-Clause
 
-// Syntax highlighting via highlight.js (regex-based).
-// Used for both file view and search snippets.
-// Re-exports from snippet-highlight.ts which has the hljs setup.
+// Lazy-loading syntax highlighting via highlight.js.
+// The hljs module (~105KB) is loaded on first use via dynamic import.
 
-import {highlightSnippet, detectSnippetLanguage} from './snippet-highlight.ts';
+type SnippetModule = typeof import('./snippet-highlight.ts');
 
-/** Detect language from file path. Returns empty string if unknown. */
-export const detectLanguage = detectSnippetLanguage;
+let mod: SnippetModule | null = null;
+let loading: Promise<SnippetModule> | null = null;
+
+async function load(): Promise<SnippetModule> {
+  if (mod) return mod;
+  if (!loading) {
+    loading = import('./snippet-highlight.ts').then(m => { mod = m; return m; });
+  }
+  return loading;
+}
+
+// Start loading immediately on import — don't wait for first highlight call.
+// By the time search results arrive (~200ms debounce + network), hljs is usually ready.
+load();
 
 /**
  * Highlight source code and return an array of HTML strings, one per line.
- * Returns null if the language is unknown or highlighting fails.
+ * Lazy-loads highlight.js on first call. Returns null if language unknown.
  */
 export async function highlightLines(filePath: string, content: string): Promise<string[] | null> {
-  return highlightSnippet(filePath, content);
+  const m = await load();
+  return m.highlightSnippet(filePath, content);
 }
+

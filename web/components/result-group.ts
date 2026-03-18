@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 import {LitElement, html, css} from 'lit';
-import {customElement, property} from 'lit/decorators.js';
+import {customElement, property, state} from 'lit/decorators.js';
 import {unsafeHTML} from 'lit/directives/unsafe-html.js';
 import {splitResultPath, type ResultEvent, type ResultLine} from '../api.ts';
 import {resultPathStyles, linkStyles} from '../shared-styles.ts';
-import {highlightSnippet} from '../snippet-highlight.ts';
+import {highlightLines} from '../highlight.ts';
 import '../components.ts';
 
 // path helpers matching Go's path.Dir and path.Base.
@@ -28,6 +28,24 @@ function pathBase(p: string): string {
 export class ResultGroup extends LitElement {
   @property({type: Object}) result!: ResultEvent;
   @property({type: Boolean, reflect: true, attribute: 'no-context'}) noContext = false;
+  @state() private hlMap = new Map<number, string>();
+
+  willUpdate(changed: Map<string, unknown>) {
+    if (changed.has('result') && this.result) {
+      this.hlMap = new Map();
+      const allLines = this.result.lines.filter((l): l is ResultLine => l !== null);
+      const text = allLines.map(l => l[1]).join('\n');
+      const {filePath} = splitResultPath(this.result.path);
+      highlightLines(filePath, text).then(hlLines => {
+        if (!hlLines) return;
+        const map = new Map<number, string>();
+        for (let i = 0; i < allLines.length && i < hlLines.length; i++) {
+          map.set(allLines[i][0], hlLines[i]);
+        }
+        this.hlMap = map;
+      });
+    }
+  }
 
   render() {
     const {repo, version, filePath} = splitResultPath(this.result.path);
@@ -36,17 +54,6 @@ export class ResultGroup extends LitElement {
     const shortVersion = version.length > 6 ? version.slice(0, 6) : version;
     const dir = pathDir(filePath);
     const base = pathBase(filePath);
-
-    // Highlight all lines as a single block (gives hljs cross-line context).
-    const allLines = this.result.lines.filter((l): l is ResultLine => l !== null);
-    const text = allLines.map(l => l[1]).join('\n');
-    const hlLines = highlightSnippet(filePath, text);
-    const hlMap = new Map<number, string>();
-    if (hlLines) {
-      for (let i = 0; i < allLines.length && i < hlLines.length; i++) {
-        hlMap.set(allLines[i][0], hlLines[i]);
-      }
-    }
 
     return html`
       <div class="file-group">
@@ -67,7 +74,7 @@ export class ResultGroup extends LitElement {
                   const bounds = line.length > 2 ? line[2] : undefined;
                   const isMatch = bounds !== undefined && bounds.length > 0;
                   const href = `${viewHref}#L${lno}`;
-                  const hl = hlMap.get(lno);
+                  const hl = this.hlMap.get(lno);
                   if (!isMatch && hl) {
                     return html`
                       <match-line

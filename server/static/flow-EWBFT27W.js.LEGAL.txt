@@ -1,0 +1,10 @@
+Bundled license information:
+
+@lit-labs/virtualizer/layouts/shared/SizeCache.js:
+@lit-labs/virtualizer/layouts/shared/BaseLayout.js:
+@lit-labs/virtualizer/layouts/flow.js:
+  /**
+   * @license
+   * Copyright 2021 Google LLC
+   * SPDX-License-Identifier: BSD-3-Clause
+   */

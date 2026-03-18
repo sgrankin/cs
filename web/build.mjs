@@ -21,6 +21,7 @@ const opts = {
     bundle: true,
     write: true,
     format: "esm",
+    splitting: true,
     platform: "browser",
     loader: {
         ".eot": "dataurl",
