@@ -6,7 +6,10 @@
 
 /* CSS custom properties using light-dark(): these inherit through shadow DOM.
    The color-scheme property controls which value light-dark() uses.
-   Settings menu sets color-scheme on :root to force light/dark. */
+   Settings menu sets color-scheme on :root to force light/dark.
+
+   All foreground/background combinations target WCAG AA contrast (4.5:1
+   for normal text, 3:1 for large text and UI components). */
 
 :root {
     color-scheme: light dark;
@@ -16,7 +19,8 @@
     --color-background-hover: light-dark(#d4d4d4, hsl(214, 21%, 17%));
     --color-background-modal-overlay: rgba(0, 0, 0, 0.1);
     --color-foreground: light-dark(#000000, #c9d1d9);
-    --color-foreground-muted: light-dark(hsl(0, 0%, 25%), hsl(215, 8%, 47%));
+    /* Muted: dark raised from 47% → 57% for 4.5:1 on #0d1117 */
+    --color-foreground-muted: light-dark(hsl(0, 0%, 25%), hsl(215, 8%, 57%));
     --color-foreground-subtle: light-dark(hsl(0, 0%, 40%), hsl(212, 9%, 58%));
     --color-foreground-emphasis: light-dark(#000000, #ffffff);
     --color-shadow: rgba(0, 0, 0, 0.25);
@@ -26,14 +30,18 @@
     --color-background-mark: light-dark(rgba(255, 166, 0, 0.15), rgba(255, 166, 0, 0.2));
     --color-border-mark: light-dark(rgba(255, 166, 0, 0.4), rgba(255, 166, 0, 0.5));
 
-    --color-foreground-accent: light-dark(#337ab7, #417dc1);
-    --color-foreground-error: light-dark(#dd3b38, #d73a49);
+    /* Accent: dark raised for 4.5:1 on #0d1117 */
+    --color-foreground-accent: light-dark(#337ab7, #58a6ff);
+    /* Error: dark raised for 4.5:1 on #0d1117 (GitHub's error red) */
+    --color-foreground-error: light-dark(#dd3b38, #f85149);
 
-    --color-border-default: light-dark(#e6e6e6, #30363d);
-    --color-border-subtle: light-dark(#c0c0c0, #6e7681);
+    /* Borders: increased contrast for 3:1 UI component visibility */
+    --color-border-default: light-dark(#c0c0c0, #484f58);
+    --color-border-subtle: light-dark(#a0a0a0, #6e7681);
 
     --color-file-group-background: light-dark(#e9edf5, var(--color-background-subtle));
-    --color-file-group-accent: light-dark(#a0d1fa, #6e6e6e);
+    /* File group accent: increased contrast against file-group-background */
+    --color-file-group-accent: light-dark(#6fa8dc, #8b949e);
 
     --color-prefixed-input-border: light-dark(rgba(0, 0, 0, 0.1), rgb(45, 51, 59));
     --color-prefixed-input-border-hover: light-dark(rgba(0, 126, 229, 0.1), hsl(208, 17%, 45%));
@@ -42,7 +50,8 @@
     --color-prefixed-input-border-valid-hover: light-dark(rgba(0, 126, 229, 0.45), rgb(63, 121, 168));
     --color-prefixed-input-border-valid-focus: light-dark(rgba(0, 126, 229, 0.75), rgb(72, 167, 244));
 
-    --color-syntax-comment: light-dark(#999988, #8b949e);
+    /* Syntax: light comment darkened from #999988 to #767676 for 4.5:1 on white */
+    --color-syntax-comment: light-dark(#767676, #8b949e);
     --color-syntax-string: light-dark(#e3116c, #a5d6ff);
     --color-syntax-entity: light-dark(#007c7b, #7ee787);
     --color-syntax-keyword: light-dark(#0075a9, #ff7b72);
