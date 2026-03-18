@@ -199,14 +199,21 @@ export async function testCodeViewerKeyIgnoredWithModifier(t: T) {
 // --- Line click test (behavioral: click, check rendered state) ---
 
 export async function testCodeViewerLineClick(t: T) {
-    const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
-    const links = el.renderRoot.querySelectorAll('.lno') as NodeListOf<HTMLAnchorElement>;
-    links[2].click(); // click line 3
-    await el.updateComplete;
-    // Line 3 should now be selected (has 'selected' class).
-    const got = Array.from(el.renderRoot.querySelectorAll('.line'))
-        .map(l => l.classList.contains('selected'));
-    eq(got, [false, false, true, false, false]);
+    const origHash = window.location.hash;
+    try {
+        const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
+        const links = el.renderRoot.querySelectorAll('.lno') as NodeListOf<HTMLAnchorElement>;
+        links[2].click(); // click line 3
+        await el.updateComplete;
+        // Line 3 should now be selected (has 'selected' class).
+        const got = Array.from(el.renderRoot.querySelectorAll('.line'))
+            .map(l => l.classList.contains('selected'));
+        eq(got, [false, false, true, false, false]);
+        // Hash should be updated to #L3.
+        eq(window.location.hash, "#L3");
+    } finally {
+        history.replaceState(null, '', origHash || ' ');
+    }
 }
 
 // --- Selection hint tests ---
@@ -235,20 +242,27 @@ export async function testCodeViewerEmptyContent(t: T) {
 }
 
 export async function testCodeViewerShiftClickRange(t: T) {
-    const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
-    const links = el.renderRoot.querySelectorAll('.lno') as NodeListOf<HTMLAnchorElement>;
+    const origHash = window.location.hash;
+    try {
+        const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
+        const links = el.renderRoot.querySelectorAll('.lno') as NodeListOf<HTMLAnchorElement>;
 
-    // Click line 1 to select it.
-    links[0].click();
-    await el.updateComplete;
+        // Click line 1 to select it.
+        links[0].click();
+        await el.updateComplete;
+        eq(window.location.hash, "#L1");
 
-    // Shift+click line 3 to extend the range.
-    links[2].dispatchEvent(new MouseEvent('click', {shiftKey: true, bubbles: true}));
-    await el.updateComplete;
+        // Shift+click line 3 to extend the range.
+        links[2].dispatchEvent(new MouseEvent('click', {shiftKey: true, bubbles: true}));
+        await el.updateComplete;
 
-    const got = Array.from(el.renderRoot.querySelectorAll('.line'))
-        .map(l => l.classList.contains('selected'));
-    eq(got, [true, true, true, false, false]);
+        const got = Array.from(el.renderRoot.querySelectorAll('.line'))
+            .map(l => l.classList.contains('selected'));
+        eq(got, [true, true, true, false, false]);
+        eq(window.location.hash, "#L1-L3");
+    } finally {
+        history.replaceState(null, '', origHash || ' ');
+    }
 }
 
 export async function testCodeViewerOnSelectionChange(t: T) {

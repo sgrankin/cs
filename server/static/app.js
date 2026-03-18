@@ -933,7 +933,7 @@ import{c}from"./chunk-NVALI5VU.js";var Bt=globalThis,Vt=Bt.ShadowRoot&&(Bt.Shady
             </div>
           `})}
       </div>
-    `}onLineClick(e,s){if(e.shiftKey&&this.selectedStart>0){e.preventDefault();let o=Math.min(this.selectedStart,s),i=Math.max(this.selectedStart,s);this.selectedStart=o,this.selectedEnd=i,history.replaceState(null,"",`#L${o}-L${i}`)}else this.selectedStart=s,this.selectedEnd=s}};O.styles=[lt(we),g`
+    `}onLineClick(e,s){if(e.preventDefault(),e.shiftKey&&this.selectedStart>0){let o=Math.min(this.selectedStart,s),i=Math.max(this.selectedStart,s);this.selectedStart=o,this.selectedEnd=i,history.replaceState(null,"",`#L${o}-L${i}`)}else this.selectedStart=s,this.selectedEnd=s,history.replaceState(null,"",`#L${s}`)}};O.styles=[lt(we),g`
     .selection-hint {
       font-size: 11px;
       color: var(--color-foreground-subtle);

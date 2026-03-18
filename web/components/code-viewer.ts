@@ -269,8 +269,11 @@ export class CodeViewer extends LitElement {
   }
 
   private onLineClick(e: MouseEvent, lno: number) {
+    // Always prevent default to stop the browser from following the <a href="#L...">
+    // link. Without this, the hash-only navigation bubbles out of shadow DOM and
+    // can be misinterpreted as a route change (e.g. "/#L5" matches the search page).
+    e.preventDefault();
     if (e.shiftKey && this.selectedStart > 0) {
-      e.preventDefault();
       const start = Math.min(this.selectedStart, lno);
       const end = Math.max(this.selectedStart, lno);
       this.selectedStart = start;
@@ -279,6 +282,7 @@ export class CodeViewer extends LitElement {
     } else {
       this.selectedStart = lno;
       this.selectedEnd = lno;
+      history.replaceState(null, '', `#L${lno}`);
     }
   }
 
