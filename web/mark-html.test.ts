@@ -20,6 +20,10 @@ export function testMarkInHTML(t: T) {
             want: "hello"},
         {name: "at end", html: "hello", start: 3, end: 5,
             want: 'hel<mark class="matchstr">lo</mark>'},
+        {name: "mark extends past text end", html: "abc", start: 1, end: 10,
+            want: 'a<mark class="matchstr">bc</mark>'},
+        {name: "entity within mark range", html: "a&amp;b", start: 0, end: 3,
+            want: '<mark class="matchstr">a&amp;b</mark>'},
     ];
     for (const c of cases) {
         t.run(c.name, () => {

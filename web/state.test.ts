@@ -305,6 +305,84 @@ export async function testExecuteSearchWithFileResults(t: T) {
     }
 }
 
+export async function testPopstateTriggersSearch(t: T) {
+    const origFetch = globalThis.fetch;
+    const prev = currentRoute.get();
+    try {
+        let fetched = false;
+        globalThis.fetch = (async () => {
+            fetched = true;
+            return new Response('{"type":"done","time_ms":1,"total":0,"truncated":false}\n');
+        }) as any;
+
+        // Set initial state with a query.
+        currentRoute.set({name: 'search', params: new URLSearchParams('q=initial')});
+        immediateSearch("initial");
+        await new Promise(r => setTimeout(r, 50));
+        fetched = false;
+
+        // Simulate popstate by dispatching the event after updating URL.
+        // The popstate handler in state.ts reads the current route and calls controller.popstate.
+        history.pushState(null, '', '/search?q=popstate-test');
+        currentRoute.set({name: 'search', params: new URLSearchParams('q=popstate-test')});
+        window.dispatchEvent(new PopStateEvent('popstate'));
+
+        // Wait for search to execute.
+        await new Promise(r => setTimeout(r, 100));
+
+        eq(fetched, true, "popstate triggered search");
+    } finally {
+        searchResults.set([]);
+        fileResults.set([]);
+        facets.set(null);
+        searchDone.set(null);
+        searchLoading.set(false);
+        searchError.set(null);
+        document.title = "code search";
+        currentRoute.set(prev);
+        globalThis.fetch = origFetch;
+    }
+}
+
+export async function testPopstateEmptyQueryClearsResults(t: T) {
+    const origFetch = globalThis.fetch;
+    const prev = currentRoute.get();
+    try {
+        globalThis.fetch = (async () => {
+            return new Response('{"type":"done","time_ms":1,"total":0,"truncated":false}\n');
+        }) as any;
+
+        // First, set up some search results.
+        currentRoute.set({name: 'search', params: new URLSearchParams('q=something')});
+        immediateSearch("something");
+        await new Promise(r => setTimeout(r, 50));
+
+        // Now simulate popstate with empty query — should clear results (lines 181-187).
+        history.pushState(null, '', '/search');
+        currentRoute.set({name: 'search', params: new URLSearchParams()});
+        window.dispatchEvent(new PopStateEvent('popstate'));
+
+        await new Promise(r => setTimeout(r, 50));
+
+        eq(searchResults.get(), [], "results cleared");
+        eq(fileResults.get(), [], "file results cleared");
+        eq(facets.get(), null, "facets cleared");
+        eq(searchDone.get(), null, "done cleared");
+        eq(searchLoading.get(), false, "loading cleared");
+        eq(searchError.get(), null, "error cleared");
+    } finally {
+        searchResults.set([]);
+        fileResults.set([]);
+        facets.set(null);
+        searchDone.set(null);
+        searchLoading.set(false);
+        searchError.set(null);
+        document.title = "code search";
+        currentRoute.set(prev);
+        globalThis.fetch = origFetch;
+    }
+}
+
 export async function testInitFromUrl(t: T) {
     const origFetch = globalThis.fetch;
     const prev = currentRoute.get();

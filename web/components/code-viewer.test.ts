@@ -233,6 +233,61 @@ export async function testCodeViewerSelectionHintShown(t: T) {
     eq(hint.textContent!.includes("Enter"), true, "hint shows Enter shortcut");
 }
 
+// --- Hash change handler ---
+
+export async function testCodeViewerHashChange(t: T) {
+    const origHash = window.location.hash;
+    try {
+        const el = await render(html`<cs-code-viewer .content=${"a\nb\nc\nd\ne\n"}></cs-code-viewer>`) as CodeViewer;
+        // Initially no selection.
+        let got = Array.from(el.renderRoot.querySelectorAll('.line'))
+            .map(l => l.classList.contains('selected'));
+        eq(got, [false, false, false, false, false]);
+
+        // Change hash and dispatch hashchange event.
+        history.replaceState(null, '', '#L2');
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+        await el.updateComplete;
+
+        got = Array.from(el.renderRoot.querySelectorAll('.line'))
+            .map(l => l.classList.contains('selected'));
+        eq(got, [false, true, false, false, false]);
+    } finally {
+        history.replaceState(null, '', origHash || ' ');
+    }
+}
+
+// --- Syntax highlighting via willUpdate ---
+
+export async function testCodeViewerHighlightTrigger(t: T) {
+    // Render with both content and filePath to trigger willUpdate → highlightLines.
+    const el = await render(html`
+        <cs-code-viewer .content=${"package main\nfunc main() {}\n"} .filePath=${"main.go"}></cs-code-viewer>
+    `) as CodeViewer;
+    // highlightLines is async (lazy import). Wait for it to resolve and re-render.
+    await new Promise(r => setTimeout(r, 200));
+    await el.updateComplete;
+    // After highlighting, the .code spans should contain highlighted HTML (span tags).
+    const codeSpans = Array.from(el.renderRoot.querySelectorAll('.code'));
+    // At least the first line should have syntax highlighting (contains <span> children).
+    const firstCode = codeSpans[0];
+    const hasHighlight = firstCode.querySelector('span') !== null;
+    eq(hasHighlight, true, "first line has syntax highlighting spans");
+}
+
+export async function testCodeViewerHighlightNullResult(t: T) {
+    // Render with an unknown file extension — highlightLines returns null.
+    const el = await render(html`
+        <cs-code-viewer .content=${"some content\n"} .filePath=${"data.xyz"}></cs-code-viewer>
+    `) as CodeViewer;
+    await new Promise(r => setTimeout(r, 200));
+    await el.updateComplete;
+    // Content should render as plain text (no highlight spans).
+    const codeSpans = Array.from(el.renderRoot.querySelectorAll('.code'));
+    eq(codeSpans[0].textContent, "some content");
+    eq(codeSpans[0].querySelector('span'), null, "no highlight spans for unknown language");
+}
+
 // --- Empty content ---
 
 export async function testCodeViewerEmptyContent(t: T) {

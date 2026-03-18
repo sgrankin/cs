@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 import {T, eq} from "@testing/harness";
-import {matchRoute} from "./router.ts";
+import {matchRoute, currentRoute, navigate, updateSearchParams} from "./router.ts";
 
 export function testMatchRoute(t: T) {
     const cases: {path: string; search?: string; name: string; routePath?: string}[] = [
@@ -26,5 +26,62 @@ export function testMatchRoute(t: T) {
                 eq(route.params.get("q"), "hello", "params");
             }
         });
+    }
+}
+
+export function testNavigateReplace(t: T) {
+    const prev = currentRoute.get();
+    const origPathname = window.location.pathname;
+    const origSearch = window.location.search;
+    try {
+        navigate("/search?q=replace-test", true);
+        eq(currentRoute.get().name, "search");
+        eq(currentRoute.get().params.get("q"), "replace-test");
+    } finally {
+        history.replaceState(null, '', origPathname + origSearch);
+        currentRoute.set(prev);
+    }
+}
+
+export function testUpdateSearchParams(t: T) {
+    const prev = currentRoute.get();
+    const origPathname = window.location.pathname;
+    const origSearch = window.location.search;
+    try {
+        updateSearchParams(new URLSearchParams("q=params-test"), true);
+        eq(currentRoute.get().params.get("q"), "params-test");
+    } finally {
+        history.replaceState(null, '', origPathname + origSearch);
+        currentRoute.set(prev);
+    }
+}
+
+export async function testPopstateUpdatesRoute(t: T) {
+    const prev = currentRoute.get();
+    const origPathname = window.location.pathname;
+    const origSearch = window.location.search;
+    try {
+        // Navigate to a known state so we have a history entry.
+        navigate("/search?q=poptest");
+        eq(currentRoute.get().name, "search");
+        eq(currentRoute.get().params.get("q"), "poptest");
+
+        // Navigate to another state.
+        navigate("/about");
+        eq(currentRoute.get().name, "about");
+
+        // Simulate browser back by going back and dispatching popstate.
+        history.back();
+        // history.back() is async; wait a tick, then fire popstate.
+        await new Promise(r => setTimeout(r, 50));
+
+        // The popstate listener in router.ts should have updated currentRoute.
+        const route = currentRoute.get();
+        eq(route.name, "search");
+        eq(route.params.get("q"), "poptest");
+    } finally {
+        // Restore original state.
+        history.replaceState(null, '', origPathname + origSearch);
+        currentRoute.set(prev);
     }
 }
