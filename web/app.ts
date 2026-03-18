@@ -16,6 +16,7 @@ import './codesearch.css';
 import './views/search-view.ts';
 import './views/file-view.ts';
 import './views/about-view.ts';
+import './components/settings-menu.ts';
 
 
 /**
@@ -27,6 +28,7 @@ export class CsApp extends SignalWatcher(LitElement) {
   render() {
     const route = currentRoute.get();
     return html`
+      <cs-settings-menu></cs-settings-menu>
       <main>${this.renderView(route)}</main>
       <footer>
         <ul>

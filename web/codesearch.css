@@ -54,8 +54,9 @@
     color-scheme: light;
 }
 
+/* Dark mode: auto (media query) or forced (data-theme attribute). */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         --color-background: #0d1117;
         --color-background-subtle: #161b22;
         --color-background-hover: hsl(214, 21%, 17%);
@@ -102,6 +103,40 @@
 
         color-scheme: dark;
     }
+}
+
+/* Forced dark mode via data-theme attribute (overrides light preference). */
+:root[data-theme="dark"] {
+    --color-background: #0d1117;
+    --color-background-subtle: #161b22;
+    --color-background-hover: hsl(214, 21%, 17%);
+    --color-background-modal-overlay: rgba(0, 0, 0, 0.1);
+    --color-foreground: #c9d1d9;
+    --color-foreground-muted: hsl(215, 8%, 47%);
+    --color-foreground-subtle: hsl(212, 9%, 58%);
+    --color-foreground-emphasis: #ffffff;
+    --color-shadow: rgba(0, 0, 0, 0.25);
+    --color-foreground-matchstr: inherit;
+    --color-background-matchstr: rgb(198, 140, 40, 0.4);
+    --color-background-mark: rgba(255, 166, 0, 0.2);
+    --color-border-mark: rgba(255, 166, 0, 0.5);
+    --color-outline-highlight-focus: rgba(187, 128, 9, 0.4);
+    --color-background-highlight-focus: rgba(187, 128, 9, 0.15);
+    --color-foreground-symlink: rgba(60, 60, 60);
+    --color-foreground-symlink-target: rgba(115, 115, 115);
+    --color-foreground-accent: #417dc1;
+    --color-foreground-error: #d73a49;
+    --color-border-default: #30363d;
+    --color-border-subtle: #6e7681;
+    --color-file-group-background: var(--color-background-subtle);
+    --color-file-group-accent: #6e6e6e;
+    --color-prefixed-input-border: rgb(45, 51, 59);
+    --color-prefixed-input-border-hover: hsl(208, 17%, 45%);
+    --color-prefixed-input-border-focus: hsl(208, 47%, 44%);
+    --color-prefixed-input-border-valid: hsl(208, 0%, 60%);
+    --color-prefixed-input-border-valid-hover: rgb(63, 121, 168);
+    --color-prefixed-input-border-valid-focus: rgb(72, 167, 244);
+    color-scheme: dark;
 }
 
 /* Body/html resets */

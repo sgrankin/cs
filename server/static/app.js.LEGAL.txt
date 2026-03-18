@@ -95,3 +95,14 @@ lit-html/directives/class-map.js:
    * Copyright 2018 Google LLC
    * SPDX-License-Identifier: BSD-3-Clause
    */
+
+lucide/dist/esm/icons/chevron-down.js:
+lucide/dist/esm/icons/sun.js:
+lucide/dist/esm/icons/moon.js:
+lucide/dist/esm/icons/monitor.js:
+  /**
+   * @license lucide v0.577.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */
