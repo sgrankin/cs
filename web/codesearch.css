@@ -54,9 +54,10 @@
     --color-syntax-comment: light-dark(#767676, #8b949e);
     --color-syntax-string: light-dark(#e3116c, #a5d6ff);
     --color-syntax-entity: light-dark(#007c7b, #7ee787);
-    --color-syntax-keyword: light-dark(#0075a9, #ff7b72);
+    /* Dark keyword/tag: slightly desaturated to reduce halation for astigmatism */
+    --color-syntax-keyword: light-dark(#0075a9, #e5958f);
     --color-syntax-function: light-dark(#9a050f, #d2a8ff);
-    --color-syntax-tag: light-dark(#00009f, #7ee787);
+    --color-syntax-tag: light-dark(#00009f, #6dcc76);
 
     /* Monospace font stack — use this variable for all code text. */
     --font-mono: 'Menlo', 'Consolas', 'Monaco', monospace;
